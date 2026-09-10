@@ -1,0 +1,7 @@
+project_root <- normalizePath(file.path("..", ".."), mustWork = TRUE)
+source(file.path(project_root, "R", "config.R"))
+source(file.path(project_root, "R", "acis-prism.R"))
+source(file.path(project_root, "R", "process-prism.R"))
+source(file.path(project_root, "R", "build-prism-climatology.R"))
+source(file.path(project_root, "R", "prism-percentile-rank.R"))
+source(file.path(project_root, "R", "prism-workflow.R"))

@@ -1,0 +1,34 @@
+---
+title: "Methods"
+description: "Data sources and processing methods"
+---
+
+## Data and software
+
+Climate grids will be obtained from the PRISM Climate Group and processed in R.
+The analysis stack uses **terra**, **sf**, **ggplot2**, **dplyr**, and
+**lubridate**. Geographic operations use explicit coordinate reference systems,
+and every file path is relative to the project root.
+
+Daily maximum temperature, minimum temperature, and precipitation are obtained
+for Arizona and New Mexico with a 0.5-degree geographic buffer. Temperature is
+retained in degrees Fahrenheit and precipitation in inches. The stable local
+archive begins in 1981, while fixed 1991-2020 normals are used for standard
+climate comparisons.
+
+Daily temperature thresholds pool a centered five-day calendar window and use
+R quantile type 8. February 29 thresholds are interpolated from February 28 and
+March 1. A precipitation wet day is at least 0.04 inch; precipitation amount
+percentiles are calculated from wet days rather than from all days including
+zeros.
+
+## Reproducible updates
+
+Raw downloads, processed analysis files, and presentation-ready maps are kept in
+separate directories. Quarto renders the static website to `_site/`. Shell
+scripts in `scripts/` provide entry points for unattended Ubuntu execution and
+S3 deployment; scheduling and AWS credentials remain external to this repository.
+
+The repository's
+[technical PRISM methods](../docs/prism-data-methods.md) document records the
+periods, processing decisions, API safeguards, and function-level workflow.

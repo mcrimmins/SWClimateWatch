@@ -1,0 +1,11 @@
+---
+title: "Atmosphere"
+description: "Atmospheric patterns influencing Southwest climate"
+---
+
+This section will summarize atmospheric circulation, moisture transport, and
+other large-scale patterns affecting Arizona and New Mexico.
+
+::: {.callout-note}
+Atmospheric products are coming soon.
+:::

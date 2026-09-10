@@ -1,0 +1,26 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# Quarto output and caches
+_site/
+_freeze/
+.quarto/
+*_cache/
+*_files/
+
+# Local climate data and generated map products
+data/raw/*
+data/processed/*
+maps/generated/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!maps/generated/.gitkeep
+
+# Local environment and logs
+.env
+logs/
+
+/.quarto/
+**/*.quarto_ipynb

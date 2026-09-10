@@ -1,0 +1,11 @@
+---
+title: "Forecasts"
+description: "Climate outlooks for Arizona and New Mexico"
+---
+
+This section will present short-range forecasts and seasonal climate outlooks
+for the Southwest.
+
+::: {.callout-note}
+Forecast products are coming soon.
+:::

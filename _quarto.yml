@@ -1,0 +1,42 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "Southwest Climate Watch"
+  description: "Automatically updated climate maps for Arizona and New Mexico"
+  sidebar:
+    style: docked
+    background: light
+    search: true
+    contents:
+      - href: index.qmd
+        text: Home
+      - href: pages/current-conditions.qmd
+        text: Current Conditions
+      - href: pages/atmosphere.qmd
+        text: Atmosphere
+      - href: pages/forecasts.qmd
+        text: Forecasts
+      - href: pages/el-nino.qmd
+        text: El Niño
+      - href: pages/methods.qmd
+        text: Methods
+  page-footer:
+    left: "Southwest Climate Watch"
+    right: "Built with Quarto and R"
+
+format:
+  html:
+    theme:
+      light: flatly
+      dark: darkly
+    css: styles.css
+    toc: true
+    link-external-newwindow: true
+
+execute:
+  echo: false
+  warning: false
+  message: false
+  freeze: auto
