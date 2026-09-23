@@ -1,0 +1,19 @@
+---
+title: "Wet-day count in 90 days"
+description-meta: "This map counts days with at least 0.04 inch of precipitation during the latest 90 days at each grid cell. Higher counts mean precipitation occurred more often, although they do not show how much fell on those wet days."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/precipitation/pcpn-wet-day-count-090day-latest.png){fig-alt="Map showing wet-day count in 90 days across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+This map counts days with at least 0.04 inch of precipitation during the latest 90 days at each grid cell. Higher counts mean precipitation occurred more often, although they do not show how much fell on those wet days.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/precipitation/pcpn-wet-day-count-090day-latest.png){.btn .btn-outline-primary}
+:::

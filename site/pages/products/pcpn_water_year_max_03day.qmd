@@ -1,0 +1,19 @@
+---
+title: "Maximum 3-day precipitation"
+description-meta: "This map finds the largest complete three-day precipitation total since October 1 of the current water year, in inches. Higher values locate stronger short-duration events during the year, regardless of the total accumulated over the whole year."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/precipitation/pcpn-water-year-max-03day-latest.png){fig-alt="Map showing maximum 3-day precipitation across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+This map finds the largest complete three-day precipitation total since October 1 of the current water year, in inches. Higher values locate stronger short-duration events during the year, regardless of the total accumulated over the whole year.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/precipitation/pcpn-water-year-max-03day-latest.png){.btn .btn-outline-primary}
+:::

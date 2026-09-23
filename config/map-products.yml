@@ -1,0 +1,462 @@
+version: 1
+
+# These are the two settings intended for routine editing. A product-level
+# `enabled` or `scale` value overrides these defaults. The remaining fields
+# provide stable navigation and file metadata for the site generator.
+defaults:
+  enabled: true
+  scale: continuous
+
+# The homepage dashboard uses existing public products in this display order.
+# Keep four to six unique, enabled product IDs here.
+dashboard:
+  products:
+    - tmean_percentile_07day
+    - tmean_percentile_30day
+    - pcpn_percentile_30day
+    - pcpn_percentile_90day
+    - pcpn_current_dry_spell_percentile
+    - pcpn_water_year_percentile
+
+products:
+  maxt_value:
+    section: Temperature
+    group: Current values
+    label: Maximum temperature
+    image: prism/temperature/maxt-value-latest.png
+    description: >-
+      This map shows the latest PRISM daily maximum temperature at each grid cell in degrees F.
+      Higher values mark hotter afternoons; use the departure or percentile maps to judge whether that heat is unusual for the date.
+  tmean_value:
+    section: Temperature
+    group: Current values
+    label: Mean temperature
+    image: prism/temperature/tmean-value-latest.png
+    description: >-
+      Daily mean temperature is calculated at each grid cell as the average of that day's PRISM maximum and minimum temperatures in degrees F.
+      Higher values show warmer overall conditions, while the companion departure and percentile maps show how those conditions compare with the season.
+  mint_value:
+    section: Temperature
+    group: Current values
+    label: Minimum temperature
+    image: prism/temperature/mint-value-latest.png
+    description: >-
+      This map shows the latest PRISM daily minimum temperature at each grid cell in degrees F.
+      Lower values mark colder overnight conditions; use the departure or percentile maps to judge whether they are unusual for the date.
+
+  maxt_departure_daily:
+    section: Temperature
+    group: Daily departures
+    label: Maximum temperature departure
+    image: prism/temperature/maxt-departure-latest.png
+    description: >-
+      The latest daily maximum temperature is compared with the 1991-2020 average maximum for the same calendar date, estimated with a centered five-day window.
+      Positive values mean warmer-than-average afternoons and negative values mean cooler-than-average afternoons, in degrees F.
+  tmean_departure_daily:
+    section: Temperature
+    group: Daily departures
+    label: Mean temperature departure
+    image: prism/temperature/tmean-departure-latest.png
+    description: >-
+      The latest daily mean temperature, calculated from maximum and minimum temperature, is compared with its 1991-2020 average for the same calendar date using a centered five-day window.
+      Positive values mean warmer-than-average conditions and negative values mean cooler-than-average conditions, in degrees F.
+  mint_departure_daily:
+    section: Temperature
+    group: Daily departures
+    label: Minimum temperature departure
+    image: prism/temperature/mint-departure-latest.png
+    description: >-
+      The latest daily minimum temperature is compared with the 1991-2020 average minimum for the same calendar date, estimated with a centered five-day window.
+      Positive values mean warmer-than-average nights and negative values mean colder-than-average nights, in degrees F.
+
+  maxt_departure_30day:
+    section: Temperature
+    group: 30-day departures
+    label: Maximum temperature departure
+    image: prism/temperature/maxt-departure-30day-latest.png
+    description: >-
+      The average of the latest 30 daily maximum temperatures is compared with the average of their matching centered-five-day 1991-2020 calendar-day normals.
+      Positive values show sustained warmer-than-average afternoons and negative values show sustained cooler-than-average afternoons, in degrees F.
+  tmean_departure_30day:
+    section: Temperature
+    group: 30-day departures
+    label: Mean temperature departure
+    image: prism/temperature/tmean-departure-30day-latest.png
+    description: >-
+      The average of the latest 30 daily mean temperatures is compared with the average of their matching centered-five-day 1991-2020 calendar-day normals.
+      Positive values show sustained warmer-than-average conditions and negative values show sustained cooler-than-average conditions, in degrees F.
+  mint_departure_30day:
+    section: Temperature
+    group: 30-day departures
+    label: Minimum temperature departure
+    image: prism/temperature/mint-departure-30day-latest.png
+    description: >-
+      The average of the latest 30 daily minimum temperatures is compared with the average of their matching centered-five-day 1991-2020 calendar-day normals.
+      Positive values show sustained warmer-than-average nights and negative values show sustained colder-than-average nights, in degrees F.
+
+  maxt_percentile_daily:
+    scale: categorical
+    section: Temperature
+    group: Daily percentile ranks
+    label: Maximum temperature
+    image: prism/temperature/maxt-percentile-rank-latest.png
+    description: >-
+      The latest daily maximum temperature is ranked against 1991-2020 maximum temperatures from the same calendar date and two days on either side.
+      High percentile ranks indicate unusually hot afternoons for this time of year, while low ranks indicate unusually cool afternoons.
+  tmean_percentile_daily:
+    scale: categorical
+    section: Temperature
+    group: Daily percentile ranks
+    label: Mean temperature
+    image: prism/temperature/tmean-percentile-rank-latest.png
+    description: >-
+      The latest daily mean temperature is ranked against 1991-2020 daily means from the same calendar date and two days on either side.
+      High percentile ranks indicate unusually warm conditions for this time of year, while low ranks indicate unusually cool conditions.
+  mint_percentile_daily:
+    scale: categorical
+    section: Temperature
+    group: Daily percentile ranks
+    label: Minimum temperature
+    image: prism/temperature/mint-percentile-rank-latest.png
+    description: >-
+      The latest daily minimum temperature is ranked against 1991-2020 minimum temperatures from the same calendar date and two days on either side.
+      High percentile ranks indicate unusually warm nights for this time of year, while low ranks indicate unusually cold nights.
+
+  tmean_percentile_07day:
+    scale: categorical
+    section: Temperature
+    group: Rolling mean percentile ranks
+    label: 7-day mean temperature
+    image: prism/temperature/tmean-percentile-rank-07day-latest.png
+    description: >-
+      The mean of the latest seven daily mean temperatures is ranked against 1991-2020 seven-day means ending within two calendar days of this date.
+      High ranks indicate a persistently warm week and low ranks a persistently cool week for this time of year.
+  tmean_percentile_30day:
+    scale: categorical
+    section: Temperature
+    group: Rolling mean percentile ranks
+    label: 30-day mean temperature
+    image: prism/temperature/tmean-percentile-rank-30day-latest.png
+    description: >-
+      The mean of the latest 30 daily mean temperatures is ranked against 1991-2020 30-day means ending within two calendar days of this date.
+      High ranks indicate sustained warmth and low ranks sustained coolness for this time of year.
+  tmean_percentile_90day:
+    scale: categorical
+    section: Temperature
+    group: Rolling mean percentile ranks
+    label: 90-day mean temperature
+    image: prism/temperature/tmean-percentile-rank-90day-latest.png
+    description: >-
+      The mean of the latest 90 daily mean temperatures is ranked against 1991-2020 90-day means ending within two calendar days of this date.
+      High ranks indicate an unusually warm recent 90-day period and low ranks an unusually cool one.
+
+  maxt_extreme_warm_count_30day:
+    section: Temperature
+    group: Temperature extremes
+    label: Extreme warm days in 30 days
+    image: prism/temperature/maxt-above-p90-count-30day-latest.png
+    description: >-
+      This map counts days in the latest 30 when maximum temperature exceeded the local 1991-2020 calendar-day 90th-percentile threshold.
+      More qualifying days indicate more frequent unusually hot afternoons during the period.
+  mint_extreme_cold_count_30day:
+    section: Temperature
+    group: Temperature extremes
+    label: Extreme cold nights in 30 days
+    image: prism/temperature/mint-below-p10-count-30day-latest.png
+    description: >-
+      This map counts nights in the latest 30 when minimum temperature fell below the local 1991-2020 calendar-day 10th-percentile threshold.
+      More qualifying nights indicate more frequent unusually cold overnight conditions during the period.
+
+  mint_freeze_count_30day:
+    section: Temperature
+    group: Freeze monitoring
+    label: Freeze-night count in 30 days
+    image: prism/temperature/mint-freeze-day-count-30day-latest.png
+    description: >-
+      This map counts nights in the latest 30 with PRISM minimum temperature at or below 32 degrees F.
+      Higher counts mean more freeze nights; the companion anomaly map shows whether that count is unusual for the season.
+  mint_freeze_anomaly_30day:
+    section: Temperature
+    group: Freeze monitoring
+    label: Freeze-night anomaly in 30 days
+    image: prism/temperature/mint-freeze-day-anomaly-30day-latest.png
+    description: >-
+      The latest 30-day count of nights at or below 32 degrees F is compared with the average count in seasonally matched 1991-2020 periods.
+      Positive values mean more freeze nights than average and negative values mean fewer.
+  mint_first_freeze_date:
+    section: Temperature
+    group: Freeze monitoring
+    label: First-freeze date
+    image: prism/temperature/mint-first-freeze-date-latest.png
+    description: >-
+      This map shows the first date with minimum temperature at or below 32 degrees F in the displayed August 1-July 31 cold season.
+      Areas without a recorded freeze are blank, and the prior completed season remains displayed until the new season has sufficient coverage.
+  mint_first_freeze_departure:
+    section: Temperature
+    group: Freeze monitoring
+    label: First-freeze departure
+    image: prism/temperature/mint-first-freeze-departure-latest.png
+    description: >-
+      The observed first freeze in the displayed August 1-July 31 season is compared with the local median first-freeze date from 1991-2020.
+      Negative values mean the first freeze arrived early and positive values mean it arrived late; areas without a reliable historical comparison are blank.
+  mint_last_freeze_date:
+    section: Temperature
+    group: Freeze monitoring
+    label: Last-freeze date
+    image: prism/temperature/mint-last-freeze-date-latest.png
+    description: >-
+      This map shows the latest date with minimum temperature at or below 32 degrees F in the displayed August 1-July 31 cold season.
+      The current season's date can change if another freeze occurs before July 31; areas without a recorded freeze are blank.
+  mint_last_freeze_departure:
+    section: Temperature
+    group: Freeze monitoring
+    label: Last-freeze departure
+    image: prism/temperature/mint-last-freeze-departure-latest.png
+    description: >-
+      The observed last freeze in the displayed August 1-July 31 season is compared with the local median last-freeze date from 1991-2020.
+      Negative values mean the last freeze was early and positive values mean it was late; a current-season result remains provisional until July 31.
+  mint_freeze_free_length:
+    section: Temperature
+    group: Freeze monitoring
+    label: Freeze-free season length
+    image: prism/temperature/mint-freeze-free-season-length-latest.png
+    description: >-
+      Freeze-free season length is the number of days between the last January-July freeze and the first August-December freeze in the displayed calendar year.
+      Longer periods mean more days between these freeze events; areas missing either freeze date are blank.
+  mint_freeze_free_departure:
+    section: Temperature
+    group: Freeze monitoring
+    label: Freeze-free season departure
+    image: prism/temperature/mint-freeze-free-season-departure-latest.png
+    description: >-
+      The displayed year's freeze-free season length is compared with the local median length from 1991-2020.
+      Positive values mean a longer-than-median interval and negative values a shorter one; areas without both freeze dates or a reliable historical comparison are blank.
+
+  pcpn_total_01day:
+    section: Precipitation
+    group: Recent totals
+    label: Daily precipitation
+    image: prism/precipitation/pcpn-total-01day-latest.png
+    description: >-
+      This map shows PRISM precipitation accumulated during the latest complete day, in inches.
+      Higher values locate where more liquid-equivalent precipitation fell that day; the companion longer-period percentile maps provide seasonal context.
+  pcpn_total_07day:
+    section: Precipitation
+    group: Recent totals
+    label: 7-day total
+    image: prism/precipitation/pcpn-total-07day-latest.png
+    description: >-
+      This map sums PRISM daily precipitation over the latest complete seven-day period, in inches.
+      Higher values show where more precipitation accumulated during the week; the companion percentile map places the total in seasonal context.
+  pcpn_total_30day:
+    section: Precipitation
+    group: Recent totals
+    label: 30-day total
+    image: prism/precipitation/pcpn-total-30day-latest.png
+    description: >-
+      This map sums PRISM daily precipitation over the latest complete 30-day period, in inches.
+      Higher values show where more precipitation accumulated during the month-length window; the companion percentile map shows whether the amount is unusual.
+  pcpn_total_90day:
+    section: Precipitation
+    group: Recent totals
+    label: 90-day total
+    image: prism/precipitation/pcpn-total-90day-latest.png
+    description: >-
+      This map sums PRISM daily precipitation over the latest complete 90-day period, in inches.
+      Higher values show where more precipitation accumulated across the recent season-length window; the companion percentile map provides seasonal context.
+
+  pcpn_percentile_07day:
+    scale: categorical
+    section: Precipitation
+    group: Percentile ranks
+    label: 7-day percentile rank
+    image: prism/precipitation/pcpn-percentile-rank-07day-latest.png
+    description: >-
+      The latest seven-day precipitation total is ranked against 1991-2020 seven-day totals ending within two calendar days of this date.
+      Low ranks indicate an unusually dry week and high ranks an unusually wet week for this time of year.
+  pcpn_percentile_30day:
+    scale: categorical
+    section: Precipitation
+    group: Percentile ranks
+    label: 30-day percentile rank
+    image: prism/precipitation/pcpn-percentile-rank-30day-latest.png
+    description: >-
+      The latest 30-day precipitation total is ranked against 1991-2020 30-day totals ending within two calendar days of this date.
+      Low ranks indicate an unusually dry month-length period and high ranks an unusually wet one for this time of year.
+  pcpn_percentile_90day:
+    scale: categorical
+    section: Precipitation
+    group: Percentile ranks
+    label: 90-day percentile rank
+    image: prism/precipitation/pcpn-percentile-rank-90day-latest.png
+    description: >-
+      The latest 90-day precipitation total is ranked against 1991-2020 90-day totals ending within two calendar days of this date.
+      Low ranks indicate an unusually dry recent season-length period and high ranks an unusually wet one.
+
+  pcpn_percent_normal_30day:
+    section: Precipitation
+    group: Percent of normal
+    label: 30-day percent of normal
+    image: prism/precipitation/pcpn-percent-normal-30day-latest.png
+    description: >-
+      The latest 30-day precipitation total is divided by the average of 1991-2020 totals ending within two calendar days of this date and expressed as a percentage.
+      Values below 100% indicate less precipitation than average and values above 100% more; cells with a historical average below 0.10 inch are blank.
+  pcpn_percent_normal_90day:
+    section: Precipitation
+    group: Percent of normal
+    label: 90-day percent of normal
+    image: prism/precipitation/pcpn-percent-normal-90day-latest.png
+    description: >-
+      The latest 90-day precipitation total is divided by the average of 1991-2020 totals ending within two calendar days of this date and expressed as a percentage.
+      Values below 100% indicate less precipitation than average and values above 100% more; cells with a historical average below 0.10 inch are blank.
+
+  pcpn_percentile_change_30day_14day:
+    scale: categorical
+    section: Precipitation
+    group: Recent change
+    label: 14-day change in 30-day rank
+    image: prism/precipitation/pcpn-percentile-rank-change-30day-over-14day-latest.png
+    description: >-
+      This map subtracts the 30-day precipitation percentile rank from 14 days ago from today's 30-day rank, using each date's matching 1991-2020 seasonal sample.
+      Positive percentile-point changes show relative wetting and negative changes show relative drying, rather than a change in precipitation inches.
+
+  pcpn_current_dry_spell_length:
+    section: Precipitation
+    group: Dry-spell conditions
+    label: Current dry-spell length
+    image: prism/precipitation/pcpn-current-dry-spell-length-latest.png
+    description: >-
+      Starting with the latest day, this map counts consecutive days with precipitation below 0.04 inch at each grid cell.
+      A value of zero means the latest day was wet; larger values show longer ongoing dry spells, with the map scale capped at 90+ days.
+  pcpn_current_dry_spell_percentile:
+    scale: categorical
+    section: Precipitation
+    group: Dry-spell conditions
+    label: Current dry-spell percentile
+    image: prism/precipitation/pcpn-current-dry-spell-percentile-rank-latest.png
+    description: >-
+      The ongoing number of consecutive days below 0.04 inch is ranked against 1991-2020 dry spells ending within two calendar days of this date.
+      High ranks mean the current dry spell is unusually long for this time of year, while low ranks mean it is relatively short.
+  pcpn_longest_dry_spell_180day:
+    section: Precipitation
+    group: Dry-spell conditions
+    label: Longest dry spell in 180 days
+    image: prism/precipitation/pcpn-longest-dry-spell-180day-latest.png
+    description: >-
+      This map finds the longest uninterrupted run of days below 0.04 inch anywhere within the latest 180 days.
+      Higher values show a longer dry stretch during that window, even if the stretch ended before the latest day.
+  pcpn_longest_dry_spell_percentile_180day:
+    scale: categorical
+    section: Precipitation
+    group: Dry-spell conditions
+    label: Longest dry-spell percentile
+    image: prism/precipitation/pcpn-longest-dry-spell-percentile-rank-180day-latest.png
+    description: >-
+      The longest dry run in the latest 180 days is ranked against 1991-2020 180-day windows ending within two calendar days of this date.
+      High ranks indicate an unusually long dry stretch for this time of year, whether or not it is still ongoing.
+
+  pcpn_wet_day_count_90day:
+    section: Precipitation
+    group: Wet-day frequency
+    label: Wet-day count in 90 days
+    image: prism/precipitation/pcpn-wet-day-count-090day-latest.png
+    description: >-
+      This map counts days with at least 0.04 inch of precipitation during the latest 90 days at each grid cell.
+      Higher counts mean precipitation occurred more often, although they do not show how much fell on those wet days.
+  pcpn_wet_day_count_percentile_90day:
+    scale: categorical
+    section: Precipitation
+    group: Wet-day frequency
+    label: Wet-day-count percentile
+    image: prism/precipitation/pcpn-wet-day-count-percentile-rank-090day-latest.png
+    description: >-
+      The latest 90-day count of days with at least 0.04 inch is ranked against 1991-2020 counts in windows ending within two calendar days of this date.
+      High ranks mean wet days have been unusually frequent and low ranks mean they have been unusually scarce.
+
+  pcpn_wet_day_intensity_90day:
+    section: Precipitation
+    group: Wet-day intensity
+    label: Mean precipitation per wet day
+    image: prism/precipitation/pcpn-wet-day-intensity-090day-latest.png
+    description: >-
+      This map averages precipitation only on days with at least 0.04 inch during the latest 90 days, reporting inches per wet day.
+      Higher values mean heavier precipitation when a wet day occurred; cells with no qualifying wet days are blank.
+  pcpn_wet_day_intensity_percentile_90day:
+    scale: categorical
+    section: Precipitation
+    group: Wet-day intensity
+    label: Wet-day-intensity percentile
+    image: prism/precipitation/pcpn-wet-day-intensity-percentile-rank-090day-latest.png
+    description: >-
+      Mean precipitation per wet day is calculated from days with at least 0.04 inch in the latest 90 days and ranked against 1991-2020 periods ending within two calendar days of this date.
+      High ranks mean unusually heavy wet days and low ranks mean unusually light wet days; cells with no qualifying wet days are blank.
+
+  pcpn_very_wet_contribution_90day:
+    section: Precipitation
+    group: Very-wet-day contribution
+    label: Very-wet-day contribution
+    image: prism/precipitation/pcpn-very-wet-contribution-090day-latest.png
+    description: >-
+      This map divides precipitation from days above the local 1991-2020 wet-day 95th-percentile amount by all precipitation in the latest 90 days.
+      Higher percentages mean a larger share came from unusually large events; cells with less than 0.10 inch in total are blank.
+  pcpn_very_wet_contribution_percentile_90day:
+    scale: categorical
+    section: Precipitation
+    group: Very-wet-day contribution
+    label: Contribution percentile rank
+    image: prism/precipitation/pcpn-very-wet-contribution-percentile-rank-090day-latest.png
+    description: >-
+      The latest 90-day precipitation share from days above the local 1991-2020 wet-day 95th-percentile amount is ranked against shares from 1991-2020 windows ending within two calendar days of this date.
+      High ranks mean unusually strong dependence on very wet days, while low ranks mean less dependence; cells with less than 0.10 inch in total are blank.
+
+  pcpn_water_year_total:
+    section: Precipitation
+    group: Water year
+    label: Total precipitation
+    image: prism/precipitation/pcpn-water-year-total-latest.png
+    description: >-
+      This map sums PRISM daily precipitation from October 1 of the current water year through the latest available day, in inches.
+      Higher values show larger cumulative totals; the companion percentile map shows how unusual those totals are for this point in the water year.
+  pcpn_water_year_percent_normal:
+    section: Precipitation
+    group: Water year
+    label: Percent of normal
+    image: prism/precipitation/pcpn-water-year-percent-normal-latest.png
+    description: >-
+      Precipitation since October 1 is divided by the average 1991-2020 water-year total through the same calendar date and expressed as a percentage.
+      Values below 100% are drier than average and values above 100% wetter; cells with a historical average below 0.10 inch are blank.
+  pcpn_water_year_percentile:
+    scale: categorical
+    section: Precipitation
+    group: Water year
+    label: Percentile rank
+    image: prism/precipitation/pcpn-water-year-percentile-rank-latest.png
+    description: >-
+      Precipitation since October 1 is ranked against water-year 1991-2020 totals accumulated through the same calendar date.
+      Low ranks indicate an unusually dry water year to date and high ranks an unusually wet one.
+
+  pcpn_water_year_max_03day:
+    section: Precipitation
+    group: Water-year extremes
+    label: Maximum 3-day precipitation
+    image: prism/precipitation/pcpn-water-year-max-03day-latest.png
+    description: >-
+      This map finds the largest complete three-day precipitation total since October 1 of the current water year, in inches.
+      Higher values locate stronger short-duration events during the year, regardless of the total accumulated over the whole year.
+  pcpn_water_year_max_percentile_03day:
+    scale: categorical
+    section: Precipitation
+    group: Water-year extremes
+    label: Maximum 3-day percentile
+    image: prism/precipitation/pcpn-water-year-max-percentile-rank-03day-latest.png
+    description: >-
+      The largest three-day precipitation total so far this water year is ranked against the largest three-day totals from complete water years 1991-2020.
+      High ranks indicate an unusually large event; the current-year rank is provisional until September 30 because another event may raise the maximum.
+  pcpn_water_year_concentration_03day:
+    section: Precipitation
+    group: Water-year extremes
+    label: Precipitation concentration
+    image: prism/precipitation/pcpn-water-year-precipitation-concentration-03day-latest.png
+    description: >-
+      This map divides the water year's largest three-day precipitation total by all precipitation since October 1 and expresses the result as a percentage.
+      Higher values mean one short period supplied more of the year's precipitation; cells with less than 0.10 inch in total are blank.

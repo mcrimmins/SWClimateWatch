@@ -1,0 +1,19 @@
+---
+title: "Minimum temperature"
+description-meta: "The latest daily minimum temperature is ranked against 1991-2020 minimum temperatures from the same calendar date and two days on either side. High percentile ranks indicate unusually warm nights for this time of year, while low ranks indicate unusually cold nights."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/temperature/mint-percentile-rank-latest.png){fig-alt="Map showing minimum temperature across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+The latest daily minimum temperature is ranked against 1991-2020 minimum temperatures from the same calendar date and two days on either side. High percentile ranks indicate unusually warm nights for this time of year, while low ranks indicate unusually cold nights.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/temperature/mint-percentile-rank-latest.png){.btn .btn-outline-primary}
+:::

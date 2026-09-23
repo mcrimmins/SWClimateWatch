@@ -1,0 +1,19 @@
+---
+title: "Very-wet-day contribution"
+description-meta: "This map divides precipitation from days above the local 1991-2020 wet-day 95th-percentile amount by all precipitation in the latest 90 days. Higher percentages mean a larger share came from unusually large events; cells with less than 0.10 inch in total are blank."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/precipitation/pcpn-very-wet-contribution-090day-latest.png){fig-alt="Map showing very-wet-day contribution across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+This map divides precipitation from days above the local 1991-2020 wet-day 95th-percentile amount by all precipitation in the latest 90 days. Higher percentages mean a larger share came from unusually large events; cells with less than 0.10 inch in total are blank.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/precipitation/pcpn-very-wet-contribution-090day-latest.png){.btn .btn-outline-primary}
+:::

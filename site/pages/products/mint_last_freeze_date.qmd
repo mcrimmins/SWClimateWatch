@@ -1,0 +1,19 @@
+---
+title: "Last-freeze date"
+description-meta: "This map shows the latest date with minimum temperature at or below 32 degrees F in the displayed August 1-July 31 cold season. The current season's date can change if another freeze occurs before July 31; areas without a recorded freeze are blank."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/temperature/mint-last-freeze-date-latest.png){fig-alt="Map showing last-freeze date across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+This map shows the latest date with minimum temperature at or below 32 degrees F in the displayed August 1-July 31 cold season. The current season's date can change if another freeze occurs before July 31; areas without a recorded freeze are blank.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/temperature/mint-last-freeze-date-latest.png){.btn .btn-outline-primary}
+:::

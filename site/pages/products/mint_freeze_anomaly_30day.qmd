@@ -1,0 +1,19 @@
+---
+title: "Freeze-night anomaly in 30 days"
+description-meta: "The latest 30-day count of nights at or below 32 degrees F is compared with the average count in seasonally matched 1991-2020 periods. Positive values mean more freeze nights than average and negative values mean fewer."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/temperature/mint-freeze-day-anomaly-30day-latest.png){fig-alt="Map showing freeze-night anomaly in 30 days across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+The latest 30-day count of nights at or below 32 degrees F is compared with the average count in seasonally matched 1991-2020 periods. Positive values mean more freeze nights than average and negative values mean fewer.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/temperature/mint-freeze-day-anomaly-30day-latest.png){.btn .btn-outline-primary}
+:::

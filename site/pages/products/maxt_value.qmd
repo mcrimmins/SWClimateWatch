@@ -1,0 +1,19 @@
+---
+title: "Maximum temperature"
+description-meta: "This map shows the latest PRISM daily maximum temperature at each grid cell in degrees F. Higher values mark hotter afternoons; use the departure or percentile maps to judge whether that heat is unusual for the date."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/temperature/maxt-value-latest.png){fig-alt="Map showing maximum temperature across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+This map shows the latest PRISM daily maximum temperature at each grid cell in degrees F. Higher values mark hotter afternoons; use the departure or percentile maps to judge whether that heat is unusual for the date.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/temperature/maxt-value-latest.png){.btn .btn-outline-primary}
+:::

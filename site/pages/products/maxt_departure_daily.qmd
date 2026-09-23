@@ -1,0 +1,19 @@
+---
+title: "Maximum temperature departure"
+description-meta: "The latest daily maximum temperature is compared with the 1991-2020 average maximum for the same calendar date, estimated with a centered five-day window. Positive values mean warmer-than-average afternoons and negative values mean cooler-than-average afternoons, in degrees F."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/temperature/maxt-departure-latest.png){fig-alt="Map showing maximum temperature departure across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+The latest daily maximum temperature is compared with the 1991-2020 average maximum for the same calendar date, estimated with a centered five-day window. Positive values mean warmer-than-average afternoons and negative values mean cooler-than-average afternoons, in degrees F.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/temperature/maxt-departure-latest.png){.btn .btn-outline-primary}
+:::

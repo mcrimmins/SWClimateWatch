@@ -1,8 +1,8 @@
 # Shared configuration for Southwest Climate Watch analyses.
 
 swc_packages <- c(
-  "terra", "sf", "ggplot2", "dplyr", "lubridate", "maps",
-  "httr2", "jsonlite", "digest"
+  "terra", "sf", "ggplot2", "ggrepel", "magick", "dplyr", "lubridate", "maps",
+  "httr2", "jsonlite", "digest", "yaml"
 )
 
 check_swc_packages <- function(packages = swc_packages) {
@@ -21,9 +21,10 @@ check_swc_packages <- function(packages = swc_packages) {
 swc_paths <- list(
   raw = file.path("data", "raw"),
   processed = file.path("data", "processed"),
-  maps = file.path("maps", "generated"),
-  pages = "pages",
-  site = "_site"
+  maps = file.path("site", "maps", "generated"),
+  pages = file.path("site", "pages"),
+  site_source = "site",
+  site = file.path("site", "_site")
 )
 
 swc_region <- list(
@@ -42,11 +43,18 @@ swc_prism <- list(
   monthly_endpoint = "https://data.rcc-acis.org/GridData",
   daily_grid = "prism",
   monthly_grid = "21",
+  # `variables` are requested from RCC-ACIS. `tmean` is derived locally from
+  # maxt and mint so it never adds API traffic.
   variables = c("maxt", "mint", "pcpn"),
-  native_units = c(maxt = "degreeF", mint = "degreeF", pcpn = "inch"),
+  derived_variables = "tmean",
+  temperature_variables = c("maxt", "mint", "tmean"),
+  native_units = c(
+    maxt = "degreeF", mint = "degreeF", tmean = "degreeF", pcpn = "inch"
+  ),
   plausible_ranges = list(
     maxt = c(-150, 150),
     mint = c(-150, 150),
+    tmean = c(-150, 150),
     pcpn = c(0, 100)
   ),
   archive_start = as.Date("1981-01-01"),
@@ -60,15 +68,27 @@ swc_prism <- list(
   centered_window_days = 5L,
   quantile_type = 8L,
   wet_day_threshold_inches = 0.04,
+  # Allows values stored as float32 just below an exact decimal threshold to
+  # retain their intended wet/dry classification.
+  wet_day_storage_tolerance_inches = 1e-7,
+  percent_normal_minimum_inches = 0.10,
   # PRISM normally revises daily grids after roughly 1 day, 5 days, and then
-  # monthly through six months. These ages keep the local recent cache fresh.
-  revision_ages = c(2L, 6L, 31L, 61L, 92L, 123L, 153L, 184L),
+  # monthly through six months. The 215-day check follows the approximate
+  # six-month window so a late final batch is not missed by the 184-day check.
+  revision_ages = c(2L, 6L, 31L, 61L, 92L, 123L, 153L, 184L, 215L),
   bootstrap_chunk = "month",
   request_timeout_seconds = 180L,
   max_requests_per_run = 100L,
   request_delay_seconds = 1,
   request_jitter_seconds = 0.5
 )
+
+prism_is_wet_day <- function(
+    values,
+    threshold = swc_prism$wet_day_threshold_inches,
+    tolerance = swc_prism$wet_day_storage_tolerance_inches) {
+  values >= (threshold - tolerance)
+}
 
 initialize_swc_directories <- function(paths = swc_paths) {
   directories <- unname(unlist(paths[c("raw", "processed", "maps")]))

@@ -1,0 +1,19 @@
+---
+title: "Wet-day-count percentile"
+description-meta: "The latest 90-day count of days with at least 0.04 inch is ranked against 1991-2020 counts in windows ending within two calendar days of this date. High ranks mean wet days have been unusually frequent and low ranks mean they have been unusually scarce."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/precipitation/pcpn-wet-day-count-percentile-rank-090day-latest.png){fig-alt="Map showing wet-day-count percentile across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+The latest 90-day count of days with at least 0.04 inch is ranked against 1991-2020 counts in windows ending within two calendar days of this date. High ranks mean wet days have been unusually frequent and low ranks mean they have been unusually scarce.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/precipitation/pcpn-wet-day-count-percentile-rank-090day-latest.png){.btn .btn-outline-primary}
+:::

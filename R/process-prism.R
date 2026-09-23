@@ -16,7 +16,7 @@ prism_raster_dates <- function(path, raster = terra::rast(path)) {
 }
 
 validate_prism_native_values <- function(raster, variable, config = swc_prism) {
-  variable <- validate_prism_variables(variable, config)
+  variable <- validate_prism_analysis_variables(variable, config)
   if (length(variable) != 1L) {
     stop("Exactly one PRISM variable is required for raster validation.", call. = FALSE)
   }
@@ -93,7 +93,8 @@ plan_prism_daily_processing <- function(
     variables = swc_prism$variables,
     raw_dir = swc_paths$raw,
     processed_dir = swc_paths$processed,
-    processed_manifest = read_prism_manifest(prism_processed_manifest_path(processed_dir))) {
+    processed_manifest = read_prism_manifest(prism_processed_manifest_path(processed_dir)),
+    verify_source_md5 = TRUE) {
   variables <- validate_prism_variables(variables)
   required <- c(
     "product", "aoi_id", "variable", "native_units", "start_date", "end_date", "path"
@@ -119,7 +120,24 @@ plan_prism_daily_processing <- function(
   }
 
   selected$source_path <- selected$path
-  selected$source_md5 <- unname(tools::md5sum(selected$source_path))
+  recorded_md5 <- if ("md5" %in% names(selected)) {
+    trimws(as.character(selected$md5))
+  } else {
+    rep(NA_character_, nrow(selected))
+  }
+  usable_recorded_md5 <- !is.na(recorded_md5) &
+    grepl("^[[:xdigit:]]{32}$", recorded_md5)
+  calculate_md5 <- if (isTRUE(verify_source_md5)) {
+    rep(TRUE, nrow(selected))
+  } else {
+    !usable_recorded_md5
+  }
+  selected$source_md5 <- recorded_md5
+  if (any(calculate_md5)) {
+    selected$source_md5[calculate_md5] <- unname(
+      tools::md5sum(selected$source_path[calculate_md5])
+    )
+  }
   selected$path <- vapply(
     selected$source_path,
     prism_processed_path,
@@ -141,7 +159,10 @@ plan_prism_daily_processing <- function(
   selected
 }
 
-write_prism_processed_raster <- function(raster, path) {
+write_prism_processed_raster <- function(raster, path, datatype = "FLT4S") {
+  if (length(datatype) != 1L || !datatype %in% c("FLT4S", "FLT8S")) {
+    stop("`datatype` must be `FLT4S` or `FLT8S`.", call. = FALSE)
+  }
   dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
   temporary <- tempfile("processed-", tmpdir = dirname(path), fileext = ".tif")
   on.exit(unlink(temporary), add = TRUE)
@@ -150,7 +171,7 @@ write_prism_processed_raster <- function(raster, path) {
     raster,
     temporary,
     overwrite = TRUE,
-    datatype = "FLT4S",
+    datatype = datatype,
     gdal = c("COMPRESS=DEFLATE", "PREDICTOR=3", "TILED=YES")
   )
   written <- terra::rast(temporary)

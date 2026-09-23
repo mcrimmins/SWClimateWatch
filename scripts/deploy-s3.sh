@@ -11,9 +11,10 @@ if [[ -n "$s3_prefix" ]]; then
   destination="${destination}/${s3_prefix#/}"
 fi
 
-test -d _site || {
-  echo "_site does not exist; run scripts/render-site.sh first." >&2
+site_output="site/_site"
+test -d "$site_output" || {
+  echo "$site_output does not exist; run scripts/render-site.sh first." >&2
   exit 1
 }
 
-aws s3 sync _site/ "$destination/" --delete
+aws s3 sync "$site_output/" "$destination/" --delete

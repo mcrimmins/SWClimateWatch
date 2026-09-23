@@ -1,0 +1,19 @@
+---
+title: "Daily precipitation"
+description-meta: "This map shows PRISM precipitation accumulated during the latest complete day, in inches. Higher values locate where more liquid-equivalent precipitation fell that day; the companion longer-period percentile maps provide seasonal context."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/precipitation/pcpn-total-01day-latest.png){fig-alt="Map showing daily precipitation across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+This map shows PRISM precipitation accumulated during the latest complete day, in inches. Higher values locate where more liquid-equivalent precipitation fell that day; the companion longer-period percentile maps provide seasonal context.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/precipitation/pcpn-total-01day-latest.png){.btn .btn-outline-primary}
+:::

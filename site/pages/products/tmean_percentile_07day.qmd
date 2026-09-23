@@ -1,0 +1,19 @@
+---
+title: "7-day mean temperature"
+description-meta: "The mean of the latest seven daily mean temperatures is ranked against 1991-2020 seven-day means ending within two calendar days of this date. High ranks indicate a persistently warm week and low ranks a persistently cool week for this time of year."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/temperature/tmean-percentile-rank-07day-latest.png){fig-alt="Map showing 7-day mean temperature across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+The mean of the latest seven daily mean temperatures is ranked against 1991-2020 seven-day means ending within two calendar days of this date. High ranks indicate a persistently warm week and low ranks a persistently cool week for this time of year.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/temperature/tmean-percentile-rank-07day-latest.png){.btn .btn-outline-primary}
+:::

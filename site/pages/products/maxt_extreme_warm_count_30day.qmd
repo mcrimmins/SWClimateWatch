@@ -1,0 +1,19 @@
+---
+title: "Extreme warm days in 30 days"
+description-meta: "This map counts days in the latest 30 when maximum temperature exceeded the local 1991-2020 calendar-day 90th-percentile threshold. More qualifying days indicate more frequent unusually hot afternoons during the period."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/temperature/maxt-above-p90-count-30day-latest.png){fig-alt="Map showing extreme warm days in 30 days across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+This map counts days in the latest 30 when maximum temperature exceeded the local 1991-2020 calendar-day 90th-percentile threshold. More qualifying days indicate more frequent unusually hot afternoons during the period.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/temperature/maxt-above-p90-count-30day-latest.png){.btn .btn-outline-primary}
+:::

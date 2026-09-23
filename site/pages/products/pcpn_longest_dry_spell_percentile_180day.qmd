@@ -1,0 +1,19 @@
+---
+title: "Longest dry-spell percentile"
+description-meta: "The longest dry run in the latest 180 days is ranked against 1991-2020 180-day windows ending within two calendar days of this date. High ranks indicate an unusually long dry stretch for this time of year, whether or not it is still ongoing."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/precipitation/pcpn-longest-dry-spell-percentile-rank-180day-latest.png){fig-alt="Map showing longest dry-spell percentile across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+The longest dry run in the latest 180 days is ranked against 1991-2020 180-day windows ending within two calendar days of this date. High ranks indicate an unusually long dry stretch for this time of year, whether or not it is still ongoing.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/precipitation/pcpn-longest-dry-spell-percentile-rank-180day-latest.png){.btn .btn-outline-primary}
+:::

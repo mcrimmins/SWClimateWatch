@@ -1,0 +1,19 @@
+---
+title: "Current dry-spell percentile"
+description-meta: "The ongoing number of consecutive days below 0.04 inch is ranked against 1991-2020 dry spells ending within two calendar days of this date. High ranks mean the current dry spell is unusually long for this time of year, while low ranks mean it is relatively short."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/precipitation/pcpn-current-dry-spell-percentile-rank-latest.png){fig-alt="Map showing current dry-spell percentile across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+The ongoing number of consecutive days below 0.04 inch is ranked against 1991-2020 dry spells ending within two calendar days of this date. High ranks mean the current dry spell is unusually long for this time of year, while low ranks mean it is relatively short.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/precipitation/pcpn-current-dry-spell-percentile-rank-latest.png){.btn .btn-outline-primary}
+:::

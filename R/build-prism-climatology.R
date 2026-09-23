@@ -168,7 +168,7 @@ prism_apply_daily_statistic <- function(
     wet_frequency = function(x, ...) {
       valid <- x[!is.na(x)]
       if (length(valid) == 0L) return(NA_real_)
-      mean(valid >= wet_day_threshold)
+      mean(prism_is_wet_day(valid, wet_day_threshold))
     },
     stop("Unsupported centered climatology statistic: ", statistic, call. = FALSE)
   )
@@ -239,23 +239,43 @@ prism_centered_daily_statistic <- function(
   prism_insert_feb29(result, variable, statistic, keys)$raster
 }
 
+prism_wet_day_percentiles <- function(
+    raster,
+    statistics = c("wet_p90", "wet_p95", "wet_p99"),
+    wet_day_threshold = swc_prism$wet_day_threshold_inches,
+    quantile_type = swc_prism$quantile_type) {
+  supported <- c(wet_p90 = 0.90, wet_p95 = 0.95, wet_p99 = 0.99)
+  statistics <- unique(as.character(statistics))
+  invalid <- setdiff(statistics, names(supported))
+  if (length(statistics) == 0L || length(invalid) > 0L) {
+    stop(
+      "Unsupported wet-day percentile: ",
+      paste(invalid, collapse = ", "),
+      call. = FALSE
+    )
+  }
+  probabilities <- unname(supported[statistics])
+  result <- terra::app(raster, fun = function(x, ...) {
+    wet <- x[!is.na(x) & prism_is_wet_day(x, wet_day_threshold)]
+    if (length(wet) == 0L) return(rep(NA_real_, length(probabilities)))
+    stats::quantile(wet, probs = probabilities, names = FALSE, type = quantile_type)
+  })
+  names(result) <- paste("pcpn", statistics, sep = "_")
+  terra::time(result) <- rep(as.Date("2000-01-01"), length(statistics))
+  result
+}
+
 prism_wet_day_percentile <- function(
     raster,
     statistic,
     wet_day_threshold = swc_prism$wet_day_threshold_inches,
     quantile_type = swc_prism$quantile_type) {
-  probability <- switch(statistic, wet_p90 = 0.90, wet_p95 = 0.95, wet_p99 = 0.99, NA_real_)
-  if (is.na(probability)) {
-    stop("Unsupported wet-day percentile: ", statistic, call. = FALSE)
-  }
-  result <- terra::app(raster, fun = function(x, ...) {
-    wet <- x[!is.na(x) & x >= wet_day_threshold]
-    if (length(wet) == 0L) return(NA_real_)
-    stats::quantile(wet, probs = probability, names = FALSE, type = quantile_type)
-  })
-  names(result) <- paste("pcpn", statistic, sep = "_")
-  terra::time(result) <- as.Date("2000-01-01")
-  result
+  prism_wet_day_percentiles(
+    raster,
+    statistics = statistic,
+    wet_day_threshold = wet_day_threshold,
+    quantile_type = quantile_type
+  )
 }
 
 prism_climatology_statistic <- function(
@@ -356,6 +376,37 @@ build_prism_daily_climatology <- function(
   }
 
   records <- vector("list", length(statistics))
+  wet_statistics <- if (variable == "pcpn") {
+    intersect(statistics, c("wet_p90", "wet_p95", "wet_p99"))
+  } else {
+    character()
+  }
+  precomputed_wet <- list()
+  if (length(wet_statistics) > 1L) {
+    wet_started <- proc.time()[["elapsed"]]
+    if (!quiet) {
+      message(
+        "Building ", paste(wet_statistics, collapse = ", "),
+        " annual wet-day percentiles in one pass."
+      )
+    }
+    wet_result <- prism_wet_day_percentiles(
+      collection$raster,
+      statistics = wet_statistics,
+      wet_day_threshold = wet_day_threshold,
+      quantile_type = quantile_type
+    )
+    for (wet_index in seq_along(wet_statistics)) {
+      precomputed_wet[[wet_statistics[[wet_index]]]] <- wet_result[[wet_index]]
+    }
+    if (!quiet) {
+      message(
+        "Completed combined wet-day percentiles in ",
+        format_prism_elapsed(proc.time()[["elapsed"]] - wet_started), "."
+      )
+    }
+  }
+
   for (index in seq_along(statistics)) {
     statistic <- statistics[[index]]
     method <- prism_statistic_method(statistic, window_days)
@@ -368,15 +419,20 @@ build_prism_daily_climatology <- function(
       stop("Climatology output already exists; set `overwrite = TRUE`: ", path, call. = FALSE)
     }
     statistic_started <- proc.time()[["elapsed"]]
-    if (!quiet) message("Building ", variable, " daily ", statistic, " climatology.")
-    result <- prism_climatology_statistic(
-      collection$raster, variable, statistic,
-      window_days = window_days,
-      quantile_type = quantile_type,
-      wet_day_threshold = wet_day_threshold,
-      progress_every = progress_every,
-      quiet = quiet
-    )
+    if (!is.null(precomputed_wet[[statistic]])) {
+      if (!quiet) message("Writing precomputed ", variable, " ", statistic, " climatology.")
+      result <- precomputed_wet[[statistic]]
+    } else {
+      if (!quiet) message("Building ", variable, " daily ", statistic, " climatology.")
+      result <- prism_climatology_statistic(
+        collection$raster, variable, statistic,
+        window_days = window_days,
+        quantile_type = quantile_type,
+        wet_day_threshold = wet_day_threshold,
+        progress_every = progress_every,
+        quiet = quiet
+      )
+    }
     write_prism_processed_raster(result, path)
     if (!quiet) {
       message(

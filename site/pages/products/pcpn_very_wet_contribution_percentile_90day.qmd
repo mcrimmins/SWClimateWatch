@@ -1,0 +1,19 @@
+---
+title: "Contribution percentile rank"
+description-meta: "The latest 90-day precipitation share from days above the local 1991-2020 wet-day 95th-percentile amount is ranked against shares from 1991-2020 windows ending within two calendar days of this date. High ranks mean unusually strong dependence on very wet days, while low ranks mean less dependence; cells with less than 0.10 inch in total are blank."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/precipitation/pcpn-very-wet-contribution-percentile-rank-090day-latest.png){fig-alt="Map showing contribution percentile rank across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+The latest 90-day precipitation share from days above the local 1991-2020 wet-day 95th-percentile amount is ranked against shares from 1991-2020 windows ending within two calendar days of this date. High ranks mean unusually strong dependence on very wet days, while low ranks mean less dependence; cells with less than 0.10 inch in total are blank.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/precipitation/pcpn-very-wet-contribution-percentile-rank-090day-latest.png){.btn .btn-outline-primary}
+:::

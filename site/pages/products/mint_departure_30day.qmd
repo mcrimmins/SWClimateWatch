@@ -1,0 +1,19 @@
+---
+title: "Minimum temperature departure"
+description-meta: "The average of the latest 30 daily minimum temperatures is compared with the average of their matching centered-five-day 1991-2020 calendar-day normals. Positive values show sustained warmer-than-average nights and negative values show sustained colder-than-average nights, in degrees F."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/temperature/mint-departure-30day-latest.png){fig-alt="Map showing minimum temperature departure across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+The average of the latest 30 daily minimum temperatures is compared with the average of their matching centered-five-day 1991-2020 calendar-day normals. Positive values show sustained warmer-than-average nights and negative values show sustained colder-than-average nights, in degrees F.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/temperature/mint-departure-30day-latest.png){.btn .btn-outline-primary}
+:::

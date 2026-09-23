@@ -1,0 +1,19 @@
+---
+title: "Freeze-free season length"
+description-meta: "Freeze-free season length is the number of days between the last January-July freeze and the first August-December freeze in the displayed calendar year. Longer periods mean more days between these freeze events; areas missing either freeze date are blank."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/temperature/mint-freeze-free-season-length-latest.png){fig-alt="Map showing freeze-free season length across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+Freeze-free season length is the number of days between the last January-July freeze and the first August-December freeze in the displayed calendar year. Longer periods mean more days between these freeze events; areas missing either freeze date are blank.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/temperature/mint-freeze-free-season-length-latest.png){.btn .btn-outline-primary}
+:::

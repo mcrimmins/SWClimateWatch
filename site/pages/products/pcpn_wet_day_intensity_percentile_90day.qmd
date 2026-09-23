@@ -1,0 +1,19 @@
+---
+title: "Wet-day-intensity percentile"
+description-meta: "Mean precipitation per wet day is calculated from days with at least 0.04 inch in the latest 90 days and ranked against 1991-2020 periods ending within two calendar days of this date. High ranks mean unusually heavy wet days and low ranks mean unusually light wet days; cells with no qualifying wet days are blank."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/precipitation/pcpn-wet-day-intensity-percentile-rank-090day-latest.png){fig-alt="Map showing wet-day-intensity percentile across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+Mean precipitation per wet day is calculated from days with at least 0.04 inch in the latest 90 days and ranked against 1991-2020 periods ending within two calendar days of this date. High ranks mean unusually heavy wet days and low ranks mean unusually light wet days; cells with no qualifying wet days are blank.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/precipitation/pcpn-wet-day-intensity-percentile-rank-090day-latest.png){.btn .btn-outline-primary}
+:::

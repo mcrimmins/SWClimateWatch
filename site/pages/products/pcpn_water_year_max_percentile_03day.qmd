@@ -1,0 +1,19 @@
+---
+title: "Maximum 3-day percentile"
+description-meta: "The largest three-day precipitation total so far this water year is ranked against the largest three-day totals from complete water years 1991-2020. High ranks indicate an unusually large event; the current-year rank is provisional until September 30 because another event may raise the maximum."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/precipitation/pcpn-water-year-max-percentile-rank-03day-latest.png){fig-alt="Map showing maximum 3-day percentile across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+The largest three-day precipitation total so far this water year is ranked against the largest three-day totals from complete water years 1991-2020. High ranks indicate an unusually large event; the current-year rank is provisional until September 30 because another event may raise the maximum.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/precipitation/pcpn-water-year-max-percentile-rank-03day-latest.png){.btn .btn-outline-primary}
+:::

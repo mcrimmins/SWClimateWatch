@@ -1,0 +1,19 @@
+---
+title: "Mean temperature departure"
+description-meta: "The average of the latest 30 daily mean temperatures is compared with the average of their matching centered-five-day 1991-2020 calendar-day normals. Positive values show sustained warmer-than-average conditions and negative values show sustained cooler-than-average conditions, in degrees F."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/temperature/tmean-departure-30day-latest.png){fig-alt="Map showing mean temperature departure across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+The average of the latest 30 daily mean temperatures is compared with the average of their matching centered-five-day 1991-2020 calendar-day normals. Positive values show sustained warmer-than-average conditions and negative values show sustained cooler-than-average conditions, in degrees F.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/temperature/tmean-departure-30day-latest.png){.btn .btn-outline-primary}
+:::

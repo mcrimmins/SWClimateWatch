@@ -1,0 +1,19 @@
+---
+title: "Maximum temperature"
+description-meta: "The latest daily maximum temperature is ranked against 1991-2020 maximum temperatures from the same calendar date and two days on either side. High percentile ranks indicate unusually hot afternoons for this time of year, while low ranks indicate unusually cool afternoons."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/temperature/maxt-percentile-rank-latest.png){fig-alt="Map showing maximum temperature across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+The latest daily maximum temperature is ranked against 1991-2020 maximum temperatures from the same calendar date and two days on either side. High percentile ranks indicate unusually hot afternoons for this time of year, while low ranks indicate unusually cool afternoons.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/temperature/maxt-percentile-rank-latest.png){.btn .btn-outline-primary}
+:::

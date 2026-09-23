@@ -1,0 +1,19 @@
+---
+title: "Extreme cold nights in 30 days"
+description-meta: "This map counts nights in the latest 30 when minimum temperature fell below the local 1991-2020 calendar-day 10th-percentile threshold. More qualifying nights indicate more frequent unusually cold overnight conditions during the period."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/temperature/mint-below-p10-count-30day-latest.png){fig-alt="Map showing extreme cold nights in 30 days across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+This map counts nights in the latest 30 when minimum temperature fell below the local 1991-2020 calendar-day 10th-percentile threshold. More qualifying nights indicate more frequent unusually cold overnight conditions during the period.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/temperature/mint-below-p10-count-30day-latest.png){.btn .btn-outline-primary}
+:::

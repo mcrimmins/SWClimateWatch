@@ -118,6 +118,62 @@ read_prism_daily_subset <- function(
   list(raster = raster, dates = raster_dates, sources = selected)
 }
 
+prism_mean_temperature_raster <- function(maxt, mint, dates = NULL) {
+  terra::compareGeom(maxt, mint, stopOnError = TRUE)
+  if (terra::nlyr(maxt) != terra::nlyr(mint)) {
+    stop("Maximum and minimum temperature rasters must have the same number of layers.", call. = FALSE)
+  }
+  maxt_dates <- as.Date(terra::time(maxt))
+  mint_dates <- as.Date(terra::time(mint))
+  if (length(maxt_dates) != terra::nlyr(maxt) || anyNA(maxt_dates) ||
+      length(mint_dates) != length(maxt_dates) || anyNA(mint_dates) ||
+      any(maxt_dates != mint_dates)) {
+    stop("Maximum and minimum temperature rasters must have identical valid dates.", call. = FALSE)
+  }
+  if (is.null(dates)) dates <- maxt_dates
+  dates <- as.Date(dates)
+  if (length(dates) != length(maxt_dates) || anyNA(dates) ||
+      any(dates != maxt_dates)) {
+    stop("Supplied mean-temperature dates do not match the raster layers.", call. = FALSE)
+  }
+  result <- (maxt + mint) / 2
+  names(result) <- paste("tmean", format(dates), sep = "_")
+  terra::time(result) <- dates
+  validate_prism_native_values(result, "tmean")
+  result
+}
+
+read_prism_temperature_subset <- function(
+    variable,
+    dates,
+    aoi_id = swc_prism$aoi_id,
+    processed_manifest = read_prism_manifest(prism_processed_manifest_path()),
+    require_complete = TRUE) {
+  variable <- validate_prism_temperature_variables(variable)
+  if (length(variable) != 1L) {
+    stop("Exactly one PRISM temperature variable is required.", call. = FALSE)
+  }
+  if (variable != "tmean") {
+    return(read_prism_daily_subset(
+      variable, dates, aoi_id, processed_manifest, require_complete
+    ))
+  }
+  maxt <- read_prism_daily_subset(
+    "maxt", dates, aoi_id, processed_manifest, require_complete
+  )
+  mint <- read_prism_daily_subset(
+    "mint", dates, aoi_id, processed_manifest, require_complete
+  )
+  if (!identical(maxt$dates, mint$dates)) {
+    stop("Maximum and minimum temperature reference dates do not match.", call. = FALSE)
+  }
+  list(
+    raster = prism_mean_temperature_raster(maxt$raster, mint$raster, maxt$dates),
+    dates = maxt$dates,
+    sources = rbind(maxt$sources, mint$sources)
+  )
+}
+
 prism_type8_percentile_rank <- function(current, baseline) {
   if (length(current) != 1L || is.na(current)) return(NA_real_)
   baseline <- sort(baseline[!is.na(baseline)])
@@ -140,15 +196,15 @@ prism_type8_percentile_rank <- function(current, baseline) {
 }
 
 prism_percentile_rank_raster <- function(current_raster, baseline_raster, variable, current_date) {
-  variable <- validate_prism_variables(variable)
-  if (length(variable) != 1L) {
-    stop("Exactly one PRISM variable is required.", call. = FALSE)
-  }
-  if (!variable %in% c("maxt", "mint")) {
+  if (length(variable) == 1L && identical(as.character(variable), "pcpn")) {
     stop(
-      "Daily percentile ranks currently support `maxt` and `mint`; use accumulation-based ranks for precipitation.",
+      "Daily precipitation ranks use accumulation-based percentile methods.",
       call. = FALSE
     )
+  }
+  variable <- validate_prism_temperature_variables(variable)
+  if (length(variable) != 1L) {
+    stop("Exactly one PRISM variable is required.", call. = FALSE)
   }
   if (terra::nlyr(current_raster) != 1L) {
     stop("The current raster must contain exactly one layer.", call. = FALSE)
@@ -164,8 +220,12 @@ prism_percentile_rank_raster <- function(current_raster, baseline_raster, variab
 }
 
 select_prism_current_layer <- function(current, variable, current_date = NULL) {
-  raster <- if (is.character(current) && length(current) == 1L) {
+  variable <- validate_prism_temperature_variables(variable)
+  raster <- if (is.character(current) && length(current) == 1L && variable != "tmean") {
     read_prism_daily_raster(current, variable)
+  } else if (is.character(current) && length(current) == 1L) {
+    if (!file.exists(current)) stop("PRISM raster does not exist: ", current, call. = FALSE)
+    terra::rast(current)
   } else if (inherits(current, "SpatRaster")) {
     current
   } else {
@@ -207,7 +267,7 @@ calculate_prism_percentile_rank <- function(
     output_path = NULL,
     overwrite = FALSE,
     quiet = FALSE) {
-  variable <- validate_prism_variables(variable)
+  variable <- validate_prism_temperature_variables(variable)
   if (length(variable) != 1L) {
     stop("Exactly one PRISM variable is required.", call. = FALSE)
   }
@@ -222,7 +282,7 @@ calculate_prism_percentile_rank <- function(
       " baseline days for percentile rank."
     )
   }
-  collection <- read_prism_daily_subset(
+  collection <- read_prism_temperature_subset(
     variable = variable,
     dates = requested_dates,
     aoi_id = aoi_id,

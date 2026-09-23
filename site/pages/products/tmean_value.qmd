@@ -1,0 +1,19 @@
+---
+title: "Mean temperature"
+description-meta: "Daily mean temperature is calculated at each grid cell as the average of that day's PRISM maximum and minimum temperatures in degrees F. Higher values show warmer overall conditions, while the companion departure and percentile maps show how those conditions compare with the season."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/temperature/tmean-value-latest.png){fig-alt="Map showing mean temperature across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+Daily mean temperature is calculated at each grid cell as the average of that day's PRISM maximum and minimum temperatures in degrees F. Higher values show warmer overall conditions, while the companion departure and percentile maps show how those conditions compare with the season.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/temperature/tmean-value-latest.png){.btn .btn-outline-primary}
+:::

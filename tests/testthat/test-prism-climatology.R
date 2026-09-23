@@ -143,6 +143,33 @@ testthat::test_that("precipitation percentiles use wet days only", {
   )
 })
 
+testthat::test_that("wet-day percentiles can be calculated together in one pass", {
+  values <- c(0, 0.01, 0.039, 0.04, 0.10, 0.20, 0.50)
+  raster <- make_climatology_test_raster(
+    values,
+    sprintf("%d-07-01", 2014:2020)
+  )
+
+  result <- prism_wet_day_percentiles(
+    raster,
+    statistics = c("wet_p90", "wet_p95", "wet_p99"),
+    wet_day_threshold = 0.04,
+    quantile_type = 8L
+  )
+  expected <- stats::quantile(
+    c(0.04, 0.10, 0.20, 0.50),
+    probs = c(0.90, 0.95, 0.99),
+    type = 8,
+    names = FALSE
+  )
+
+  testthat::expect_equal(as.numeric(terra::values(result)), as.numeric(expected))
+  testthat::expect_equal(
+    names(result),
+    c("pcpn_wet_p90", "pcpn_wet_p95", "pcpn_wet_p99")
+  )
+})
+
 testthat::test_that("daily collection detects an incomplete baseline", {
   processed_dir <- tempfile("processed-")
   path <- file.path(processed_dir, "two-days.tif")

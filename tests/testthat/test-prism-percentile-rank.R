@@ -127,3 +127,40 @@ testthat::test_that("high-level percentile ranks use the requested baseline wind
 
   testthat::expect_equal(as.numeric(terra::values(result)), 50)
 })
+
+testthat::test_that("mean-temperature percentile ranks use paired historical samples", {
+  processed_dir <- tempfile("tmean-rank-")
+  dir.create(processed_dir, recursive = TRUE)
+  dates <- as.Date(c("2018-07-01", "2019-07-01", "2020-07-01"))
+  records <- list()
+  record_index <- 0L
+  for (variable in c("maxt", "mint")) {
+    values <- if (variable == "maxt") c(20, 30, 40) else c(10, 20, 30)
+    for (index in seq_along(dates)) {
+      path <- file.path(processed_dir, variable, paste0(format(dates[[index]]), ".tif"))
+      dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+      terra::writeRaster(
+        make_rank_test_raster(values[[index]], dates[[index]]),
+        path,
+        overwrite = TRUE
+      )
+      record_index <- record_index + 1L
+      records[[record_index]] <- data.frame(
+        product = "daily", aoi_id = "az-nm-pad050", variable = variable,
+        native_units = "degreeF", start_date = dates[[index]], end_date = dates[[index]],
+        md5 = unname(tools::md5sum(path)), path = path, stringsAsFactors = FALSE
+      )
+    }
+  }
+  manifest <- do.call(rbind, records)
+  current <- make_rank_test_raster(25, "2026-07-01")
+
+  result <- calculate_prism_percentile_rank(
+    current, "tmean", current_date = "2026-07-01",
+    baseline_start = "2018-07-01", baseline_end = "2020-07-01",
+    window_days = 1L, processed_manifest = manifest, quiet = TRUE
+  )
+
+  testthat::expect_equal(as.numeric(terra::values(result)), 50)
+  testthat::expect_equal(names(result), "tmean_percentile_rank_2026-07-01")
+})

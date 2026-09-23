@@ -1,0 +1,19 @@
+---
+title: "Minimum temperature departure"
+description-meta: "The latest daily minimum temperature is compared with the 1991-2020 average minimum for the same calendar date, estimated with a centered five-day window. Positive values mean warmer-than-average nights and negative values mean colder-than-average nights, in degrees F."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/temperature/mint-departure-latest.png){fig-alt="Map showing minimum temperature departure across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+The latest daily minimum temperature is compared with the 1991-2020 average minimum for the same calendar date, estimated with a centered five-day window. Positive values mean warmer-than-average nights and negative values mean colder-than-average nights, in degrees F.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/temperature/mint-departure-latest.png){.btn .btn-outline-primary}
+:::

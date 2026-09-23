@@ -82,6 +82,54 @@ testthat::test_that("update plans contain the PRISM revision schedule", {
   testthat::expect_true(all(plan$refresh))
 })
 
+testthat::test_that("default update includes a post-six-month finalization check", {
+  today <- as.Date("2026-09-23")
+  plan <- plan_prism_download(
+    mode = "update",
+    today = today,
+    manifest = data.frame(),
+    raw_dir = tempfile("raw-")
+  )
+
+  testthat::expect_equal(tail(swc_prism$revision_ages, 1L), 215L)
+  testthat::expect_equal(nrow(plan), 27L)
+  testthat::expect_setequal(
+    unique(plan$start_date),
+    today - swc_prism$revision_ages
+  )
+  testthat::expect_equal(
+    sum(plan$start_date == today - 215L),
+    length(swc_prism$variables)
+  )
+  testthat::expect_true(all(plan$refresh))
+})
+
+testthat::test_that("catchup plans use complete calendar months", {
+  plan <- plan_prism_download(
+    mode = "catchup",
+    variables = "maxt",
+    today = as.Date("2026-09-11"),
+    raw_dir = tempfile("raw-")
+  )
+
+  testthat::expect_equal(nrow(plan), 8L)
+  testthat::expect_equal(min(plan$start_date), as.Date("2026-01-01"))
+  testthat::expect_equal(max(plan$end_date), as.Date("2026-08-31"))
+  testthat::expect_true(all(grepl("catchup", plan$path, fixed = TRUE)))
+  testthat::expect_true(all(!plan$refresh))
+})
+
+testthat::test_that("catchup is empty when no complete month follows the archive", {
+  plan <- plan_prism_download(
+    mode = "catchup",
+    variables = "maxt",
+    today = as.Date("2026-01-15"),
+    raw_dir = tempfile("raw-")
+  )
+
+  testthat::expect_equal(nrow(plan), 0L)
+})
+
 testthat::test_that("an up-to-date manifest does not create a backwards missing tail", {
   manifest <- data.frame(
     product = "daily",

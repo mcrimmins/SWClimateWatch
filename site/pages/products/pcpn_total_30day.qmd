@@ -1,0 +1,19 @@
+---
+title: "30-day total"
+description-meta: "This map sums PRISM daily precipitation over the latest complete 30-day period, in inches. Higher values show where more precipitation accumulated during the month-length window; the companion percentile map shows whether the amount is unusual."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/precipitation/pcpn-total-30day-latest.png){fig-alt="Map showing 30-day total across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+This map sums PRISM daily precipitation over the latest complete 30-day period, in inches. Higher values show where more precipitation accumulated during the month-length window; the companion percentile map shows whether the amount is unusual.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/precipitation/pcpn-total-30day-latest.png){.btn .btn-outline-primary}
+:::

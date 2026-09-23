@@ -1,0 +1,19 @@
+---
+title: "14-day change in 30-day rank"
+description-meta: "This map subtracts the 30-day precipitation percentile rank from 14 days ago from today's 30-day rank, using each date's matching 1991-2020 seasonal sample. Positive percentile-point changes show relative wetting and negative changes show relative drying, rather than a change in precipitation inches."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/precipitation/pcpn-percentile-rank-change-30day-over-14day-latest.png){fig-alt="Map showing 14-day change in 30-day rank across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+This map subtracts the 30-day precipitation percentile rank from 14 days ago from today's 30-day rank, using each date's matching 1991-2020 seasonal sample. Positive percentile-point changes show relative wetting and negative changes show relative drying, rather than a change in precipitation inches.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/precipitation/pcpn-percentile-rank-change-30day-over-14day-latest.png){.btn .btn-outline-primary}
+:::

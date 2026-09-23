@@ -1,0 +1,18 @@
+---
+title: "El Niño"
+description: "ENSO conditions and Southwest climate"
+---
+
+ENSO tends to have its clearest Southwest precipitation relationship during
+the October-March cool season. El Niño years are often wetter and La Niña
+years often drier, but individual years can differ sharply across Arizona and
+New Mexico. [CLIMAS explains the regional pattern](https://climas.arizona.edu/sw-climate/enso-and-monsoon).
+
+The historical archive pilot compares two completed seasons:
+
+- [Water year 1998](archive/wy1998.qmd) (DJF RONI +2.1 °C)
+- [Water year 2011](archive/wy2011.qmd) (DJF RONI -1.4 °C)
+
+Each page has six cool-season maps and two full-water-year context maps. The
+RONI values use the December-February [NOAA Relative Oceanic Niño Index](https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso/roni/).
+The maps show observed conditions, not changes caused solely by ENSO.

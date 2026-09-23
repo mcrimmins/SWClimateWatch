@@ -1,0 +1,19 @@
+---
+title: "Total precipitation"
+description-meta: "This map sums PRISM daily precipitation from October 1 of the current water year through the latest available day, in inches. Higher values show larger cumulative totals; the companion percentile map shows how unusual those totals are for this point in the water year."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/precipitation/pcpn-water-year-total-latest.png){fig-alt="Map showing total precipitation across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+This map sums PRISM daily precipitation from October 1 of the current water year through the latest available day, in inches. Higher values show larger cumulative totals; the companion percentile map shows how unusual those totals are for this point in the water year.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/precipitation/pcpn-water-year-total-latest.png){.btn .btn-outline-primary}
+:::

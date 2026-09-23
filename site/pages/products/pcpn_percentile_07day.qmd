@@ -1,0 +1,19 @@
+---
+title: "7-day percentile rank"
+description-meta: "The latest seven-day precipitation total is ranked against 1991-2020 seven-day totals ending within two calendar days of this date. Low ranks indicate an unusually dry week and high ranks an unusually wet week for this time of year."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/precipitation/pcpn-percentile-rank-07day-latest.png){fig-alt="Map showing 7-day percentile rank across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+The latest seven-day precipitation total is ranked against 1991-2020 seven-day totals ending within two calendar days of this date. Low ranks indicate an unusually dry week and high ranks an unusually wet week for this time of year.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/precipitation/pcpn-percentile-rank-07day-latest.png){.btn .btn-outline-primary}
+:::

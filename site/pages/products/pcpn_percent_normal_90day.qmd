@@ -1,0 +1,19 @@
+---
+title: "90-day percent of normal"
+description-meta: "The latest 90-day precipitation total is divided by the average of 1991-2020 totals ending within two calendar days of this date and expressed as a percentage. Values below 100% indicate less precipitation than average and values above 100% more; cells with a historical average below 0.10 inch are blank."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/precipitation/pcpn-percent-normal-90day-latest.png){fig-alt="Map showing 90-day percent of normal across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+The latest 90-day precipitation total is divided by the average of 1991-2020 totals ending within two calendar days of this date and expressed as a percentage. Values below 100% indicate less precipitation than average and values above 100% more; cells with a historical average below 0.10 inch are blank.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/precipitation/pcpn-percent-normal-90day-latest.png){.btn .btn-outline-primary}
+:::

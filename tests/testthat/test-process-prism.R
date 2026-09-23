@@ -87,3 +87,45 @@ testthat::test_that("processing plan rebuilds when the raw checksum changes", {
   )
   testthat::expect_true(changed$refresh)
 })
+
+testthat::test_that("processing plan can use recorded checksums for fast recovery scans", {
+  raw_dir <- tempfile("raw-")
+  processed_dir <- tempfile("processed-")
+  raw_path <- file.path(
+    raw_dir, "prism", "az-nm-pad050", "daily", "update", "maxt", "test.tif"
+  )
+  dir.create(dirname(raw_path), recursive = TRUE)
+  terra::writeRaster(make_test_prism_raster(), raw_path, overwrite = TRUE)
+  recorded_md5 <- "0123456789abcdef0123456789abcdef"
+  raw_manifest <- data.frame(
+    product = "daily", aoi_id = "az-nm-pad050", variable = "maxt",
+    native_units = "degreeF", start_date = as.Date("2020-01-01"),
+    end_date = as.Date("2020-01-02"), md5 = recorded_md5, path = raw_path
+  )
+
+  missing_processed <- plan_prism_daily_processing(
+    raw_manifest = raw_manifest,
+    variables = "maxt",
+    raw_dir = raw_dir,
+    processed_dir = processed_dir,
+    processed_manifest = data.frame(),
+    verify_source_md5 = FALSE
+  )
+  testthat::expect_identical(missing_processed$source_md5, recorded_md5)
+  testthat::expect_true(missing_processed$refresh)
+
+  dir.create(dirname(missing_processed$path), recursive = TRUE)
+  file.create(missing_processed$path)
+  current <- plan_prism_daily_processing(
+    raw_manifest = raw_manifest,
+    variables = "maxt",
+    raw_dir = raw_dir,
+    processed_dir = processed_dir,
+    processed_manifest = data.frame(
+      path = missing_processed$path,
+      source_md5 = recorded_md5
+    ),
+    verify_source_md5 = FALSE
+  )
+  testthat::expect_false(current$refresh)
+})

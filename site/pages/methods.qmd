@@ -1,0 +1,52 @@
+---
+title: "Methods"
+description: "Data sources, update timing, and how to read the maps"
+---
+
+## Data source and updates
+
+These maps use daily, approximately 4-km precipitation and maximum- and minimum-temperature grids produced by the [PRISM Climate Group at Oregon State University](https://prism.oregonstate.edu/data/). We retrieve the PRISM grids through the [RCC-ACIS web service](https://www.rcc-acis.org/docs_webservices.html) for Arizona, New Mexico, and a half-degree buffer around the two states. Temperature is shown in °F and precipitation in inches. Mean temperature is calculated at each grid cell as the average of that day's maximum and minimum. PRISM grids are spatial estimates informed by weather-station data, not direct observations at every pixel.
+
+**Recent maps mostly use preliminary data.** According to [PRISM's update calendar](https://prism.oregonstate.edu/calendar/), a day's first grid is modeled about 24 hours after the day ends, then modeled again after about five days and roughly monthly through six months. The eighth daily run is considered final unless the whole dataset is later revised. Our daily update checks for newly available dates *and* revisits recent dates so revised PRISM values can flow into the maps. The date printed on each map is the latest PRISM date actually used; it may lag today's date. Recent values and derived rankings can change as their source grids are revised. These maps do not use the separate PRISM monthly dataset.
+
+## Reference periods and interpretation
+
+Unless a map says otherwise, its comparison period is **1991–2020**. For a daily seasonal comparison, we combine the same calendar date and the two days on either side in each of those 30 years (about 150 values per grid cell). For a 7-, 30-, 90-, or 180-day map, we compare the *whole period's* result with historical periods ending in that centered five-day calendar window. A percentile rank describes position within that historical distribution: low ranks are relatively low values, high ranks relatively high values. Thus, a high temperature rank means unusual warmth, while a high dry-spell rank means an unusually *long* dry spell. The legend on each map gives its exact ranges and units.
+
+The maps below use a **wet-day threshold of at least 0.04 inch**, a **freeze threshold of minimum temperature at or below 32°F**, and a **water year of October 1–September 30**. Blank areas can mean that an event did not occur or that the available comparison is unreliable; see the relevant method below.
+
+## Temperature maps
+
+- **Current values:** Show the latest day's maximum, minimum, or derived mean temperature. These are absolute temperatures, not departures from normal.
+- **Daily departures:** Subtract the matching 1991–2020 calendar-day mean from the latest maximum, minimum, or mean temperature. Positive values are warmer than average; negative values are cooler.
+- **30-day departures:** Average the latest 30 daily temperatures and subtract the average of their matching daily normals. This highlights sustained warmth or coolness rather than one-day swings.
+- **Daily percentile ranks:** Rank the latest maximum, minimum, or mean temperature against the centered five-day historical sample. High ranks mean unusual warmth for the date; low ranks mean unusual coolness.
+- **7-, 30-, and 90-day mean-temperature ranks:** First average daily mean temperature over the complete period, then rank that period average against seasonally matched historical period averages. These are *not* averages of daily ranks.
+- **Extreme warm days and cold nights:** Count, over the latest 30 days, maximum temperatures strictly above the local daily 90th-percentile threshold and minimum temperatures strictly below the local daily 10th-percentile threshold, respectively.
+- **Freeze-night count and anomaly:** Count nights at or below 32°F in the latest 30 days. The anomaly subtracts the average count for seasonally matched 1991–2020 periods; positive values mean more freeze nights than usual.
+- **First- and last-freeze date and departure:** Find the first or last night at or below 32°F in an August 1–July 31 cold season. Departure compares the observed date with the local 1991–2020 median; negative means earlier, positive later. Current-season dates may change, and areas without a freeze or a reliable historical comparison are blank.
+- **Freeze-free season length and departure:** Count days from the last January–July freeze to the first August–December freeze in the same calendar year. Departure is relative to the 1991–2020 median length. Areas missing either event are blank; an in-progress season is provisional.
+
+## Precipitation maps
+
+- **Recent totals:** Sum daily precipitation for the latest complete day or latest 7, 30, or 90 days. These maps show amounts, not how unusual the amounts are.
+- **7-, 30-, and 90-day percentile ranks:** Rank each accumulation against seasonally matched 1991–2020 accumulations. Low ranks indicate unusually dry periods; high ranks indicate unusually wet ones.
+- **30- and 90-day percent of normal:** Divide the recent total by the matching 1991–2020 average and multiply by 100. Below 100% is drier than average; above 100% is wetter. Areas with a historical average below 0.10 inch are blank because the ratio would be unstable.
+- **Recent change in 30-day rank:** Subtract the 30-day precipitation rank from 14 days ago from the latest 30-day rank. Positive values indicate relative wetting and negative values relative drying; the units are percentile points, not inches.
+- **Current dry spell:** Count consecutive days below 0.04 inch ending on the latest day, and rank that length against seasonally matched historical spells. Zero means the latest day was wet; a high rank means an unusually long ongoing dry spell.
+- **Longest dry spell in 180 days:** Find the longest below-threshold run anywhere in the latest 180 days, whether or not it is still underway. Its companion rank compares that maximum with seasonally matched 1991–2020 windows.
+- **Wet-day count in 90 days:** Count days with at least 0.04 inch. Its companion rank shows whether wet days have been unusually frequent or scarce for the season; it does not measure the size of those events.
+- **Mean precipitation per wet day:** Average precipitation on qualifying wet days in the latest 90 days. Its companion rank compares that intensity with seasonally matched historical periods. Areas with no wet days are blank.
+- **Very-wet-day contribution:** Calculate the share of the latest 90-day total supplied by days above the local 1991–2020 annual wet-day 95th-percentile amount. Its companion rank shows whether that share is unusual for the season. Totals below 0.10 inch are blank.
+- **Water-year total, percent of normal, and rank:** Accumulate precipitation since October 1. Percent of normal compares with the 1991–2020 average through the *same date*; the rank compares with historical water-year-to-date totals through that date. A low rank means an unusually dry water year so far.
+- **Water-year maximum three-day precipitation and rank:** Find the largest complete three-day total since October 1. The rank compares it with annual maxima from complete 1991–2020 water years, so the current year's result remains provisional until September 30.
+- **Water-year precipitation concentration:** Divide the largest three-day total by the water-year total. High percentages mean that one short period supplied a larger share of the year's precipitation. Totals below 0.10 inch are blank.
+
+## Historic Years
+
+Each available Historic Years page summarizes a water year without labeling the year itself as an El Niño or La Niña event. A separate badge reports the December–February [Relative Oceanic Niño Index (RONI)](https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso/roni/) value and its phase for that three-month period; it does not establish the cause of Southwest conditions.
+
+- **October–March cool season:** Maps show precipitation total and rank, maximum- and minimum-temperature departures, wet-day-count rank, and mean precipitation per wet day. The temperature departures use 1991–2020 daily normals.
+- **Full water year:** Maps show October–September precipitation total and rank. Cool-season and full-year precipitation ranks, plus cool-season wet-day-count ranks, use a fixed set of complete water years **1982–2025** (44 seasons), including the displayed year. These full-season ranks have fewer reference values than the current, seasonally matched rolling maps.
+
+The data-processing and map-generation methods are available in the [Southwest Climate Watch GitHub repository](https://github.com/mcrimmins/SWClimateWatch).

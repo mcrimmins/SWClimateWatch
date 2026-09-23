@@ -1,0 +1,19 @@
+---
+title: "Freeze-free season departure"
+description-meta: "The displayed year's freeze-free season length is compared with the local median length from 1991-2020. Positive values mean a longer-than-median interval and negative values a shorter one; areas without both freeze dates or a reliable historical comparison are blank."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/temperature/mint-freeze-free-season-departure-latest.png){fig-alt="Map showing freeze-free season departure across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+The displayed year's freeze-free season length is compared with the local median length from 1991-2020. Positive values mean a longer-than-median interval and negative values a shorter one; areas without both freeze dates or a reliable historical comparison are blank.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/temperature/mint-freeze-free-season-departure-latest.png){.btn .btn-outline-primary}
+:::

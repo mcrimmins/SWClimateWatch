@@ -1,7 +1,7 @@
 # Build the static coverage map shown on the homepage.
 
 build_overview_map <- function(
-    filename = file.path("maps", "generated", "southwest-overview.png")) {
+    filename = file.path(swc_paths$maps, "southwest-overview.png")) {
   check_swc_packages()
 
   states <- ggplot2::map_data(

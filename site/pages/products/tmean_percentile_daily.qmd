@@ -1,0 +1,19 @@
+---
+title: "Mean temperature"
+description-meta: "The latest daily mean temperature is ranked against 1991-2020 daily means from the same calendar date and two days on either side. High percentile ranks indicate unusually warm conditions for this time of year, while low ranks indicate unusually cool conditions."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/temperature/tmean-percentile-rank-latest.png){fig-alt="Map showing mean temperature across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+The latest daily mean temperature is ranked against 1991-2020 daily means from the same calendar date and two days on either side. High percentile ranks indicate unusually warm conditions for this time of year, while low ranks indicate unusually cool conditions.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/temperature/tmean-percentile-rank-latest.png){.btn .btn-outline-primary}
+:::

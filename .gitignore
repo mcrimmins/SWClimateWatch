@@ -4,23 +4,24 @@
 .Ruserdata
 
 # Quarto output and caches
-_site/
-_freeze/
-.quarto/
+site/_site/
+site/_freeze/
+site/.quarto/
 *_cache/
 *_files/
 
 # Local climate data and generated map products
 data/raw/*
 data/processed/*
-maps/generated/*
+site/maps/generated/*
+data/diagnostics/
+docs/prism-data-methods.html
 !data/raw/.gitkeep
 !data/processed/.gitkeep
-!maps/generated/.gitkeep
+!site/maps/generated/.gitkeep
 
 # Local environment and logs
 .env
 logs/
 
-/.quarto/
 **/*.quarto_ipynb

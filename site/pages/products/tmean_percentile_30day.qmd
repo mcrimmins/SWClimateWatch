@@ -1,0 +1,19 @@
+---
+title: "30-day mean temperature"
+description-meta: "The mean of the latest 30 daily mean temperatures is ranked against 1991-2020 30-day means ending within two calendar days of this date. High ranks indicate sustained warmth and low ranks sustained coolness for this time of year."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/temperature/tmean-percentile-rank-30day-latest.png){fig-alt="Map showing 30-day mean temperature across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+The mean of the latest 30 daily mean temperatures is ranked against 1991-2020 30-day means ending within two calendar days of this date. High ranks indicate sustained warmth and low ranks sustained coolness for this time of year.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/temperature/tmean-percentile-rank-30day-latest.png){.btn .btn-outline-primary}
+:::

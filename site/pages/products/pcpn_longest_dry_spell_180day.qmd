@@ -1,0 +1,19 @@
+---
+title: "Longest dry spell in 180 days"
+description-meta: "This map finds the longest uninterrupted run of days below 0.04 inch anywhere within the latest 180 days. Higher values show a longer dry stretch during that window, even if the stretch ended before the latest day."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/precipitation/pcpn-longest-dry-spell-180day-latest.png){fig-alt="Map showing longest dry spell in 180 days across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+This map finds the longest uninterrupted run of days below 0.04 inch anywhere within the latest 180 days. Higher values show a longer dry stretch during that window, even if the stretch ended before the latest day.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/precipitation/pcpn-longest-dry-spell-180day-latest.png){.btn .btn-outline-primary}
+:::

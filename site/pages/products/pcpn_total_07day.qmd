@@ -1,0 +1,19 @@
+---
+title: "7-day total"
+description-meta: "This map sums PRISM daily precipitation over the latest complete seven-day period, in inches. Higher values show where more precipitation accumulated during the week; the companion percentile map places the total in seasonal context."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/precipitation/pcpn-total-07day-latest.png){fig-alt="Map showing 7-day total across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+This map sums PRISM daily precipitation over the latest complete seven-day period, in inches. Higher values show where more precipitation accumulated during the week; the companion percentile map places the total in seasonal context.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/precipitation/pcpn-total-07day-latest.png){.btn .btn-outline-primary}
+:::

@@ -13,6 +13,34 @@ validate_prism_variables <- function(variables, config = swc_prism) {
   variables
 }
 
+validate_prism_analysis_variables <- function(variables, config = swc_prism) {
+  variables <- unique(as.character(variables))
+  supported <- unique(c(config$variables, config$derived_variables))
+  invalid <- setdiff(variables, supported)
+  if (length(invalid) > 0L) {
+    stop(
+      "Unsupported PRISM analysis variable(s): ", paste(invalid, collapse = ", "),
+      ". Supported variables are: ", paste(supported, collapse = ", "),
+      call. = FALSE
+    )
+  }
+  variables
+}
+
+validate_prism_temperature_variables <- function(variables, config = swc_prism) {
+  variables <- validate_prism_analysis_variables(variables, config)
+  invalid <- setdiff(variables, config$temperature_variables)
+  if (length(invalid) > 0L) {
+    stop(
+      "Unsupported PRISM temperature variable(s): ", paste(invalid, collapse = ", "),
+      ". Supported temperature variables are: ",
+      paste(config$temperature_variables, collapse = ", "),
+      call. = FALSE
+    )
+  }
+  variables
+}
+
 normalize_prism_bbox <- function(bbox) {
   bbox <- as.numeric(bbox)
   if (length(bbox) != 4L || any(!is.finite(bbox))) {
@@ -78,7 +106,7 @@ read_prism_manifest <- function(path = prism_manifest_path()) {
 }
 
 plan_prism_download <- function(
-    mode = c("bootstrap", "update"),
+    mode = c("bootstrap", "catchup", "update"),
     variables = swc_prism$variables,
     start = NULL,
     end = NULL,
@@ -105,6 +133,24 @@ plan_prism_download <- function(
     chunks <- split_prism_date_range(start, end, chunk = chunk, chunk_days = chunk_days)
     chunks$refresh <- FALSE
     subdirectory <- "archive"
+  } else if (mode == "catchup") {
+    # Catch up complete months with range requests. The current partial month is
+    # left to update mode so its path does not change every day.
+    current_month_start <- as.Date(format(today, "%Y-%m-01"))
+    start <- as.Date(start %||% (swc_prism$archive_end + 1L))
+    end <- as.Date(end %||% (current_month_start - 1L))
+    if (start > end) {
+      chunks <- data.frame(
+        start_date = as.Date(character()),
+        end_date = as.Date(character()),
+        refresh = logical(),
+        stringsAsFactors = FALSE
+      )
+    } else {
+      chunks <- split_prism_date_range(start, end, chunk = "month")
+      chunks$refresh <- FALSE
+    }
+    subdirectory <- "catchup"
   } else {
     target_dates <- sort(unique(today - as.integer(revision_ages)))
     target_dates <- target_dates[target_dates >= as.Date("1981-01-01") & target_dates < today]
@@ -359,6 +405,11 @@ download_prism_plan <- function(
   for (index in seq_len(nrow(queue))) {
     item <- queue[index, , drop = FALSE]
     dir.create(dirname(item$path), recursive = TRUE, showWarnings = FALSE)
+    previous_md5 <- if (file.exists(item$path)) {
+      unname(tools::md5sum(item$path))
+    } else {
+      NA_character_
+    }
     temporary <- tempfile("acis-", tmpdir = dirname(item$path), fileext = ".tif")
     on.exit(unlink(temporary), add = TRUE)
     if (!quiet) {
@@ -375,6 +426,7 @@ download_prism_plan <- function(
     response <- httr2::req_perform(request, path = temporary)
     validate_prism_geotiff(temporary, item)
     replace_file_atomically(temporary, item$path)
+    current_md5 <- unname(tools::md5sum(item$path))
 
     completed_count <- completed_count + 1L
     completed[[completed_count]] <- data.frame(
@@ -388,7 +440,9 @@ download_prism_plan <- function(
       end_date = as.Date(item$end_date),
       downloaded_at = format(Sys.time(), tz = "UTC", usetz = TRUE),
       bytes = file.info(item$path)$size,
-      md5 = unname(tools::md5sum(item$path)),
+      md5 = current_md5,
+      previous_md5 = previous_md5,
+      changed = is.na(previous_md5) || !identical(previous_md5, current_md5),
       path = item$path,
       stringsAsFactors = FALSE
     )
@@ -405,7 +459,7 @@ download_prism_plan <- function(
 }
 
 sync_prism <- function(
-    mode = c("bootstrap", "update"), ...,
+    mode = c("bootstrap", "catchup", "update"), ...,
     force = FALSE,
     max_requests = swc_prism$max_requests_per_run,
     delay_seconds = swc_prism$request_delay_seconds,

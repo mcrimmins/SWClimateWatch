@@ -1,0 +1,19 @@
+---
+title: "90-day percentile rank"
+description-meta: "The latest 90-day precipitation total is ranked against 1991-2020 90-day totals ending within two calendar days of this date. Low ranks indicate an unusually dry recent season-length period and high ranks an unusually wet one."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/precipitation/pcpn-percentile-rank-90day-latest.png){fig-alt="Map showing 90-day percentile rank across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+The latest 90-day precipitation total is ranked against 1991-2020 90-day totals ending within two calendar days of this date. Low ranks indicate an unusually dry recent season-length period and high ranks an unusually wet one.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/precipitation/pcpn-percentile-rank-90day-latest.png){.btn .btn-outline-primary}
+:::

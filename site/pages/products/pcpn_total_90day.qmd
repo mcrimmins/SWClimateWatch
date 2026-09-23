@@ -1,0 +1,19 @@
+---
+title: "90-day total"
+description-meta: "This map sums PRISM daily precipitation over the latest complete 90-day period, in inches. Higher values show where more precipitation accumulated across the recent season-length window; the companion percentile map provides seasonal context."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/precipitation/pcpn-total-90day-latest.png){fig-alt="Map showing 90-day total across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+This map sums PRISM daily precipitation over the latest complete 90-day period, in inches. Higher values show where more precipitation accumulated across the recent season-length window; the companion percentile map provides seasonal context.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/precipitation/pcpn-total-90day-latest.png){.btn .btn-outline-primary}
+:::

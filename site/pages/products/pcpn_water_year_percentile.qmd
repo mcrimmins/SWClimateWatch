@@ -1,0 +1,19 @@
+---
+title: "Percentile rank"
+description-meta: "Precipitation since October 1 is ranked against water-year 1991-2020 totals accumulated through the same calendar date. Low ranks indicate an unusually dry water year to date and high ranks an unusually wet one."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/precipitation/pcpn-water-year-percentile-rank-latest.png){fig-alt="Map showing percentile rank across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+Precipitation since October 1 is ranked against water-year 1991-2020 totals accumulated through the same calendar date. Low ranks indicate an unusually dry water year to date and high ranks an unusually wet one.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/precipitation/pcpn-water-year-percentile-rank-latest.png){.btn .btn-outline-primary}
+:::

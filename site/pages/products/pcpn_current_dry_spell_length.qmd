@@ -1,0 +1,19 @@
+---
+title: "Current dry-spell length"
+description-meta: "Starting with the latest day, this map counts consecutive days with precipitation below 0.04 inch at each grid cell. A value of zero means the latest day was wet; larger values show longer ongoing dry spells, with the map scale capped at 90+ days."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/precipitation/pcpn-current-dry-spell-length-latest.png){fig-alt="Map showing current dry-spell length across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+Starting with the latest day, this map counts consecutive days with precipitation below 0.04 inch at each grid cell. A value of zero means the latest day was wet; larger values show longer ongoing dry spells, with the map scale capped at 90+ days.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/precipitation/pcpn-current-dry-spell-length-latest.png){.btn .btn-outline-primary}
+:::

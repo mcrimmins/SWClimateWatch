@@ -1,0 +1,19 @@
+---
+title: "First-freeze date"
+description-meta: "This map shows the first date with minimum temperature at or below 32 degrees F in the displayed August 1-July 31 cold season. Areas without a recorded freeze are blank, and the prior completed season remains displayed until the new season has sufficient coverage."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/temperature/mint-first-freeze-date-latest.png){fig-alt="Map showing first-freeze date across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+This map shows the first date with minimum temperature at or below 32 degrees F in the displayed August 1-July 31 cold season. Areas without a recorded freeze are blank, and the prior completed season remains displayed until the new season has sufficient coverage.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/temperature/mint-first-freeze-date-latest.png){.btn .btn-outline-primary}
+:::

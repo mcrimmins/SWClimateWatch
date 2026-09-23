@@ -1,0 +1,19 @@
+---
+title: "90-day mean temperature"
+description-meta: "The mean of the latest 90 daily mean temperatures is ranked against 1991-2020 90-day means ending within two calendar days of this date. High ranks indicate an unusually warm recent 90-day period and low ranks an unusually cool one."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/temperature/tmean-percentile-rank-90day-latest.png){fig-alt="Map showing 90-day mean temperature across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+The mean of the latest 90 daily mean temperatures is ranked against 1991-2020 90-day means ending within two calendar days of this date. High ranks indicate an unusually warm recent 90-day period and low ranks an unusually cool one.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/temperature/tmean-percentile-rank-90day-latest.png){.btn .btn-outline-primary}
+:::

@@ -1,0 +1,194 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "Southwest Climate Watch"
+  description: "Automatically updated climate maps for Arizona and New Mexico"
+  # Keep these unfinished sections in source without publishing or indexing them.
+  draft-mode: gone
+  drafts:
+    - pages/atmosphere.qmd
+    - pages/forecasts.qmd
+    - pages/el-nino.qmd
+  sidebar:
+    style: docked
+    background: light
+    title: "Southwest Climate Watch"
+    logo: assets/branding/southwest-climate-watch-mark-transparent.png
+    logo-alt: "Southwest Climate Watch landscape and weather logo"
+    search: true
+    collapse-level: 1
+    contents:
+      - href: index.qmd
+        text: Home
+      # BEGIN GENERATED MAP BROWSER
+      - section: Map Browser
+        contents:
+          - section: Temperature
+            contents:
+              - section: Current values
+                contents:
+                  - href: pages/products/maxt_value.qmd
+                    text: Maximum temperature
+                  - href: pages/products/tmean_value.qmd
+                    text: Mean temperature
+                  - href: pages/products/mint_value.qmd
+                    text: Minimum temperature
+              - section: Daily departures
+                contents:
+                  - href: pages/products/maxt_departure_daily.qmd
+                    text: Maximum temperature departure
+                  - href: pages/products/tmean_departure_daily.qmd
+                    text: Mean temperature departure
+                  - href: pages/products/mint_departure_daily.qmd
+                    text: Minimum temperature departure
+              - section: 30-day departures
+                contents:
+                  - href: pages/products/maxt_departure_30day.qmd
+                    text: Maximum temperature departure
+                  - href: pages/products/tmean_departure_30day.qmd
+                    text: Mean temperature departure
+                  - href: pages/products/mint_departure_30day.qmd
+                    text: Minimum temperature departure
+              - section: Daily percentile ranks
+                contents:
+                  - href: pages/products/maxt_percentile_daily.qmd
+                    text: Maximum temperature
+                  - href: pages/products/tmean_percentile_daily.qmd
+                    text: Mean temperature
+                  - href: pages/products/mint_percentile_daily.qmd
+                    text: Minimum temperature
+              - section: Rolling mean percentile ranks
+                contents:
+                  - href: pages/products/tmean_percentile_07day.qmd
+                    text: 7-day mean temperature
+                  - href: pages/products/tmean_percentile_30day.qmd
+                    text: 30-day mean temperature
+                  - href: pages/products/tmean_percentile_90day.qmd
+                    text: 90-day mean temperature
+              - section: Temperature extremes
+                contents:
+                  - href: pages/products/maxt_extreme_warm_count_30day.qmd
+                    text: Extreme warm days in 30 days
+                  - href: pages/products/mint_extreme_cold_count_30day.qmd
+                    text: Extreme cold nights in 30 days
+              - section: Freeze monitoring
+                contents:
+                  - href: pages/products/mint_freeze_count_30day.qmd
+                    text: Freeze-night count in 30 days
+                  - href: pages/products/mint_freeze_anomaly_30day.qmd
+                    text: Freeze-night anomaly in 30 days
+                  - href: pages/products/mint_first_freeze_date.qmd
+                    text: First-freeze date
+                  - href: pages/products/mint_first_freeze_departure.qmd
+                    text: First-freeze departure
+                  - href: pages/products/mint_last_freeze_date.qmd
+                    text: Last-freeze date
+                  - href: pages/products/mint_last_freeze_departure.qmd
+                    text: Last-freeze departure
+                  - href: pages/products/mint_freeze_free_length.qmd
+                    text: Freeze-free season length
+                  - href: pages/products/mint_freeze_free_departure.qmd
+                    text: Freeze-free season departure
+          - section: Precipitation
+            contents:
+              - section: Recent totals
+                contents:
+                  - href: pages/products/pcpn_total_01day.qmd
+                    text: Daily precipitation
+                  - href: pages/products/pcpn_total_07day.qmd
+                    text: 7-day total
+                  - href: pages/products/pcpn_total_30day.qmd
+                    text: 30-day total
+                  - href: pages/products/pcpn_total_90day.qmd
+                    text: 90-day total
+              - section: Percentile ranks
+                contents:
+                  - href: pages/products/pcpn_percentile_07day.qmd
+                    text: 7-day percentile rank
+                  - href: pages/products/pcpn_percentile_30day.qmd
+                    text: 30-day percentile rank
+                  - href: pages/products/pcpn_percentile_90day.qmd
+                    text: 90-day percentile rank
+              - section: Percent of normal
+                contents:
+                  - href: pages/products/pcpn_percent_normal_30day.qmd
+                    text: 30-day percent of normal
+                  - href: pages/products/pcpn_percent_normal_90day.qmd
+                    text: 90-day percent of normal
+              - section: Recent change
+                contents:
+                  - href: pages/products/pcpn_percentile_change_30day_14day.qmd
+                    text: 14-day change in 30-day rank
+              - section: Dry-spell conditions
+                contents:
+                  - href: pages/products/pcpn_current_dry_spell_length.qmd
+                    text: Current dry-spell length
+                  - href: pages/products/pcpn_current_dry_spell_percentile.qmd
+                    text: Current dry-spell percentile
+                  - href: pages/products/pcpn_longest_dry_spell_180day.qmd
+                    text: Longest dry spell in 180 days
+                  - href: pages/products/pcpn_longest_dry_spell_percentile_180day.qmd
+                    text: Longest dry-spell percentile
+              - section: Wet-day frequency
+                contents:
+                  - href: pages/products/pcpn_wet_day_count_90day.qmd
+                    text: Wet-day count in 90 days
+                  - href: pages/products/pcpn_wet_day_count_percentile_90day.qmd
+                    text: Wet-day-count percentile
+              - section: Wet-day intensity
+                contents:
+                  - href: pages/products/pcpn_wet_day_intensity_90day.qmd
+                    text: Mean precipitation per wet day
+                  - href: pages/products/pcpn_wet_day_intensity_percentile_90day.qmd
+                    text: Wet-day-intensity percentile
+              - section: Very-wet-day contribution
+                contents:
+                  - href: pages/products/pcpn_very_wet_contribution_90day.qmd
+                    text: Very-wet-day contribution
+                  - href: pages/products/pcpn_very_wet_contribution_percentile_90day.qmd
+                    text: Contribution percentile rank
+              - section: Water year
+                contents:
+                  - href: pages/products/pcpn_water_year_total.qmd
+                    text: Total precipitation
+                  - href: pages/products/pcpn_water_year_percent_normal.qmd
+                    text: Percent of normal
+                  - href: pages/products/pcpn_water_year_percentile.qmd
+                    text: Percentile rank
+              - section: Water-year extremes
+                contents:
+                  - href: pages/products/pcpn_water_year_max_03day.qmd
+                    text: Maximum 3-day precipitation
+                  - href: pages/products/pcpn_water_year_max_percentile_03day.qmd
+                    text: Maximum 3-day percentile
+                  - href: pages/products/pcpn_water_year_concentration_03day.qmd
+                    text: Precipitation concentration
+      # END GENERATED MAP BROWSER
+      - section: Historic Years
+        contents:
+          - href: pages/archive/wy1998.qmd
+            text: 1997-98 (WY1998)
+          - href: pages/archive/wy2011.qmd
+            text: 2010-11 (WY2011)
+      - href: pages/methods.qmd
+        text: Methods
+  page-footer:
+    left: "Southwest Climate Watch"
+    right: "Built with Quarto and R"
+
+format:
+  html:
+    theme:
+      light: flatly
+      dark: darkly
+    css: styles.css
+    toc: true
+    link-external-newwindow: true
+
+execute:
+  echo: false
+  warning: false
+  message: false
+  freeze: auto

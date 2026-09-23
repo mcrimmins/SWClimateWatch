@@ -1,0 +1,19 @@
+---
+title: "Precipitation concentration"
+description-meta: "This map divides the water year's largest three-day precipitation total by all precipitation since October 1 and expresses the result as a percentage. Higher values mean one short period supplied more of the year's precipitation; cells with less than 0.10 inch in total are blank."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/precipitation/pcpn-water-year-precipitation-concentration-03day-latest.png){fig-alt="Map showing precipitation concentration across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+This map divides the water year's largest three-day precipitation total by all precipitation since October 1 and expresses the result as a percentage. Higher values mean one short period supplied more of the year's precipitation; cells with less than 0.10 inch in total are blank.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/precipitation/pcpn-water-year-precipitation-concentration-03day-latest.png){.btn .btn-outline-primary}
+:::

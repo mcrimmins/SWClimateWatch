@@ -6,22 +6,31 @@ New Mexico. Analysis is written in R using PRISM climate data.
 ## Project layout
 
 ```text
-data/raw/          downloaded source data (not committed)
-data/processed/    analysis-ready data (not committed)
-R/                 shared configuration, functions, and update entry point
-maps/generated/    rendered map products (not committed)
-pages/             Quarto content pages
-scripts/           Ubuntu render and deployment entry points
-_site/             rendered static website (not committed)
+site/                    self-contained Quarto source project
+site/pages/              public website content
+site/maps/generated/     rendered map products (not committed)
+site/_site/              rendered static website (not committed)
+data/raw/                downloaded source data (not committed)
+data/processed/          analysis-ready data (not committed)
+R/                       processing and map-generation functions
+tests/                   automated R tests
+scripts/                 render and deployment entry points
+docs/                    technical processing documentation
+reference/map-layers/    versioned geographic context used on maps
 ```
+
+The repository root is the analysis project. The Quarto website is fully
+contained under `site/`; processing code, tests, data, and technical workflow
+documentation remain outside the website source tree.
 
 ## Local build
 
-Install Quarto and the R packages `terra`, `sf`, `ggplot2`, `dplyr`,
+Install Quarto and the R packages `terra`, `sf`, `ggplot2`, `ggrepel`, `magick`, `dplyr`,
 `lubridate`, `maps`, `httr2`, `jsonlite`, `digest`, and `testthat`, then run from the
-repository root:
+repository root. Enter the self-contained site project before starting Quarto:
 
 ```bash
+cd site
 quarto preview
 ```
 
@@ -69,6 +78,59 @@ Remove-Item Env:SWC_UPDATE_PRISM
 Leave `SWC_UPDATE_PRISM` unset for ordinary Quarto renders that should not make
 network requests.
 
+Update mode intentionally revisits nine PRISM revision ages for each of the
+three downloaded variables, so an ordinary run may show as many as 27 small
+requests even when no new date is available. Each refreshed GeoTIFF is compared
+with its previous checksum. If all downloads are byte-identical, the workflow
+skips the archive-wide checksum scan, processing, all 51 product maps, and the
+overview map. A sub-second manifest comparison still checks for any raw file
+left unprocessed by an interrupted earlier run. Set `SWC_FORCE_MAPS=true` only when
+you deliberately need to rebuild maps after a style or configuration change.
+It can be combined with `SWC_UPDATE_PRISM=false` for a local map-only rebuild
+that makes no RCC-ACIS requests.
+
+After changing the shared map layout, regenerate the current map images from
+the project root in the RStudio console before rendering or validating the
+site. This makes no PRISM download requests:
+
+```r
+Sys.setenv(SWC_UPDATE_PRISM = "false", SWC_FORCE_MAPS = "true")
+map_rebuild_time <- system.time(source("R/update-data.R"))
+swc_update_result$summary
+Sys.unsetenv(c("SWC_UPDATE_PRISM", "SWC_FORCE_MAPS"))
+```
+
+The published-map validator now expects 1998 by 1533 pixel PNGs. It will flag
+the previous-size images until the map-only rebuild completes. Freeze-season
+maps that retain a prior completed season are repainted from their existing
+processed grids when the layout is out of date; this does not change their
+observation date or reprocess PRISM data. If a map-only rebuild was interrupted
+at validation after updating the other maps, the RStudio console can finish
+just those retained maps and the site catalog without repeating the full map
+rebuild or making any RCC-ACIS requests:
+
+```r
+source("scripts/refresh-retained-freeze-layout.R")
+refreshed_retained_maps[, c("id", "date", "map_path")]
+table(map_status$validation_status)
+```
+
+Historic Years
+pilot images are generated separately and are not changed by this daily map
+workflow.
+
+The last scheduled revisit is 215 days after each observation, providing a
+post-six-month check in case PRISM's final daily revision is released after our
+184-day check. This is a time-based safeguard, not a confirmation that PRISM
+has marked an individual grid final.
+
+Daily stage timings are appended to
+`data/diagnostics/daily-update-timings.csv`; detailed product-group timings are
+appended to `data/diagnostics/map-update-timings.csv`. Both reports are ignored
+by Git. The returned `swc_update_result$summary` reports the numbers downloaded,
+changed, and processed, whether maps were rebuilt, the source dates, and total
+elapsed time.
+
 Downloads are sequential and conservative by default: at most 100 network
 requests per run, with a 1-1.5 second pause between successful requests. The
 downloader prints a summary of completed, scheduled, and deferred requests
@@ -80,6 +142,11 @@ Preview the effect of the cap without making a request with
 Historical bootstrap requests use calendar-month chunks. Month boundaries keep
 files easy to audit, allow individual months to be replaced, and prevent overlap
 between successive archive requests.
+
+After the fixed archive is installed, a one-time `catchup` mode downloads
+complete intervening months with range requests. Routine `update` mode then uses
+small single-day payloads for the current partial month and PRISM revision
+dates. Preview both plans before their first run.
 
 The default ACIS area of interest extends 0.5 degrees beyond the Arizona-New
 Mexico analysis footprint on every side. Its cache identifier is
@@ -108,12 +175,191 @@ excluded from fitting and its threshold is interpolated from February 28 and
 March 1. Precipitation amount percentiles use wet days of at least 0.04 inch.
 Native temperature and precipitation units remain Fahrenheit and inches.
 Climatology builds report every 25th completed calendar day and elapsed time.
-Current `maxt` and `mint` percentile ranks can be calculated on demand from the
-local five-day baseline without making another API request.
+Daily mean temperature (`tmean`) is derived locally as `(maxt + mint) / 2`, so
+it adds no RCC-ACIS requests. Current maximum, minimum, and mean temperature
+maps include observed values, departures from the 1991-2020 normal, and exact
+percentile ranks from the local five-day baseline. The mean-temperature normal
+is derived from the maximum- and minimum-temperature normals; its rank uses
+historical daily mean-temperature samples.
+The temperature collection also includes 30-day maximum-, minimum-, and
+mean-temperature departures. Each averages the latest 30 daily grids and
+subtracts the average of the matching 1991-2020 daily normals. The maximum and
+minimum maps distinguish sustained afternoon and nighttime conditions, while
+the mean map summarizes both.
+The public temperature collection also includes 7-, 30-, and 90-day
+mean-temperature percentile ranks. Each current rolling average is compared
+with seasonally matched rolling averages from 1991-2020 using the centered
+five-day ending-date window. The method ranks the multi-day mean itself rather
+than averaging daily percentile ranks. Double-precision historical caches are
+keyed by duration and calendar day, so routine updates can reuse the local
+baseline without rereading the full archive.
+The companion extreme warm-day map counts how many of the latest 30 daily
+maximum temperatures exceeded their local centered-five-day 1991-2020 90th
+percentile thresholds. Both products are calculated locally without additional
+RCC-ACIS requests.
+The corresponding cold-night map counts the latest 30 minimum temperatures
+that fell below their local centered-five-day 1991-2020 10th-percentile
+thresholds.
+A separate 30-day freeze map counts minimum temperatures at or below 32
+degrees F. This absolute-threshold product is retained year-round but is most
+informative during the cool-season transition months.
+Its companion anomaly subtracts the mean matching 30-day count in a centered
+five-day 1991-2020 seasonal window. Historical threshold-count samples are
+cached by calendar day so routine updates do not reread the full baseline.
+The seasonal first-freeze pair tracks the first minimum temperature at or
+below 32 degrees F in each August 1-July 31 season. One map reports the
+observed date and the other reports days earlier or later than the median
+1991-2020 first-freeze date. The normal is shown only where at least 24 of the
+30 baseline seasons recorded a freeze. To avoid publishing an almost-empty
+map at the start of autumn, the previous completed season remains online until
+September 1 and until at least 5 percent of historically freeze-prone cells
+have recorded a freeze in the new season.
+The companion last-freeze pair finds the final night at or below 32 degrees F
+in the same August 1-July 31 cold season and compares it with the median
+1991-2020 last-freeze date. It becomes available on March 1, remains explicitly
+provisional while later freezes can still occur, and is final after July 31.
+The previous completed season remains online from August through February.
+Freeze-free season length is then calculated for each calendar year as the
+elapsed days from the last January-July freeze to the first August-December
+freeze. Its departure map subtracts the median 1991-2020 length. Negative
+values indicate a shorter season and positive values a longer season. Cells
+without both freeze bookends remain blank. A new year replaces the completed
+map only after September 1 and 5 percent of historically reliable cells have
+recorded both dates.
 
 See [PRISM data acquisition and climatology methods](docs/prism-data-methods.md)
 for the full rationale, function reference, storage layout, provenance fields,
 and RStudio console examples.
+
+See [Map design and branding](docs/map-design.md) for the map hierarchy,
+reference layers, footprint behavior, city-label policy, and logo location.
+
+The expandable website map browser is generated from
+`config/map-products.yml`. The catalog contains one stable ID for each of the
+51 public products, organized into Temperature and Precipitation branches and
+17 topic groups. Set `enabled: false` on a product to skip its public map during
+the next data update and omit its generated page and navigation entry. Shared
+data prerequisites are still refreshed when another enabled product needs
+them. The `scale` field accepts `continuous` or `categorical` and now controls
+the actual map renderer. Continuous remains the default; categorical mode uses
+grouped, labeled ranges and climate-specific classes for percentiles,
+departures, percent-of-normal, freeze timing, and percentile change. Set the
+field on an individual product to override the default, for example:
+
+```yaml
+pcpn_percentile_30day:
+  scale: categorical
+  section: Precipitation
+  group: Percentile ranks
+  label: 30-day percentile rank
+  image: prism/precipitation/pcpn-percentile-rank-30day-latest.png
+```
+
+Percentile-based products are categorical by default; raw values, departures,
+counts, precipitation totals, and other products remain continuous unless
+overridden. The selected mode takes effect the next time the data/map update
+runs.
+
+The same configuration contains an ordered `dashboard.products` list of four
+to six enabled product IDs. It generates the homepage's responsive Current
+Conditions card grid. The default six cards show 7- and 30-day mean-temperature
+ranks, 30- and 90-day precipitation ranks, current dry-spell rank, and
+water-year precipitation rank. Changing this list changes the homepage without
+editing Quarto markup. Rebuild the homepage, catalog pages, and navigation from
+the R console with:
+
+```r
+source(file.path("R", "map-product-site.R"))
+build_map_product_site()
+```
+
+`scripts/render-site.sh` regenerates the dashboard and catalog-driven pages
+before rendering Quarto.
+
+The historical-season pilot is separate from daily updates. It produces eight
+maps each for the 1997-98 El Niño and 2010-11 La Niña cool seasons, with
+full-water-year context. The fixed 1982-2025 ranking reference, 1991-2020
+temperature normals, ENSO labels, output locations, and RStudio build command
+are documented in [the seasonal archive methods](docs/seasonal-archive.md).
+
+Before publication, `scripts/validate-map-products.R` verifies every enabled
+catalog PNG, its dated source copy and data date, generated page, navigation
+entry, and full-resolution link. Seasonal freeze products are allowed to retain
+their most recent publishable completed-season maps. The validator writes
+`data/diagnostics/map-product-status.csv` and stops the workflow if any enabled
+product fails. From the RStudio Terminal, validate an already rendered site
+with:
+
+```powershell
+Rscript scripts/validate-map-products.R --require-rendered
+```
+
+See [PRISM map product workplan](docs/map-product-workplan.md) for completed
+products, the next implementation phases, deferred products, and the scientific
+rationale for the public map collection.
+
+Historical rolling-precipitation samples are cached by duration and ending
+calendar day. Repeated map updates reuse a cache when its processed-source
+signature is unchanged. A normal next-day cache is advanced from its validated
+previous-day parent by subtracting the outgoing daily grids and adding the
+incoming daily grids. The same exact update is used for the 7-, 30-, and 90-day
+mean-temperature reference samples. Parent checksums and source signatures are
+recorded, and missing, stale, or February 29 parents fall back to a direct
+build.
+Historical water-year-to-date samples use water years 1991-2020 (October 1,
+1990 through September 30, 2020). They reset on October 1 and can be advanced
+from a validated previous-day cache by reading only the newly required daily
+layers. Cache files use 64-bit values, source signatures, checksums, and parent
+provenance. February 29 uses an explicitly labeled interpolation of February 28
+and March 1 cumulative reference totals.
+
+The current-conditions page includes water-year precipitation total, percent of
+normal, and percentile-rank maps. Percent of normal is suppressed where the
+matching historical mean is below 0.10 inch; this avoids misleading ratios to
+near-zero precipitation while preserving the total and percentile products.
+The rolling collection includes 1-, 7-, 30-, and 90-day totals; 7-, 30-, and
+90-day percentile ranks; and 30- and 90-day percent-of-normal maps.
+It also maps the 14-day change in the 30-day precipitation percentile rank;
+positive values indicate recent wetting and negative values recent drying.
+Dry-spell monitoring counts consecutive days below the 0.04-inch wet-day
+threshold and ranks the current length against a centered five-day 1991-2020
+seasonal sample. Its adaptive historical lookback prevents one-year truncation,
+and subsequent calendar-day caches update incrementally from validated parents.
+The companion longest-dry-spell product finds the maximum uninterrupted dry
+run in the trailing 180 days and ranks it against seasonally matched historical
+180-day windows. A moving window is used instead of a water-year maximum so the
+normally dry Southwest spring does not remain embedded in the product for the
+rest of the water year. Its exact historical calculation groups the five nearby
+ending dates for each baseline year into one raster pass, reducing repeated
+archive reads without changing the statistic.
+Wet-day-frequency monitoring counts days with at least 0.04 inch during the
+latest 90 days and ranks that count against matching centered five-day
+1991-2020 samples. Its cache also advances one calendar day by dropping the
+outgoing wet/dry indicator and adding the incoming indicator. A tiny numerical
+tolerance preserves the intended classification of 0.04-inch values stored in
+float rasters; it does not change the published threshold.
+Wet-day intensity averages precipitation amounts from those qualifying wet
+days over the latest 90 days; sub-threshold amounts are excluded and cells with
+no wet days are omitted. Its companion percentile compares against seasonally
+matched 1991-2020 windows, distinguishing event intensity from wet-day
+frequency. For the operational one-wet-day minimum, a validated next-day cache
+updates its wet-day sum and count from the two boundary days; other minimum
+counts use the direct method.
+Very-wet-day contribution reports the percentage of the latest 90-day total
+supplied by days strictly above the local 1991-2020 wet-day p95 threshold.
+Unlike wet-day intensity, it measures the dominance of climatologically large
+events in the total. Cells with less than 0.10 inch are omitted, and a companion
+percentile ranks the contribution against seasonally matched 1991-2020
+windows. Its next-day cache advances the threshold-qualified numerator and the
+total from validated parents, with a direct rebuild whenever validation fails.
+The water-year extreme-event product maps the largest complete rolling
+three-day precipitation total observed since October 1. Its percentile compares
+that maximum-so-far with maxima from complete water years 1991-2020, so the
+rank is labeled provisional until the active water year ends. The fixed
+30-layer historical cache is reused across daily updates.
+The companion precipitation-concentration map reports the percentage of the
+water-year total supplied by that wettest three-day period. Cells with less
+than 0.10 inch of water-year precipitation are masked to avoid unstable ratios.
 
 After initial validation, build the historical archive in bounded local batches
 with one command:
@@ -130,8 +376,51 @@ the command resumes from the manifests and existing files.
 
 ## S3 deployment
 
-The deployment script requires the AWS CLI and credentials supplied by the
-runtime environment. It does not store credentials in this repository.
+For local Windows/RStudio deployment, use the R script below from the project
+root. It builds the map catalog, renders `site/` into `site/_site/`, validates
+the rendered pages, and then previews an S3 sync. It does **not** download new
+PRISM data. The destination is required, must include a dedicated site prefix
+beneath a parent folder (such as `climate/sw-climate-watch/`), and is not stored
+in the repository. Replace the example URI with the exact
+bucket and prefix for this site; do not use the other project's `nam-tracker/`
+prefix. The AWS CLI must be installed and configured with access to that bucket.
+
+```r
+source("scripts/deploy-site-s3.R")
+destination <- "s3://YOUR-BUCKET/climate/YOUR-DEDICATED-SITE-PREFIX/"
+deploy_swc_site(destination, region = "us-west-2")  # dry run; no upload
+```
+
+Review the listed uploads and the destination. When they are correct, run:
+
+```r
+deploy_swc_site(destination, region = "us-west-2", dry_run = FALSE, render = FALSE)
+```
+
+For this project's confirmed destination, a one-command RStudio entry point is
+also available. **Sourcing it performs a live upload** after rendering and
+validation:
+
+```r
+source("scripts/publish-site-s3.R")
+```
+
+It is fixed to `s3://cales-climate-reports/climate/watch/` in `us-west-2`, with
+`delete = FALSE`. Change those settings in `scripts/publish-site-s3.R` if the
+hosting arrangement changes; keep `scripts/deploy-site-s3.R` as the reusable,
+dry-run-first helper.
+
+`render = FALSE` deploys the same rendered files you just reviewed, while still
+validating them again. Deletion is off by default. If and only if this prefix is
+dedicated entirely to this site and you want stale remote files removed, preview
+with `delete = TRUE` and then repeat the live call with `delete = TRUE`. A failed
+catalog build, Quarto render, or rendered-page validation stops before S3 sync.
+The script uses the Quarto bundled with RStudio on Windows if it is not on PATH;
+set `SWC_QUARTO` to another `quarto.cmd` path if needed. It does not store AWS
+credentials in this repository.
+
+The existing Bash scripts below are for the later Ubuntu automation setup, not
+the local Windows workflow:
 
 ```bash
 export S3_BUCKET="example-bucket"

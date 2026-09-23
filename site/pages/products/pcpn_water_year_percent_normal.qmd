@@ -1,0 +1,19 @@
+---
+title: "Percent of normal"
+description-meta: "Precipitation since October 1 is divided by the average 1991-2020 water-year total through the same calendar date and expressed as a percentage. Values below 100% are drier than average and values above 100% wetter; cells with a historical average below 0.10 inch are blank."
+body-classes: product-page
+toc: false
+page-layout: full
+---
+
+::: {.product-map-card}
+![](../../maps/generated/prism/precipitation/pcpn-water-year-percent-normal-latest.png){fig-alt="Map showing percent of normal across Arizona and New Mexico"}
+:::
+
+::: {.product-interpretation}
+Precipitation since October 1 is divided by the average 1991-2020 water-year total through the same calendar date and expressed as a percentage. Values below 100% are drier than average and values above 100% wetter; cells with a historical average below 0.10 inch are blank.
+:::
+
+::: {.product-actions}
+[Open full-resolution PNG](../../maps/generated/prism/precipitation/pcpn-water-year-percent-normal-latest.png){.btn .btn-outline-primary}
+:::
