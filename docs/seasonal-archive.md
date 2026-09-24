@@ -1,6 +1,6 @@
-# Historical seasonal archive pilot
+# Historical seasonal archive
 
-The pilot compares WY1998 (1997-98 El Niño) with WY2011 (2010-11 La Niña).
+The initial pilot compares WY1998 (1997-98 El Niño) with WY2011 (2010-11 La Niña).
 The Historic Years pages themselves use neutral water-year titles and navigation
 labels. Each page shows its December-February RONI value near the top with a
 color-coded El Niño, neutral, or La Niña label. The labels use the
@@ -39,13 +39,17 @@ years are added. A full-season rank is based on 44 seasonal values per cell,
 not the 150 seasonally matched daily samples used in some monitoring products;
 the smaller sample limits how finely ranks can distinguish years.
 
-The pilot labels use December-February Relative Oceanic Niño Index (RONI):
-+2.1 degrees C for DJF 1998 and -1.4 degrees C for DJF 2011. The source is
+Each page labels December-February Relative Oceanic Niño Index (RONI) using
 [NOAA CPC's historical RONI table](https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso/roni/).
-The displayed Southwest climate conditions are observations, not effects
-attributable solely to ENSO. Before expanding to all years, establish a
-versioned ENSO classification table and an explicit rule for seasons that
-change phase during October-March. The regional cool-season focus is supported
+The WY1982-WY2025 values are captured in
+[`reference/roni-djf-ersstv6-2026-09-23.csv`](../reference/roni-djf-ersstv6-2026-09-23.csv),
+transcribed from the ERSSTv6, 1991-2020-base table on September 23, 2026.
+DJF 1998 is +2.1 degrees C and DJF 2011 is -1.4 degrees C. NOAA may revise
+its table; the dated local snapshot makes page labels reproducible. The
+displayed Southwest conditions are observations, not effects attributable
+solely to ENSO. The badge classifies that DJF value only using the +/-0.5-degree
+threshold, not the full October-March season or a sustained ENSO episode.
+The regional cool-season focus is supported
 by [CLIMAS's ENSO summary](https://climas.arizona.edu/sw-climate/enso-and-monsoon).
 
 ## Build and review on the local Windows machine
@@ -59,15 +63,42 @@ source("scripts/build-seasonal-archive-pilot.R")
 The script uses existing processed PRISM files; it makes no RCC-ACIS API
 requests. The first run calculates one reusable precipitation summary for
 each WY1982-WY2025 and then builds the 16 pilot rasters, PNGs, and two Quarto
-pages. Later runs reuse the yearly summaries and existing pilot images. If
-processed inputs are revised, call `build_prism_archive_pilot_maps(overwrite =
-TRUE)` after sourcing the script's dependencies, then regenerate the pages.
+pages.
+
+## Expand in resumable batches
+
+Run this in the RStudio R console from the project root. The initial batch is
+five years, not the full archive:
+
+```r
+source("scripts/build-seasonal-archive-batch.R")
+archive_batch <- run_prism_archive_batch(1982:1986)
+table(archive_batch$water_year, archive_batch$map_refreshed)
+```
+
+Each completed water year has eight analysis TIFFs, eight PNGs, and one Quarto
+page. Navigation is regenerated from the pages that exist, grouped by decade,
+with generic water-year labels. The first run reuses the 44 already built
+reference summaries if their signatures match the processed manifest. Repeating
+the same batch leaves its existing grids and PNGs in place and reports eight
+reused maps per year. A stopped batch can be rerun; missing outputs are built.
+Use, for example, `run_prism_archive_batch(1987:1991)` for the next five years.
+Do not run `1982:2025` until the first batch and rendered pages have been
+reviewed. This build is separate from daily updates and makes no RCC-ACIS
+requests.
+
+Existing products are reused by file presence, not by a full dependency
+signature. If source PRISM data, reference years, normal grids, map styling, or
+the RONI snapshot change, rebuild affected years with
+`run_prism_archive_batch(years, overwrite = TRUE)`. That also refreshes the
+reference summaries. Use `overwrite = TRUE` deliberately: it recalculates all
+44 summary caches for the fixed reference and all requested year maps.
 
 Summary caches are under
-`data/processed/prism/az-nm-pad050/seasonal-archive/reference/`. The 16
+`data/processed/prism/az-nm-pad050/seasonal-archive/reference/`. The yearly
 analysis grids are under `data/processed/prism/az-nm-pad050/seasonal-archive/wyYYYY/`;
 the PNGs are under `site/maps/generated/prism/seasonal-archive/wyYYYY/`.
-Pages live at `site/pages/archive/wy1998.qmd` and `wy2011.qmd`.
+Pages live at `site/pages/archive/wyYYYY.qmd`.
 
 To render the site from the RStudio Terminal:
 
@@ -75,5 +106,5 @@ To render the site from the RStudio Terminal:
 quarto render site
 ```
 
-The pilot is intentionally separate from the 51 daily-updated maps. It is a
+The archive is intentionally separate from the 51 daily-updated maps. It is a
 one-time historical build and is not run by `R/update-data.R`.

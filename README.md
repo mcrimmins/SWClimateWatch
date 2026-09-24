@@ -276,11 +276,13 @@ build_map_product_site()
 `scripts/render-site.sh` regenerates the dashboard and catalog-driven pages
 before rendering Quarto.
 
-The historical-season pilot is separate from daily updates. It produces eight
-maps each for the 1997-98 El Niño and 2010-11 La Niña cool seasons, with
-full-water-year context. The fixed 1982-2025 ranking reference, 1991-2020
-temperature normals, ENSO labels, output locations, and RStudio build command
-are documented in [the seasonal archive methods](docs/seasonal-archive.md).
+The Historic Years archive is separate from daily updates. It produces eight
+maps per water year: six cool-season maps and two full-water-year maps. The
+initial WY1998 and WY2011 pilot can now be expanded in resumable batches;
+the first recommended batch is WY1982-WY1986. The fixed 1982-2025 ranking
+reference, 1991-2020 temperature normals, dated NOAA CPC RONI snapshot,
+output locations, and RStudio build commands are documented in
+[the seasonal archive methods](docs/seasonal-archive.md).
 
 Before publication, `scripts/validate-map-products.R` verifies every enabled
 catalog PNG, its dated source copy and data date, generated page, navigation

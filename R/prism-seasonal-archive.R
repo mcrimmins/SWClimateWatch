@@ -185,7 +185,7 @@ calculate_prism_archive_year <- function(
     quiet = FALSE) {
   water_year <- as.integer(water_year)
   if (!water_year %in% reference$years) {
-    stop("The pilot water year must be included in the fixed reference.", call. = FALSE)
+    stop("The archive water year must be included in the fixed reference.", call. = FALSE)
   }
   period <- prism_archive_periods(water_year)
   index <- match(water_year, reference$years)
@@ -370,7 +370,20 @@ prism_archive_roni_category <- function(djf_roni) {
   list(label = "Neutral", class = "archive-roni-neutral")
 }
 
-write_prism_archive_pilot_page <- function(
+read_prism_archive_roni <- function(
+    path = file.path("reference", "roni-djf-ersstv6-2026-09-23.csv")) {
+  values <- utils::read.csv(path, stringsAsFactors = FALSE)
+  if (!identical(names(values), c("water_year", "djf_roni")) ||
+      anyNA(values) || anyDuplicated(values$water_year) ||
+      !identical(as.integer(values$water_year), 1982:2025) ||
+      !is.numeric(values$djf_roni) || any(!is.finite(values$djf_roni))) {
+    stop("RONI snapshot must contain one finite DJF value for every WY1982-WY2025.",
+         call. = FALSE)
+  }
+  values
+}
+
+write_prism_archive_page <- function(
     water_year,
     djf_roni,
     page_dir = file.path("site", "pages", "archive")) {
@@ -434,37 +447,109 @@ write_prism_archive_pilot_page <- function(
   page
 }
 
-build_prism_archive_pilot_maps <- function(
-    water_years = c(1998L, 2011L),
+write_prism_archive_pilot_page <- write_prism_archive_page
+
+prism_archive_page_years <- function(page_dir = file.path("site", "pages", "archive")) {
+  pages <- list.files(page_dir, pattern = "^wy[0-9]{4}\\.qmd$", full.names = FALSE)
+  sort(as.integer(sub("^wy([0-9]{4})\\.qmd$", "\\1", pages)), decreasing = TRUE)
+}
+
+write_prism_archive_navigation <- function(
+    page_dir = file.path("site", "pages", "archive"),
+    config_path = file.path("site", "_quarto.yml")) {
+  years <- prism_archive_page_years(page_dir)
+  if (!length(years)) stop("No archive pages exist for the navigation.", call. = FALSE)
+  lines <- readLines(config_path, warn = FALSE)
+  begin <- match("      # BEGIN GENERATED HISTORIC YEARS", lines)
+  end <- match("      # END GENERATED HISTORIC YEARS", lines)
+  if (is.na(begin) || is.na(end) || end <= begin) {
+    stop("Historic Years navigation markers are missing or out of order.", call. = FALSE)
+  }
+  navigation <- c("      - section: Historic Years", "        contents:")
+  decades <- unique((years %/% 10L) * 10L)
+  for (decade in decades) {
+    navigation <- c(navigation, sprintf("          - section: %ds", decade),
+                    "            contents:")
+    for (year in years[years >= decade & years < decade + 10L]) {
+      navigation <- c(
+        navigation,
+        sprintf("              - href: pages/archive/wy%04d.qmd", year),
+        sprintf("                text: %d-%02d (WY%d)", year - 1L, year %% 100L, year)
+      )
+    }
+  }
+  updated <- c(lines[seq_len(begin)], navigation,
+               lines[end:length(lines)])
+  if (!identical(lines, updated)) writeLines(updated, config_path, useBytes = TRUE)
+  invisible(years)
+}
+
+build_prism_archive_maps <- function(
+    water_years,
     reference_years = 1982:2025,
     processed_manifest = read_prism_manifest(prism_processed_manifest_path()),
     processed_dir = swc_paths$processed,
     maps_dir = swc_paths$maps,
     overwrite = FALSE,
     quiet = FALSE) {
-  reference <- build_prism_archive_reference(
-    reference_years, processed_manifest, processed_dir = processed_dir,
-    overwrite = overwrite, quiet = quiet
-  )
-  states <- southwest_state_boundaries()
-  counties <- southwest_county_boundaries()
-  countries <- southwest_country_boundaries()
-  cities <- southwest_reference_cities()
-  rivers <- southwest_major_rivers()
+  water_years <- sort(unique(as.integer(water_years)))
+  reference_years <- sort(unique(as.integer(reference_years)))
+  if (!length(water_years) || anyNA(water_years) ||
+      any(!water_years %in% reference_years)) {
+    stop("`water_years` must be nonempty years in the fixed reference.", call. = FALSE)
+  }
   specs <- prism_archive_product_specs()
-  records <- list()
+  records <- vector("list", length(water_years) * nrow(specs))
+  index <- 0L
+  reference <- NULL
+  layers <- NULL
   for (water_year in water_years) {
-    if (!quiet) message("Building WY", water_year, " archive pilot maps.")
-    result <- calculate_prism_archive_year(
-      water_year, reference, processed_manifest, processed_dir = processed_dir,
-      overwrite = overwrite, quiet = quiet
-    )
+    raster_paths <- setNames(file.path(
+      processed_dir, "prism", swc_prism$aoi_id, "seasonal-archive",
+      sprintf("wy%04d", water_year), paste0(specs$id, ".tif")
+    ), specs$id)
+    map_paths <- setNames(vapply(specs$id, function(product) {
+      prism_archive_map_path(water_year, product, maps_dir)
+    }, character(1)), specs$id)
+    need_rasters <- overwrite || any(!file.exists(raster_paths))
+    need_maps <- need_rasters || any(!file.exists(map_paths))
+    if (!quiet) message("WY", water_year, ": ",
+                        if (need_rasters) "calculating grids" else "grids current", "; ",
+                        if (need_maps) "rendering missing maps" else "maps current", ".")
+    if (need_rasters) {
+      if (is.null(reference)) {
+        reference <- build_prism_archive_reference(
+          reference_years, processed_manifest, processed_dir = processed_dir,
+          overwrite = overwrite, quiet = quiet
+        )
+      }
+      result <- calculate_prism_archive_year(
+        water_year, reference, processed_manifest, processed_dir = processed_dir,
+        overwrite = overwrite, quiet = quiet
+      )
+      rasters <- result$products
+    } else if (need_maps) {
+      rasters <- lapply(raster_paths, terra::rast)
+    } else {
+      rasters <- NULL
+    }
+    if (need_maps && is.null(layers)) {
+      layers <- list(
+        states = southwest_state_boundaries(),
+        counties = southwest_county_boundaries(),
+        countries = southwest_country_boundaries(),
+        cities = southwest_reference_cities(),
+        rivers = southwest_major_rivers()
+      )
+    }
     for (product in specs$id) {
-      path <- prism_archive_map_path(water_year, product, maps_dir)
-      if (!file.exists(path) || overwrite) {
+      path <- map_paths[[product]]
+      map_refreshed <- need_rasters || !file.exists(path)
+      if (map_refreshed) {
         plot <- plot_prism_archive_map(
-          result$products[[product]], product, water_year, reference$years,
-          states, counties, countries, cities, rivers
+          rasters[[product]], product, water_year, reference_years,
+          layers$states, layers$counties, layers$countries,
+          layers$cities, layers$rivers
         )
         footer <- paste0(
           "Data source: PRISM Climate Group via RCC-ACIS",
@@ -479,12 +564,46 @@ build_prism_archive_pilot_maps <- function(
           footer_text = footer
         )
       }
-      records[[length(records) + 1L]] <- data.frame(
+      index <- index + 1L
+      records[[index]] <- data.frame(
         water_year = water_year, product = product,
-        raster_path = result$paths[[product]], map_path = path,
+        raster_path = raster_paths[[product]], map_path = path,
+        map_refreshed = map_refreshed,
         stringsAsFactors = FALSE
       )
     }
   }
   do.call(rbind, records)
+}
+
+build_prism_archive_pilot_maps <- function(
+    water_years = c(1998L, 2011L), ...) {
+  build_prism_archive_maps(water_years, ...)
+}
+
+build_prism_archive_years <- function(
+    water_years,
+    roni = read_prism_archive_roni(),
+    page_dir = file.path("site", "pages", "archive"),
+    config_path = file.path("site", "_quarto.yml"),
+    overwrite = FALSE,
+    ...) {
+  water_years <- sort(unique(as.integer(water_years)))
+  if (!length(water_years) || anyNA(water_years) ||
+      any(!water_years %in% roni$water_year)) {
+    stop("Every requested archive year needs a RONI snapshot value.", call. = FALSE)
+  }
+  records <- build_prism_archive_maps(
+    water_years, overwrite = overwrite, ...
+  )
+  for (water_year in water_years) {
+    page <- file.path(page_dir, sprintf("wy%04d.qmd", water_year))
+    if (overwrite || !file.exists(page)) {
+      write_prism_archive_page(
+        water_year, roni$djf_roni[match(water_year, roni$water_year)], page_dir
+      )
+    }
+  }
+  write_prism_archive_navigation(page_dir, config_path)
+  records
 }

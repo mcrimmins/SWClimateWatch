@@ -166,12 +166,108 @@ website:
                   - href: pages/products/pcpn_water_year_concentration_03day.qmd
                     text: Precipitation concentration
       # END GENERATED MAP BROWSER
+      # BEGIN GENERATED HISTORIC YEARS
       - section: Historic Years
         contents:
-          - href: pages/archive/wy1998.qmd
-            text: 1997-98 (WY1998)
-          - href: pages/archive/wy2011.qmd
-            text: 2010-11 (WY2011)
+          - section: 2020s
+            contents:
+              - href: pages/archive/wy2025.qmd
+                text: 2024-25 (WY2025)
+              - href: pages/archive/wy2024.qmd
+                text: 2023-24 (WY2024)
+              - href: pages/archive/wy2023.qmd
+                text: 2022-23 (WY2023)
+              - href: pages/archive/wy2022.qmd
+                text: 2021-22 (WY2022)
+              - href: pages/archive/wy2021.qmd
+                text: 2020-21 (WY2021)
+              - href: pages/archive/wy2020.qmd
+                text: 2019-20 (WY2020)
+          - section: 2010s
+            contents:
+              - href: pages/archive/wy2019.qmd
+                text: 2018-19 (WY2019)
+              - href: pages/archive/wy2018.qmd
+                text: 2017-18 (WY2018)
+              - href: pages/archive/wy2017.qmd
+                text: 2016-17 (WY2017)
+              - href: pages/archive/wy2016.qmd
+                text: 2015-16 (WY2016)
+              - href: pages/archive/wy2015.qmd
+                text: 2014-15 (WY2015)
+              - href: pages/archive/wy2014.qmd
+                text: 2013-14 (WY2014)
+              - href: pages/archive/wy2013.qmd
+                text: 2012-13 (WY2013)
+              - href: pages/archive/wy2012.qmd
+                text: 2011-12 (WY2012)
+              - href: pages/archive/wy2011.qmd
+                text: 2010-11 (WY2011)
+              - href: pages/archive/wy2010.qmd
+                text: 2009-10 (WY2010)
+          - section: 2000s
+            contents:
+              - href: pages/archive/wy2009.qmd
+                text: 2008-09 (WY2009)
+              - href: pages/archive/wy2008.qmd
+                text: 2007-08 (WY2008)
+              - href: pages/archive/wy2007.qmd
+                text: 2006-07 (WY2007)
+              - href: pages/archive/wy2006.qmd
+                text: 2005-06 (WY2006)
+              - href: pages/archive/wy2005.qmd
+                text: 2004-05 (WY2005)
+              - href: pages/archive/wy2004.qmd
+                text: 2003-04 (WY2004)
+              - href: pages/archive/wy2003.qmd
+                text: 2002-03 (WY2003)
+              - href: pages/archive/wy2002.qmd
+                text: 2001-02 (WY2002)
+              - href: pages/archive/wy2001.qmd
+                text: 2000-01 (WY2001)
+              - href: pages/archive/wy2000.qmd
+                text: 1999-00 (WY2000)
+          - section: 1990s
+            contents:
+              - href: pages/archive/wy1999.qmd
+                text: 1998-99 (WY1999)
+              - href: pages/archive/wy1998.qmd
+                text: 1997-98 (WY1998)
+              - href: pages/archive/wy1997.qmd
+                text: 1996-97 (WY1997)
+              - href: pages/archive/wy1996.qmd
+                text: 1995-96 (WY1996)
+              - href: pages/archive/wy1995.qmd
+                text: 1994-95 (WY1995)
+              - href: pages/archive/wy1994.qmd
+                text: 1993-94 (WY1994)
+              - href: pages/archive/wy1993.qmd
+                text: 1992-93 (WY1993)
+              - href: pages/archive/wy1992.qmd
+                text: 1991-92 (WY1992)
+              - href: pages/archive/wy1991.qmd
+                text: 1990-91 (WY1991)
+              - href: pages/archive/wy1990.qmd
+                text: 1989-90 (WY1990)
+          - section: 1980s
+            contents:
+              - href: pages/archive/wy1989.qmd
+                text: 1988-89 (WY1989)
+              - href: pages/archive/wy1988.qmd
+                text: 1987-88 (WY1988)
+              - href: pages/archive/wy1987.qmd
+                text: 1986-87 (WY1987)
+              - href: pages/archive/wy1986.qmd
+                text: 1985-86 (WY1986)
+              - href: pages/archive/wy1985.qmd
+                text: 1984-85 (WY1985)
+              - href: pages/archive/wy1984.qmd
+                text: 1983-84 (WY1984)
+              - href: pages/archive/wy1983.qmd
+                text: 1982-83 (WY1983)
+              - href: pages/archive/wy1982.qmd
+                text: 1981-82 (WY1982)
+      # END GENERATED HISTORIC YEARS
       - href: pages/methods.qmd
         text: Methods
   page-footer:

@@ -18,6 +18,9 @@ for (script in c(
 
 check_swc_packages()
 archive_pilot <- build_prism_archive_pilot_maps()
-write_prism_archive_pilot_page(1998L, 2.1)
-write_prism_archive_pilot_page(2011L, -1.4)
+roni <- read_prism_archive_roni()
+for (year in c(1998L, 2011L)) {
+  write_prism_archive_page(year, roni$djf_roni[roni$water_year == year])
+}
+write_prism_archive_navigation()
 message("Built ", nrow(archive_pilot), " seasonal archive pilot maps and two pages.")

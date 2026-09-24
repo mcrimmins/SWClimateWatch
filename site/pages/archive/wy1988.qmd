@@ -1,0 +1,122 @@
+---
+title: "Water year 1988"
+subtitle: "October 1, 1987 to September 30, 1988"
+page-layout: full
+toc: false
+bread-crumbs: false
+body-classes: archive-year-page
+---
+
+::: {.archive-year-intro .archive-roni-el-nino}
+[El Niño · RONI +0.5 °C]{.archive-roni-badge}
+
+December-February 1988 Relative Oceanic Niño Index: a three-month measure of tropical Pacific sea-surface temperature anomalies relative to the tropics. [NOAA CPC data](https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso/roni/).
+:::
+
+## Cool season
+
+::: {.dashboard-map-grid}
+::: {.dashboard-map-card}
+![Cool-season precipitation](../../maps/generated/prism/seasonal-archive/wy1988/cool_total.png)
+
+::: {.archive-map-description}
+Total inches received from October through March.
+:::
+
+::: {.dashboard-card-actions}
+[Open full-resolution PNG](../../maps/generated/prism/seasonal-archive/wy1988/cool_total.png){.btn .btn-sm .btn-outline-primary}
+:::
+:::
+
+::: {.dashboard-map-card}
+![Cool-season precipitation rank](../../maps/generated/prism/seasonal-archive/wy1988/cool_percentile.png)
+
+::: {.archive-map-description}
+Higher ranks indicate a wetter-than-usual cool season.
+:::
+
+::: {.dashboard-card-actions}
+[Open full-resolution PNG](../../maps/generated/prism/seasonal-archive/wy1988/cool_percentile.png){.btn .btn-sm .btn-outline-primary}
+:::
+:::
+
+::: {.dashboard-map-card}
+![Maximum-temperature departure](../../maps/generated/prism/seasonal-archive/wy1988/maxt_departure.png)
+
+::: {.archive-map-description}
+Positive values indicate warmer-than-normal afternoons.
+:::
+
+::: {.dashboard-card-actions}
+[Open full-resolution PNG](../../maps/generated/prism/seasonal-archive/wy1988/maxt_departure.png){.btn .btn-sm .btn-outline-primary}
+:::
+:::
+
+::: {.dashboard-map-card}
+![Minimum-temperature departure](../../maps/generated/prism/seasonal-archive/wy1988/mint_departure.png)
+
+::: {.archive-map-description}
+Positive values indicate warmer-than-normal nights.
+:::
+
+::: {.dashboard-card-actions}
+[Open full-resolution PNG](../../maps/generated/prism/seasonal-archive/wy1988/mint_departure.png){.btn .btn-sm .btn-outline-primary}
+:::
+:::
+
+::: {.dashboard-map-card}
+![Wet-day-count rank](../../maps/generated/prism/seasonal-archive/wy1988/wet_day_count_percentile.png)
+
+::: {.archive-map-description}
+Higher ranks mean wet days occurred more often.
+:::
+
+::: {.dashboard-card-actions}
+[Open full-resolution PNG](../../maps/generated/prism/seasonal-archive/wy1988/wet_day_count_percentile.png){.btn .btn-sm .btn-outline-primary}
+:::
+:::
+
+::: {.dashboard-map-card}
+![Precipitation per wet day](../../maps/generated/prism/seasonal-archive/wy1988/wet_day_intensity.png)
+
+::: {.archive-map-description}
+Average inches on days with at least 0.04 inch.
+:::
+
+::: {.dashboard-card-actions}
+[Open full-resolution PNG](../../maps/generated/prism/seasonal-archive/wy1988/wet_day_intensity.png){.btn .btn-sm .btn-outline-primary}
+:::
+:::
+
+:::
+
+## Full water year
+
+::: {.dashboard-map-grid}
+::: {.dashboard-map-card}
+![Water-year precipitation](../../maps/generated/prism/seasonal-archive/wy1988/water_total.png)
+
+::: {.archive-map-description}
+Total inches received through September 30.
+:::
+
+::: {.dashboard-card-actions}
+[Open full-resolution PNG](../../maps/generated/prism/seasonal-archive/wy1988/water_total.png){.btn .btn-sm .btn-outline-primary}
+:::
+:::
+
+::: {.dashboard-map-card}
+![Water-year precipitation rank](../../maps/generated/prism/seasonal-archive/wy1988/water_percentile.png)
+
+::: {.archive-map-description}
+Higher ranks indicate a wetter-than-usual full year.
+:::
+
+::: {.dashboard-card-actions}
+[Open full-resolution PNG](../../maps/generated/prism/seasonal-archive/wy1988/water_percentile.png){.btn .btn-sm .btn-outline-primary}
+:::
+:::
+
+:::
+
+Cool-season maps cover October 1-March 31. Precipitation ranks use water years 1982-2025; temperature departures use 1991-2020 normals. The full water year ends September 30 and includes months outside the cool season. These maps do not attribute local conditions solely to ENSO.
