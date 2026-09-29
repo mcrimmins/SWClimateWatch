@@ -125,7 +125,7 @@ map_dashboard_page_text <- function(dashboard, expected_data_dates = NULL) {
     "",
     paste0("**", map_dashboard_date_line(expected_data_dates), "** · Reference period: 1991–2020"),
     "",
-    "Explore all maps from Map Browser in the navigation menu.",
+    "Explore all maps from Current Maps in the navigation menu.",
     ":::",
     "",
     "::: {.dashboard-map-grid}"
@@ -460,7 +460,7 @@ map_product_navigation_lines <- function(products) {
   enabled <- products[products$enabled, , drop = FALSE]
   lines <- c(
     "      # BEGIN GENERATED MAP BROWSER",
-    "      - section: Map Browser",
+    "      - section: Current Maps",
     "        contents:"
   )
   for (section in unique(enabled$section)) {
@@ -479,7 +479,10 @@ map_product_navigation_lines <- function(products) {
       }
     }
   }
-  c(lines, "      # END GENERATED MAP BROWSER")
+  c(lines,
+    "          - href: pages/current-snow.qmd",
+    "            text: Snow",
+    "      # END GENERATED MAP BROWSER")
 }
 
 update_map_product_navigation <- function(

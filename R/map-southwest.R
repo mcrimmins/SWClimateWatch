@@ -20,6 +20,9 @@ southwest_context_states <- c(
 #' @param rivers Optional sf object containing selected major rivers.
 #' @param interstates Optional sf object containing selected interstate highways.
 #' @param cities Optional data frame with `city`, `longitude`, and `latitude`.
+#' @param city_label_fill_alpha Opacity of the white background behind city labels.
+#' @param tucson_label_southwest Place Tucson's label southwest of its marker
+#'   instead of letting the label-repelling algorithm place it.
 #' @param mask_to_states Whether to mask the raster to the supplied state polygons.
 #' @param county_colour,county_linewidth,county_alpha,county_linetype County
 #'   boundary styling.
@@ -55,6 +58,8 @@ southwest_raster_map <- function(
       southwest_interstates()
     } else NULL,
     cities = NULL,
+    city_label_fill_alpha = 0.60,
+    tucson_label_southwest = TRUE,
     mask_to_states = FALSE,
     county_colour = "#3f474c",
     county_linewidth = 0.28,
@@ -103,6 +108,16 @@ southwest_raster_map <- function(
         call. = FALSE
       )
     }
+  }
+  if (!is.numeric(city_label_fill_alpha) ||
+      length(city_label_fill_alpha) != 1L ||
+      !is.finite(city_label_fill_alpha) ||
+      city_label_fill_alpha < 0 || city_label_fill_alpha > 1) {
+    stop("`city_label_fill_alpha` must be between 0 and 1.", call. = FALSE)
+  }
+  if (!is.logical(tucson_label_southwest) ||
+      length(tucson_label_southwest) != 1L || is.na(tucson_label_southwest)) {
+    stop("`tucson_label_southwest` must be TRUE or FALSE.", call. = FALSE)
   }
 
   map_crs <- terra::crs(raster, proj = TRUE)
@@ -266,8 +281,7 @@ southwest_raster_map <- function(
       , drop = FALSE
     ]
     if (nrow(cities) > 0L) {
-      plot <- plot +
-        ggplot2::geom_point(
+      plot <- plot + ggplot2::geom_point(
           data = cities,
           ggplot2::aes(x = x, y = y),
           colour = "#101820",
@@ -276,15 +290,21 @@ southwest_raster_map <- function(
           size = 1.8,
           stroke = 0.55,
           inherit.aes = FALSE
-        ) +
-        ggrepel::geom_label_repel(
-          data = cities,
+        )
+      tucson <- if (tucson_label_southwest) {
+        cities[cities$city == "Tucson", , drop = FALSE]
+      } else cities[FALSE, , drop = FALSE]
+      repel_cities <- if (nrow(tucson) == 1L) {
+        cities[cities$city != "Tucson", , drop = FALSE]
+      } else cities
+      if (nrow(repel_cities) > 0L) plot <- plot + ggrepel::geom_label_repel(
+          data = repel_cities,
           ggplot2::aes(x = x, y = y, label = city),
           seed = 314,
           size = 3.05,
           fontface = "bold",
           colour = "#101820",
-          fill = scales::alpha("white", 0.76),
+          fill = scales::alpha("white", city_label_fill_alpha),
           label.size = 0,
           label.padding = grid::unit(0.09, "lines"),
           box.padding = grid::unit(0.18, "lines"),
@@ -295,6 +315,29 @@ southwest_raster_map <- function(
           max.overlaps = Inf,
           inherit.aes = FALSE
         )
+      if (nrow(tucson) == 1L) {
+        label_point <- sf::st_as_sf(
+          data.frame(longitude = -111.23, latitude = 32.08),
+          coords = c("longitude", "latitude"), crs = 4326
+        )
+        label_xy <- sf::st_coordinates(sf::st_transform(label_point, crs = map_crs))
+        tucson$label_x <- label_xy[1L, 1L]
+        tucson$label_y <- label_xy[1L, 2L]
+        plot <- plot +
+          ggplot2::geom_segment(
+            data = tucson,
+            ggplot2::aes(x = label_x, y = label_y, xend = x, yend = y),
+            colour = "#4c5961", linewidth = 0.28, inherit.aes = FALSE
+          ) +
+          ggplot2::geom_label(
+            data = tucson,
+            ggplot2::aes(x = label_x, y = label_y, label = city),
+            size = 3.05, fontface = "bold", colour = "#101820",
+            fill = scales::alpha("white", city_label_fill_alpha),
+            linewidth = 0, label.padding = grid::unit(0.09, "lines"),
+            inherit.aes = FALSE
+          )
+      }
     }
   }
 

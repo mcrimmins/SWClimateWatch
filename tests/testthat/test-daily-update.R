@@ -52,6 +52,7 @@ testthat::test_that("daily update skips maps when no files changed", {
   result <- run_swc_daily_update(
     update_prism = TRUE,
     timing_path = timing_path,
+    pending_marker_path = tempfile(fileext = ".pending"),
     sync_function = fixture$sync,
     processing_plan_function = fixture$plan,
     processing_function = fixture$process,
@@ -91,6 +92,7 @@ testthat::test_that("daily update rebuilds maps after data changes", {
   result <- run_swc_daily_update(
     update_prism = TRUE,
     timing_path = NULL,
+    pending_marker_path = tempfile(fileext = ".pending"),
     sync_function = fixture$sync,
     processing_plan_function = fixture$plan,
     processing_function = fixture$process,
@@ -119,6 +121,7 @@ testthat::test_that("daily update supports deliberate map-only rebuilds", {
     update_prism = FALSE,
     force_maps = TRUE,
     timing_path = NULL,
+    pending_marker_path = tempfile(fileext = ".pending"),
     sync_function = fixture$sync,
     processing_plan_function = fixture$plan,
     processing_function = fixture$process,
@@ -150,6 +153,7 @@ testthat::test_that("development mode retains overview and catalog builds", {
   result <- run_swc_daily_update(
     update_prism = FALSE,
     timing_path = NULL,
+    pending_marker_path = tempfile(fileext = ".pending"),
     sync_function = fixture$sync,
     processing_plan_function = fixture$plan,
     processing_function = fixture$process,
@@ -164,4 +168,53 @@ testthat::test_that("development mode retains overview and catalog builds", {
   testthat::expect_equal(fixture$calls$maps, 0L)
   testthat::expect_equal(fixture$calls$overview, 1L)
   testthat::expect_equal(fixture$calls$site, 1L)
+})
+
+testthat::test_that("a failed map stage remains pending on an unchanged retry", {
+  marker <- tempfile(fileext = ".pending")
+  attempts <- 0L
+  map_calls <- 0L
+  sync <- function(...) {
+    attempts <<- attempts + 1L
+    data.frame(changed = attempts == 1L)
+  }
+  maps <- function(...) {
+    map_calls <<- map_calls + 1L
+    if (map_calls == 1L) stop("simulated map failure")
+    list(example = data.frame(path = "map.png"))
+  }
+  run <- function() run_swc_daily_update(
+    update_prism = TRUE, timing_path = NULL, pending_marker_path = marker,
+    sync_function = sync,
+    processing_plan_function = function(...) data.frame(refresh = logical()),
+    processing_function = function(...) data.frame(),
+    map_function = maps,
+    overview_function = function(...) "overview.png",
+    site_function = function(...) data.frame(enabled = TRUE),
+    date_function = function(...) c(Temperature = "2026-09-21"),
+    quiet = TRUE
+  )
+  testthat::expect_error(run(), "simulated map failure")
+  testthat::expect_true(file.exists(marker))
+  retry <- run()
+  testthat::expect_equal(map_calls, 2L)
+  testthat::expect_false(retry$summary$data_changed)
+  testthat::expect_true(retry$summary$maps_rebuilt)
+  testthat::expect_false(file.exists(marker))
+})
+
+testthat::test_that("pending processing is recorded before processing starts", {
+  marker <- tempfile(fileext = ".pending")
+  testthat::expect_error(
+    run_swc_daily_update(
+      update_prism = TRUE, timing_path = NULL, pending_marker_path = marker,
+      sync_function = function(...) data.frame(changed = FALSE),
+      processing_plan_function = function(...) data.frame(refresh = TRUE),
+      processing_function = function(...) stop("simulated processing failure"),
+      date_function = function(...) c(Temperature = "2026-09-21"),
+      quiet = TRUE
+    ),
+    "simulated processing failure"
+  )
+  testthat::expect_true(file.exists(marker))
 })

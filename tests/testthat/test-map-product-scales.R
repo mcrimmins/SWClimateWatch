@@ -29,9 +29,9 @@ testthat::test_that("categorical families use interpretable climate classes", {
   testthat::expect_equal(
     percentile$labels,
     c(
-      "<=2\nnear-record low", "2-10\nmuch below", "10-33\nbelow",
+      "<=2\nexceptionally low", "2-10\nmuch below", "10-33\nbelow",
       "33-67\nnear normal", "67-90\nabove", "90-98\nmuch above",
-      ">98\nnear-record high"
+      ">98\nexceptionally high"
     )
   )
   testthat::expect_true("90-110%" %in% percent_normal$labels)
@@ -60,9 +60,9 @@ testthat::test_that("categorical mode creates a discrete map legend", {
   testthat::expect_equal(
     as.character(fill_scale$get_breaks()),
     c(
-      "<=2\nnear-record low", "2-10\nmuch below", "10-33\nbelow",
+      "<=2\nexceptionally low", "2-10\nmuch below", "10-33\nbelow",
       "33-67\nnear normal", "67-90\nabove", "90-98\nmuch above",
-      ">98\nnear-record high"
+      ">98\nexceptionally high"
     )
   )
 })

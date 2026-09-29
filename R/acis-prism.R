@@ -117,6 +117,7 @@ plan_prism_download <- function(
     chunk_days = NULL,
     today = Sys.Date(),
     revision_ages = swc_prism$revision_ages,
+    gap_lookback_days = max(revision_ages),
     manifest = read_prism_manifest(prism_manifest_path(raw_dir))) {
   mode <- match.arg(mode)
   variables <- validate_prism_variables(variables)
@@ -126,6 +127,12 @@ plan_prism_download <- function(
     stop("`aoi_id` must contain only lowercase letters, numbers, and hyphens.", call. = FALSE)
   }
   today <- as.Date(today)
+  if (mode == "update" &&
+      (!is.numeric(gap_lookback_days) || length(gap_lookback_days) != 1L ||
+       is.na(gap_lookback_days) || !is.finite(gap_lookback_days) ||
+       gap_lookback_days < 1 || gap_lookback_days != floor(gap_lookback_days))) {
+    stop("`gap_lookback_days` must be a positive whole number.", call. = FALSE)
+  }
 
   if (mode == "bootstrap") {
     start <- as.Date(start %||% swc_prism$archive_start)
@@ -154,6 +161,7 @@ plan_prism_download <- function(
   } else {
     target_dates <- sort(unique(today - as.integer(revision_ages)))
     target_dates <- target_dates[target_dates >= as.Date("1981-01-01") & target_dates < today]
+    newest_expected <- today - 2L
 
     manifest_fields <- c("product", "aoi_id", "end_date")
     if (nrow(manifest) > 0L && all(manifest_fields %in% names(manifest))) {
@@ -161,7 +169,6 @@ plan_prism_download <- function(
       daily_dates <- manifest$end_date[matching_aoi]
       daily_dates <- daily_dates[!is.na(daily_dates)]
       if (length(daily_dates) > 0L) {
-        newest_expected <- today - 2L
         if (max(daily_dates) < newest_expected) {
           missing_tail <- seq(max(daily_dates) + 1L, newest_expected, by = "day")
           target_dates <- sort(unique(c(target_dates, missing_tail)))
@@ -169,12 +176,51 @@ plan_prism_download <- function(
       }
     }
 
-    chunks <- data.frame(
-      start_date = target_dates,
-      end_date = target_dates,
-      refresh = TRUE,
-      stringsAsFactors = FALSE
+    chunks <- merge(
+      data.frame(
+        start_date = target_dates, end_date = target_dates, refresh = TRUE
+      ),
+      data.frame(variable = variables, stringsAsFactors = FALSE),
+      by = NULL
     )
+    # Scan the mutable revision window for interior gaps by variable. A
+    # complete monthly range covers its days even without daily manifest rows.
+    required_coverage_fields <- c(
+      "product", "aoi_id", "variable", "start_date", "end_date"
+    )
+    if (nrow(manifest) > 0L &&
+        all(required_coverage_fields %in% names(manifest))) {
+      first_checked <- max(as.Date("1981-01-01"), today - as.integer(gap_lookback_days))
+      if (first_checked <= newest_expected) {
+        starts <- as.Date(manifest$start_date)
+        ends <- as.Date(manifest$end_date)
+        recent <- !is.na(starts) & !is.na(ends) &
+          manifest$product == "daily" & manifest$aoi_id == aoi_id &
+          ends >= first_checked & starts <= newest_expected
+        recent[is.na(recent)] <- FALSE
+        if (any(recent)) {
+          check_dates <- seq(first_checked, newest_expected, by = "day")
+          gaps <- lapply(variables, function(variable) {
+            covered <- rep(FALSE, length(check_dates))
+            rows <- which(recent & !is.na(manifest$variable) &
+                            manifest$variable == variable)
+            for (index in rows) {
+              covered <- covered | (
+                check_dates >= starts[[index]] & check_dates <= ends[[index]]
+              )
+            }
+            missing <- check_dates[!covered]
+            data.frame(
+              start_date = missing, end_date = missing,
+              refresh = rep(TRUE, length(missing)),
+              variable = rep(variable, length(missing)),
+              stringsAsFactors = FALSE
+            )
+          })
+          chunks <- unique(rbind(chunks, do.call(rbind, gaps)))
+        }
+      }
+    }
     subdirectory <- "recent"
   }
 
@@ -182,7 +228,7 @@ plan_prism_download <- function(
     return(data.frame())
   }
 
-  plan <- merge(
+  plan <- if (mode == "update") chunks else merge(
     chunks,
     data.frame(variable = variables, stringsAsFactors = FALSE),
     by = NULL

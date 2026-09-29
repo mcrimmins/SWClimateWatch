@@ -56,7 +56,10 @@ testthat::test_that("redundant map landing pages are absent", {
   testthat::expect_true(any(grepl("logo: assets/branding/southwest-climate-watch-mark-transparent.png", navigation, fixed = TRUE)))
   testthat::expect_true(file.exists(file.path(site_dir, "assets", "branding", "southwest-climate-watch-mark-transparent.png")))
   testthat::expect_false(any(grepl("current-conditions.qmd|map-browser.qmd", c(navigation, homepage))))
-  testthat::expect_true(any(grepl("Explore all maps from Map Browser", homepage, fixed = TRUE)))
+  testthat::expect_true(any(grepl("Explore all maps from Current Maps", homepage, fixed = TRUE)))
+  testthat::expect_true(any(grepl("- section: Current Maps", navigation, fixed = TRUE)))
+  testthat::expect_equal(sum(grepl("- href: pages/current-snow.qmd", navigation, fixed = TRUE)), 1L)
+  testthat::expect_true(any(grepl("text: Snow", navigation, fixed = TRUE)))
   testthat::expect_true(any(grepl("[Climate Assessment for the Southwest](https://www.climas.arizona.edu/)", homepage, fixed = TRUE)))
   testthat::expect_true(any(grepl("[Climate Science Applications Program](https://cales.arizona.edu/climate/)", homepage, fixed = TRUE)))
   testthat::expect_true(any(grepl("[University of Arizona Cooperative Extension](https://extension.arizona.edu/topics/climate)", homepage, fixed = TRUE)))
@@ -145,7 +148,10 @@ testthat::test_that("map site generation honors enabled products", {
   testthat::expect_true(any(grepl("dashboard-map-grid", homepage, fixed = TRUE)))
   testthat::expect_equal(sum(grepl("dashboard-map-card", homepage, fixed = TRUE)), 4L)
   testthat::expect_true(any(grepl("enabled_map.qmd", homepage, fixed = TRUE)))
-  testthat::expect_true(any(grepl("Explore all maps from Map Browser", homepage, fixed = TRUE)))
+  testthat::expect_true(any(grepl("Explore all maps from Current Maps", homepage, fixed = TRUE)))
+  testthat::expect_true(any(grepl("- section: Current Maps", navigation, fixed = TRUE)))
+  testthat::expect_equal(sum(grepl("- href: pages/current-snow.qmd", navigation, fixed = TRUE)), 1L)
+  testthat::expect_true(any(grepl("text: Snow", navigation, fixed = TRUE)))
 })
 
 testthat::test_that("dashboard rejects unknown, duplicate, and disabled products", {

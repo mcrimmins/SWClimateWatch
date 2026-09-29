@@ -58,16 +58,28 @@ map_product_categorical_classes <- function(
     stop("Categorical map scales require two increasing finite limits.", call. = FALSE)
   }
 
-  if (grepl("percentile", product_id) && !grepl("change", product_id)) {
+  if (identical(product_id, "snodas_swe_observed")) {
+    boundaries <- c(0, 0.1, 1, 2, 4, 8, 12, 20, 30, 90)
+    labels <- c("<=0.1", "0.1-1", "1-2", "2-4", "4-8",
+                "8-12", "12-20", "20-30", ">30")
+  } else if (identical(product_id, "snodas_swe_departure")) {
+    boundaries <- c(-90, -16, -8, -4, -1, 1, 4, 8, 16, 90)
+    labels <- c("<=-16", "-16--8", "-8--4", "-4--1", "-1-1",
+                "1-4", "4-8", "8-16", ">16")
+  } else if (identical(product_id, "snodas_snow_days")) {
+    boundaries <- c(0, 1, 7, 30, 60, 90, 120, 180, 244)
+    labels <- c("<=1", "1-7", "7-30", "30-60", "60-90",
+                "90-120", "120-180", ">180")
+  } else if (grepl("percentile", product_id) && !grepl("change", product_id)) {
     boundaries <- c(0, 2, 10, 33, 67, 90, 98, 100)
     labels <- c(
-      "<=2\nnear-record low",
+      "<=2\nexceptionally low",
       "2-10\nmuch below",
       "10-33\nbelow",
       "33-67\nnear normal",
       "67-90\nabove",
       "90-98\nmuch above",
-      ">98\nnear-record high"
+      ">98\nexceptionally high"
     )
   } else if (grepl("percent_normal", product_id)) {
     boundaries <- c(0, 50, 75, 90, 110, 125, 150, 200)

@@ -1,0 +1,13 @@
+---
+title: "Current snow conditions"
+page-layout: full
+toc: false
+bread-crumbs: false
+body-classes: snow-current-page
+---
+
+SNODAS water year 2027 covers October 1, 2026 through May 31, 2027. Snow water equivalent (SWE) is modeled snowpack water, not daily snowfall. The maps use the latest verified regional data available, which may lag today's date.
+
+::: {.dashboard-note}
+Current-season snow maps are waiting for a listed, verified SNODAS archive that passes the map-quality check. Check back after the source posts new data.
+:::

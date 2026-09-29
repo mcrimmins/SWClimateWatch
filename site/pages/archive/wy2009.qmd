@@ -120,3 +120,40 @@ Higher ranks indicate a wetter-than-usual full year.
 :::
 
 Cool-season maps cover October 1-March 31. Precipitation ranks use water years 1982-2025; temperature departures use 1991-2020 normals. The full water year ends September 30 and includes months outside the cool season. These maps do not attribute local conditions solely to ENSO.
+
+<!-- BEGIN GENERATED SNODAS SNOW MAPS -->
+
+## Snow season
+
+October-May SNODAS model estimates. Peak SWE is the highest daily 
+snow-water equivalent; snow-covered days count dates with at least 
+0.1 inch SWE. Source gaps or screened cells may leave blank areas.
+
+::: {.dashboard-map-grid}
+::: {.dashboard-map-card}
+![Peak snow water equivalent](../../maps/generated/snodas/seasonal-archive/wy2009/peak_swe.png)
+
+::: {.archive-map-description}
+Maximum daily SWE during October-May, in inches.
+:::
+
+::: {.dashboard-card-actions}
+[Open full-resolution PNG](../../maps/generated/snodas/seasonal-archive/wy2009/peak_swe.png){.btn .btn-sm .btn-outline-primary}
+:::
+:::
+
+::: {.dashboard-map-card}
+![Snow-covered days](../../maps/generated/snodas/seasonal-archive/wy2009/snow_days.png)
+
+::: {.archive-map-description}
+Number of October-May days with SWE at least 0.1 inch.
+:::
+
+::: {.dashboard-card-actions}
+[Open full-resolution PNG](../../maps/generated/snodas/seasonal-archive/wy2009/snow_days.png){.btn .btn-sm .btn-outline-primary}
+:::
+:::
+
+:::
+
+<!-- END GENERATED SNODAS SNOW MAPS -->

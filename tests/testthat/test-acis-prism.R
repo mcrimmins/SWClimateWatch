@@ -166,6 +166,49 @@ testthat::test_that("update planning ignores manifest records from another AOI",
   testthat::expect_equal(plan$start_date, as.Date("2026-08-28"))
 })
 
+testthat::test_that("update planning repairs an interior gap for one variable", {
+  days <- seq(as.Date("2026-09-01"), as.Date("2026-09-21"), by = "day")
+  manifest <- expand.grid(
+    variable = c("maxt", "mint", "pcpn"),
+    day = days,
+    stringsAsFactors = FALSE
+  )
+  manifest <- manifest[!(
+    manifest$variable == "mint" &
+      manifest$day == as.Date("2026-09-17")
+  ), , drop = FALSE]
+  manifest$product <- "daily"
+  manifest$aoi_id <- "az-nm-pad050"
+  manifest$start_date <- as.Date(manifest$day)
+  manifest$end_date <- as.Date(manifest$day)
+  plan <- plan_prism_download(
+    "update", today = as.Date("2026-09-24"),
+    revision_ages = c(2L, 6L), gap_lookback_days = 23L,
+    manifest = manifest, raw_dir = tempfile("raw-")
+  )
+  gap <- plan[plan$start_date == as.Date("2026-09-17"), , drop = FALSE]
+  testthat::expect_identical(gap$variable, "mint")
+  testthat::expect_equal(nrow(plan), 7L)
+  testthat::expect_true(all(plan$refresh))
+})
+
+testthat::test_that("monthly files cover days without individual daily entries", {
+  manifest <- data.frame(
+    product = "daily",
+    aoi_id = "az-nm-pad050",
+    variable = c("maxt", "mint", "pcpn"),
+    start_date = as.Date("2026-09-01"),
+    end_date = as.Date("2026-09-21")
+  )
+  plan <- plan_prism_download(
+    "update", today = as.Date("2026-09-24"),
+    revision_ages = c(2L, 6L), gap_lookback_days = 23L,
+    manifest = manifest, raw_dir = tempfile("raw-")
+  )
+  testthat::expect_equal(nrow(plan), 6L)
+  testthat::expect_false(any(plan$start_date == as.Date("2026-09-17")))
+})
+
 testthat::test_that("new manifest records can extend a legacy manifest", {
   directory <- tempfile("manifest-")
   dir.create(directory)

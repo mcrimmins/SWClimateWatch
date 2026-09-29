@@ -83,6 +83,24 @@ swc_prism <- list(
   request_jitter_seconds = 0.5
 )
 
+# SNODAS is a separate, snapshot-based snow source. Keep its pilot and future
+# update traffic independent of the RCC-ACIS PRISM request plan.
+swc_snodas <- list(
+  aoi_id = "az-nm-pad050",
+  base_url = "https://noaadata.apps.nsidc.org/NOAA/G02158/masked",
+  # Fixed masked-grid origin after NOHRSC's 2013-10-01 grid shift. Values are
+  # from a modern daily header; the AOI crop is derived from this origin.
+  common_grid_origin = c(xmin = -124.733333333328, ymax = 52.8749999999979),
+  common_grid_resolution = 0.008333333333333,
+  variables = c("swe", "depth"),
+  native_units = c(swe = "inch", depth = "inch"),
+  first_date = as.Date("2003-09-30"),
+  max_requests_per_run = 5L,
+  request_delay_seconds = 1.5,
+  request_jitter_seconds = 0.5,
+  request_timeout_seconds = 180L
+)
+
 prism_is_wet_day <- function(
     values,
     threshold = swc_prism$wet_day_threshold_inches,

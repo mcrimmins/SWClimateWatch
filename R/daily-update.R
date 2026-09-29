@@ -28,6 +28,31 @@ swc_downloads_changed <- function(downloads) {
   changed
 }
 
+swc_map_rebuild_pending <- function(path) {
+  !is.null(path) && file.exists(path)
+}
+
+swc_mark_map_rebuild_pending <- function(path, run_id) {
+  if (is.null(path) || file.exists(path)) return(invisible(path))
+  dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+  temporary <- tempfile("map-rebuild-", tmpdir = dirname(path), fileext = ".pending")
+  on.exit(unlink(temporary), add = TRUE)
+  writeLines(run_id, temporary, useBytes = TRUE)
+  if (!file.rename(temporary, path) && !file.exists(path)) {
+    stop("Could not record the pending map rebuild: ", path, call. = FALSE)
+  }
+  invisible(path)
+}
+
+swc_clear_map_rebuild_pending <- function(path) {
+  if (is.null(path) || !file.exists(path)) return(invisible(NULL))
+  unlink(path)
+  if (file.exists(path)) {
+    stop("Could not clear the pending map rebuild: ", path, call. = FALSE)
+  }
+  invisible(NULL)
+}
+
 swc_append_timing_report <- function(rows, path) {
   if (is.null(path)) return(invisible(NULL))
   dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
@@ -49,6 +74,7 @@ run_swc_daily_update <- function(
     force_maps = swc_env_flag("SWC_FORCE_MAPS"),
     quiet = FALSE,
     timing_path = file.path("data", "diagnostics", "daily-update-timings.csv"),
+    pending_marker_path = file.path("data", "diagnostics", "map-rebuild-pending.txt"),
     sync_function = sync_prism,
     processing_plan_function = plan_prism_daily_processing,
     processing_function = process_prism_daily_plan,
@@ -97,12 +123,20 @@ run_swc_daily_update <- function(
       swc_call_supported(sync_function, list(mode = "update", quiet = quiet))
     })
     changed_downloads <- swc_downloads_changed(downloads)
+    if (any(changed_downloads)) {
+      swc_mark_map_rebuild_pending(pending_marker_path, run_id)
+    }
     processing_plan <- run_stage("processing_plan", function() {
       swc_call_supported(
         processing_plan_function,
         list(verify_source_md5 = FALSE)
       )
     })
+    if (is.data.frame(processing_plan) && nrow(processing_plan) > 0L &&
+        "refresh" %in% names(processing_plan) &&
+        any(as.logical(processing_plan$refresh), na.rm = TRUE)) {
+      swc_mark_map_rebuild_pending(pending_marker_path, run_id)
+    }
     processed <- run_stage("processing", function() {
       swc_call_supported(
         processing_function,
@@ -118,11 +152,16 @@ run_swc_daily_update <- function(
 
   after_dates <- swc_safe_product_dates(date_function)
   data_changed <- any(changed_downloads) || nrow(processed) > 0L
-  rebuild_maps <- data_changed || isTRUE(force_maps)
+  if (data_changed || isTRUE(force_maps)) {
+    swc_mark_map_rebuild_pending(pending_marker_path, run_id)
+  }
+  rebuild_maps <- data_changed || isTRUE(force_maps) ||
+    swc_map_rebuild_pending(pending_marker_path)
   if (rebuild_maps) {
     run_stage("map_products", function() {
       swc_call_supported(map_function, list(quiet = quiet))
     }, items = function(value) length(value))
+    swc_clear_map_rebuild_pending(pending_marker_path)
   } else {
     if (isTRUE(update_prism) && !quiet) {
       message(

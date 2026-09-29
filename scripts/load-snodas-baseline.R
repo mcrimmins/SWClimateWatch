@@ -1,0 +1,10 @@
+# Load the SNODAS year-by-year planner and overnight runner without starting it.
+source("R/config.R")
+source("R/snodas.R")
+source("R/audit-snodas.R")
+source("R/snodas-inventory.R")
+source("R/snodas-bootstrap.R")
+source("R/snodas-quality-pilot.R")
+source("R/snodas-season-audit.R")
+source("R/snodas-baseline.R")
+source("R/snodas-analysis-qc.R")

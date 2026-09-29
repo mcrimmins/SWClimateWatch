@@ -3,6 +3,13 @@
 A Quarto website for automatically updated climate maps covering Arizona and
 New Mexico. Analysis is written in R using PRISM climate data.
 
+To update the climate data and publish the website from the project root in
+RStudio, run `source("scripts/daily-update-and-publish.R")`. See the
+[publishing guide](docs/publishing.md) for previews, forced publishing, and
+site-only options.
+The [publishing guide](docs/publishing.md#optional-phone-notifications-with-ntfy)
+also explains optional ntfy phone alerts for progress, errors, and success.
+
 ## Project layout
 
 ```text
@@ -234,6 +241,49 @@ and RStudio console examples.
 See [Map design and branding](docs/map-design.md) for the map hierarchy,
 reference layers, footprint behavior, city-label policy, and logo location.
 
+The separate [SNODAS snow-data pilot](docs/snow-data-pilot.md) documents the
+sample SWE/depth maps and a capped one-day downloader and processor. Current-
+season snow maps now have a separate, quality-gated local site update; the
+unified daily publication entry point runs it after the PRISM update. The
+[SNODAS availability and quality audit](docs/snodas-availability-audit.md)
+documents the provisional historical period, common-grid pilot, resumable
+metadata-only directory inventory, bounded SWE/depth content check, and
+required safeguards. The October–May WY2005–2025 local bootstrap is complete:
+5,103 paired daily grids are processed. Three dates have small, localized
+SWE/depth consistency flags; these cells are excluded in memory for future
+historical analysis without changing source rasters. Three-date calendar-day
+and centered-five-day climatology pilots are complete. The full 244-date
+October-May SNODAS reference baseline is also complete. See the
+[SNODAS climatology pilot](docs/snodas-climatology-pilot.md) for the method
+comparison and the
+[resumable October-May baseline guide](docs/snodas-daily-climatology.md)
+for methods, local validation, and RStudio console commands.
+The [unpublished SNODAS winter map pilot](docs/snodas-map-pilot.md)
+compares observed SWE and SWE departure in ordinary and snowier winters.
+Categorical classes are the pilot default, continuous maps remain optional,
+and a review flag records unusually high modeled SWE without changing the
+source grids. A separate [bounded October-May daily updater](docs/snodas-daily-update.md)
+refreshes directory listings, downloads at most five listed archives per run,
+resumes from verified regional files, and releases full-domain archives after
+checking the SWE/depth pair. It allows a brief June closeout for late May
+postings. It also stages observed SWE and daily median-departure maps only
+when their quality gate passes; the unified script can then render and deploy
+the site in the same manually started run. The [end-of-season snow archive pilot](docs/snodas-seasonal-archive.md)
+builds peak SWE and snow-covered-day maps from each completed October-May
+season for review. Its [read-only snow QC pilots](docs/snodas-seasonal-archive.md#read-only-event-level-qc-pilot)
+group high-SWE patches into episodes and screen for strong relative anomalies
+below 50 inches. A second-stage, read-only
+[relative-anomaly triage](docs/snodas-seasonal-archive.md#relative-anomaly-episode-triage-pilot)
+uses daily SWE/depth evidence and groups flagged cells into date episodes
+before any publication-rule changes. Its
+[local episode review report](docs/snodas-seasonal-archive.md#local-episode-review-report)
+shows peak-day neighborhoods and 15-day histories. The 21 historical snow
+seasons have been staged locally on the Historic Years pages; site deployment
+is a separate step. The [Historic Years snow-map staging guide](docs/snodas-seasonal-archive.md#staging-snow-maps-on-historic-years-pages)
+explains the checksum-checked workflow. The [SNODAS remaining-work note](docs/snodas-next-steps.md)
+records the manual October 2026 readiness, later unattended-operation work,
+and a future seasonal peak-SWE anomaly product.
+
 The expandable website map browser is generated from
 `config/map-products.yml`. The catalog contains one stable ID for each of the
 51 public products, organized into Temperature and Precipitation branches and
@@ -383,48 +433,18 @@ the command resumes from the manifests and existing files.
 
 ## S3 deployment
 
-For local Windows/RStudio deployment, use the R script below from the project
-root. It builds the map catalog, renders `site/` into `site/_site/`, validates
-the rendered pages, and then previews an S3 sync. It does **not** download new
-PRISM data. The destination is required, must include a dedicated site prefix
-beneath a parent folder (such as `climate/sw-climate-watch/`), and is not stored
-in the repository. Replace the example URI with the exact
-bucket and prefix for this site; do not use the other project's `nam-tracker/`
-prefix. The AWS CLI must be installed and configured with access to that bucket.
+For the **daily local update and publication**, run this single command from
+the project root in the RStudio console:
 
 ```r
-source("scripts/deploy-site-s3.R")
-destination <- "s3://YOUR-BUCKET/climate/YOUR-DEDICATED-SITE-PREFIX/"
-deploy_swc_site(destination, region = "us-west-2")  # dry run; no upload
+source("scripts/daily-update-and-publish.R")
 ```
 
-Review the listed uploads and the destination. When they are correct, run:
-
-```r
-deploy_swc_site(destination, region = "us-west-2", dry_run = FALSE, render = FALSE)
-```
-
-For this project's confirmed destination, a one-command RStudio entry point is
-also available. **Sourcing it performs a live upload** after rendering and
-validation:
-
-```r
-source("scripts/publish-site-s3.R")
-```
-
-It is fixed to `s3://cales-climate-reports/climate/watch/` in `us-west-2`, with
-`delete = FALSE`. Change those settings in `scripts/publish-site-s3.R` if the
-hosting arrangement changes; keep `scripts/deploy-site-s3.R` as the reusable,
-dry-run-first helper.
-
-`render = FALSE` deploys the same rendered files you just reviewed, while still
-validating them again. Deletion is off by default. If and only if this prefix is
-dedicated entirely to this site and you want stale remote files removed, preview
-with `delete = TRUE` and then repeat the live call with `delete = TRUE`. A failed
-catalog build, Quarto render, or rendered-page validation stops before S3 sync.
-The script uses the Quarto bundled with RStudio on Windows if it is not on PATH;
-set `SWC_QUARTO` to another `quarto.cmd` path if needed. It does not store AWS
-credentials in this repository.
+This is a **live** workflow. It checks PRISM and in-season SNODAS, rebuilds
+current maps as needed, and renders and validates the site before syncing to
+`s3://cales-climate-reports/climate/watch/`. Remote deletion is off. See the
+[publishing guide](docs/publishing.md) for all one-line options, including a
+dry run and a site-only deployment that does not check for new climate data.
 
 The existing Bash scripts below are for the later Ubuntu automation setup, not
 the local Windows workflow:

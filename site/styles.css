@@ -351,6 +351,20 @@ body.product-page #title-block-header {
   opacity: 0.92;
 }
 
+/* Historic map titles are already drawn inside each PNG. Keep the figure
+   caption for screen readers without repeating it visually below the map. */
+.archive-year-page .dashboard-map-card figcaption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .archive-year-intro {
   display: flex;
   flex-wrap: wrap;

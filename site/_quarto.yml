@@ -23,7 +23,7 @@ website:
       - href: index.qmd
         text: Home
       # BEGIN GENERATED MAP BROWSER
-      - section: Map Browser
+      - section: Current Maps
         contents:
           - section: Temperature
             contents:
@@ -165,6 +165,8 @@ website:
                     text: Maximum 3-day percentile
                   - href: pages/products/pcpn_water_year_concentration_03day.qmd
                     text: Precipitation concentration
+          - href: pages/current-snow.qmd
+            text: Snow
       # END GENERATED MAP BROWSER
       # BEGIN GENERATED HISTORIC YEARS
       - section: Historic Years

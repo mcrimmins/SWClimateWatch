@@ -35,6 +35,12 @@ curated `southwest_reference_cities()` table. Priority 1 and 2 labels are shown
 by default to keep the display legible. Priority 3 communities remain available
 for larger specialty maps.
 
+City labels now use a 60%-opaque white backing so colored climate cells show
+through more clearly. Tucson's label is anchored southwest of its city marker
+with a short leader, keeping it off the Catalina Mountains to the northeast.
+Other labels retain automatic collision avoidance. These defaults apply when
+maps are next rendered; previously generated PNGs do not change on their own.
+
 Tribal-area outlines are shown faintly on every operational map. The source is
 the U.S. Census Bureau's 2025 cartographic American Indian, Alaska Native, and
 Native Hawaiian (AIANNH) areas. Census AIANNH geography includes both legal and
@@ -110,7 +116,8 @@ products and 26 precipitation products, organized under two top-level branches
 and 17 topic groups. Each leaf opens a single-map page with a permanent URL,
 breadcrumb, short interpretation below the plot, and full-resolution PNG link.
 The active branch opens automatically; unrelated branches remain collapsed.
-Map Browser expands directly to Temperature and Precipitation; there is no
+Current Maps expands directly to Temperature and Precipitation, with a Snow
+link alongside them; there is no
 separate overview page.
 
 The sidebar separates four levels visually: bold main links, rust-colored
@@ -151,11 +158,12 @@ summary.
 Continuous rendering remains the catalog default, while percentile-based
 products opt into categorical rendering. Categorical rendering uses a
 horizontal swatch legend with explicit grouped ranges. Percentile maps
-use seven classes: near-record low (`<=2`), much below (`2-10`), below
+use seven classes: exceptionally low (`<=2`), much below (`2-10`), below
 (`10-33`), near normal (`33-67`), above (`67-90`), much above (`90-98`), and
-near-record high (`>98`). The near-record wording is intentional because the
-daily centered-window samples contain more observations than a single annual
-series. Departures, percent-of-normal, percentile change, and freeze timing use
+exceptionally high (`>98`). These labels describe the tails of the 1991–2020
+reference distribution without implying an all-time record; daily and rolling
+samples pool a centered five-day window, while water-year ranks use 30 annual
+values. Departures, percent-of-normal, percentile change, and freeze timing use
 dedicated classes.
 Other products derive categorical classes from their existing vetted legend
 breaks, so every catalog product can use either display mode.
@@ -165,7 +173,7 @@ rasters, climatologies, percentile calculations, or stored numerical values.
 
 `R/map-product-site.R` validates the catalog and dashboard selection, writes the
 homepage and enabled product pages under `site/`, removes stale generated pages,
-and replaces only the marked Map Browser section of `site/_quarto.yml`. Run it
+and replaces only the marked Current Maps section of `site/_quarto.yml`. Run it
 from the project root:
 
 ```r

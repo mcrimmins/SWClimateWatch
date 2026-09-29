@@ -59,7 +59,8 @@ deploy_swc_site <- function(
     region = "us-west-2",
     dry_run = TRUE,
     delete = FALSE,
-    render = TRUE) {
+    render = TRUE,
+    extra_validation = NULL) {
   destination <- swc_deploy_destination(destination)
   if (length(region) != 1L || is.na(region) ||
       !grepl("^[a-z]{2}(-gov)?-[a-z]+-[0-9]+$", region)) {
@@ -69,6 +70,9 @@ deploy_swc_site <- function(
       !is.logical(delete) || length(delete) != 1L || is.na(delete) ||
       !is.logical(render) || length(render) != 1L || is.na(render)) {
     stop("`dry_run`, `delete`, and `render` must each be TRUE or FALSE.", call. = FALSE)
+  }
+  if (!is.null(extra_validation) && !is.function(extra_validation)) {
+    stop("`extra_validation` must be a function or NULL.", call. = FALSE)
   }
   project_dir <- normalizePath(getwd(), winslash = "/", mustWork = TRUE)
   if (!file.exists(file.path(project_dir, "site", "_quarto.yml")) ||
@@ -98,6 +102,7 @@ deploy_swc_site <- function(
     "Validate rendered maps and pages"
   )
   output_dir <- normalizePath(output_dir, winslash = "/", mustWork = TRUE)
+  if (!is.null(extra_validation)) extra_validation(output_dir)
   swc_deploy_run(
     aws,
     swc_deploy_sync_args(output_dir, destination, region, dry_run, delete),
