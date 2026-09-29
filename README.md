@@ -285,12 +285,17 @@ output locations, and RStudio build commands are documented in
 [the seasonal archive methods](docs/seasonal-archive.md).
 
 Before publication, `scripts/validate-map-products.R` verifies every enabled
-catalog PNG, its dated source copy and data date, generated page, navigation
-entry, and full-resolution link. Seasonal freeze products are allowed to retain
-their most recent publishable completed-season maps. The validator writes
-`data/diagnostics/map-product-status.csv` and stops the workflow if any enabled
-product fails. From the RStudio Terminal, validate an already rendered site
-with:
+current-map PNG, its dated source copy and data date, generated page, navigation
+entry, and full-resolution link. It also checks all 44 Historic Years pages and
+352 archive PNGs, including their RONI badges, navigation, rendered links, and
+copies in the rendered site. The archive uses the current 1998 × 1533 map layout;
+the two original pilot years, WY1998 and WY2011, are explicitly accepted in
+their older 2070 × 1472 layout and counted separately. Seasonal freeze products
+may retain their most recent publishable completed-season maps. The checks write
+`data/diagnostics/map-product-status.csv` and
+`data/diagnostics/archive-publication-status.csv`, and stop the workflow if
+anything required fails. From the RStudio Terminal, validate an already
+rendered site with:
 
 ```powershell
 Rscript scripts/validate-map-products.R --require-rendered

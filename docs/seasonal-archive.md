@@ -108,3 +108,8 @@ quarto render site
 
 The archive is intentionally separate from the 51 daily-updated maps. It is a
 one-time historical build and is not run by `R/update-data.R`.
+The publication validator checks every expected archive year, product PNG,
+source page, RONI badge, and navigation link. After a site render, it also
+checks every rendered page, map link, and copied PNG before an S3 upload.
+WY1998 and WY2011 retain the older 2070 × 1472 pilot map layout; the validator
+reports these 16 known exceptions while requiring 1998 × 1533 for other years.

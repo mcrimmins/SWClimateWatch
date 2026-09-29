@@ -3,6 +3,8 @@ source(file.path("R", "acis-prism.R"))
 source(file.path("R", "process-prism.R"))
 source(file.path("R", "build-current-prism-maps.R"))
 source(file.path("R", "map-product-site.R"))
+source(file.path("R", "prism-seasonal-archive.R"))
+source(file.path("R", "validate-prism-seasonal-archive.R"))
 
 arguments <- commandArgs(trailingOnly = TRUE)
 unknown <- setdiff(arguments, "--require-rendered")
@@ -15,3 +17,8 @@ validation <- validate_map_product_publication(
   require_rendered = "--require-rendered" %in% arguments
 )
 print(validation)
+
+archive_validation <- validate_prism_archive_publication(
+  require_rendered = "--require-rendered" %in% arguments
+)
+print(archive_validation)
