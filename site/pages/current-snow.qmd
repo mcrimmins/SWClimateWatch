@@ -8,6 +8,34 @@ body-classes: snow-current-page
 
 SNODAS water year 2027 covers October 1, 2026 through May 31, 2027. Snow water equivalent (SWE) is modeled snowpack water, not daily snowfall. The maps use the latest verified regional data available, which may lag today's date.
 
-::: {.dashboard-note}
-Current-season snow maps are waiting for a listed, verified SNODAS archive that passes the map-quality check. Check back after the source posts new data.
+**Latest map date: October 1, 2026**
+
+::: {.dashboard-map-grid}
+::: {.dashboard-map-card}
+![](../maps/generated/snodas/current/swe-observed.png){fig-alt="Observed snow water equivalent across Arizona and New Mexico"}
+
+::: {.archive-map-description}
+Modeled SWE on the map date, in inches. Pale areas may be snow-free; missing data remain uncolored.
 :::
+
+::: {.dashboard-card-actions}
+[Open full-resolution PNG](../maps/generated/snodas/current/swe-observed.png){.btn .btn-sm .btn-outline-primary}
+:::
+:::
+
+::: {.dashboard-map-card}
+![](../maps/generated/snodas/current/swe-departure.png){fig-alt="Snow water equivalent departure from the seasonal median"}
+
+::: {.archive-map-description}
+Observed SWE minus the centered-five-day WY2005-WY2025 median for this calendar date, in inches. Positive values indicate more snow water than the reference median.
+:::
+
+::: {.dashboard-card-actions}
+[Open full-resolution PNG](../maps/generated/snodas/current/swe-departure.png){.btn .btn-sm .btn-outline-primary}
+:::
+:::
+
+:::
+
+SNODAS is a modeled 06:00 UTC snowpack snapshot supplied by NOAA/NSIDC.
+The departure is an absolute difference, not a percentile or snowfall total.

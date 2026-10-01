@@ -8,8 +8,9 @@ source("scripts/daily-update-and-publish.R")
 ```
 
 It checks PRISM for new or revised data, updates the current maps when needed,
-checks SNODAS during October-May and the June closeout, then renders, validates,
-and syncs changed site content to the live website. The destination is
+checks SNODAS during October-May and the June closeout, refreshes the beta
+station explorer from RCC-ACIS, then renders, validates, and syncs changed site
+content to the live website. The destination is
 `s3://cales-climate-reports/climate/watch/` in `us-west-2`. No remote files are
 deleted. It is safe to rerun: existing downloads and processed data are reused,
 and the site sync is skipped if its source content has not changed since the
@@ -22,7 +23,7 @@ last successful daily publication. This is a manual command, not a scheduler.
 | Normal daily update and publish | `source("scripts/daily-update-and-publish.R")` | Yes, if site content changed |
 | Preview the entire daily workflow, including the proposed S3 sync | `source("scripts/load-daily-publish.R"); run_swc_daily_publish(dry_run = TRUE, force_publish = TRUE)` | No |
 | Update data and republish even when the site fingerprint is unchanged | `source("scripts/load-daily-publish.R"); run_swc_daily_publish(dry_run = FALSE, force_publish = TRUE)` | Yes |
-| Publish existing local data/site changes without checking for new PRISM or SNODAS data | `source("scripts/publish-site-s3.R")` | Yes |
+| Publish existing local data/site changes without checking for new PRISM, SNODAS, or station data | `source("scripts/publish-site-s3.R")` | Yes |
 | Preview a site-only render and S3 sync | `source("scripts/deploy-site-s3.R"); deploy_swc_site("s3://cales-climate-reports/climate/watch/", dry_run = TRUE)` | No |
 
 **Important:** The full-workflow preview still downloads/checks live data and
@@ -33,11 +34,21 @@ commands build the map catalog and render the site from existing maps; they do
 the [local map-only rebuild](../README.md#local-prism-downloader-development)
 first, then use the site-only publish command.
 
+The station beta requires a verified local snapshot in `site/stations/` before
+the first render. On a machine where you have already built the screened local
+station explorer, stage it without new requests with
+`source("scripts/stage-station-beta.R")`. That snapshot is generated locally and
+is not committed to Git. A failed daily station refresh keeps the last verified
+snapshot; the other map updates can continue. Publication stops if the rendered
+station page or its assets are missing. Individual delayed stations remain marked
+in the beta page rather than silently treated as current.
+
 The site-only publisher does not update the daily workflow's success marker, so
 the next normal daily run may sync the same site again. All commands require
 Quarto and a configured AWS CLI with write access to the bucket; credentials
 are not stored in this repository. A failed render or validation stops the
-sync. The daily workflow also validates the Current Snow page before syncing.
+sync. The daily workflow validates both the Current Snow and Station Conditions
+pages before syncing.
 
 ## Checking the result
 
@@ -53,7 +64,9 @@ was needed. A full-workflow dry run returns `PREVIEW`. The daily workflow logs
 attempts in `data/diagnostics/daily-publish/runs.csv` and writes the last
 successful live site fingerprint to
 `data/diagnostics/daily-publish/last-success.csv`. These are local diagnostics,
-not files uploaded to the website.
+not files uploaded to the website. Station refresh attempts and provisional
+counts are recorded separately in
+`data/diagnostics/acis-stations/beta-update-runs.csv`.
 
 The site-only command returns `swc_publish_result` in the RStudio session. It
 does not update the climate data or the daily publication log.
@@ -81,7 +94,8 @@ topic or token.
 Live daily runs then send a start notice, PRISM/data-check milestones, a
 publishing notice, and a final success or failure notice. A SNODAS failure or
 quality hold sends a warning while the last verified snow page remains in
-place. The site-only live publishing command sends start, publishing, success,
+place. A station refresh failure also sends a warning while the last verified
+station page remains in place. The site-only live publishing command sends start, publishing, success,
 or failure notices too. Dry runs send **no** phone alerts. Alert messages are
 deliberately high-level; consult the local console and daily-publish log for
 the underlying error. A failed ntfy delivery warns locally but does not stop

@@ -52,6 +52,10 @@ testthat::test_that("current snow page has a waiting state and no repeat caption
                                     fixed = TRUE)), 2L)
   testthat::expect_true(any(grepl('fig-alt="Observed snow water', live,
                                   fixed = TRUE)))
+  testthat::expect_equal(sum(grepl("../maps/generated/snodas/current/", live,
+                                   fixed = TRUE)), 4L)
+  testthat::expect_false(any(grepl("../../maps/generated/snodas/current/", live,
+                                   fixed = TRUE)))
   testthat::expect_false(any(grepl("![Observed snow water", live,
                                    fixed = TRUE)))
 })

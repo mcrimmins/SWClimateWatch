@@ -45,7 +45,8 @@ snodas_current_site_page_text <- function(water_year, date = as.Date(NA_characte
       "source posts new data.", ":::"))
   }
   pretty_date <- sub(" 0", " ", format(date, "%B %d, %Y"), fixed = TRUE)
-  root <- "../../maps/generated/snodas/current/"
+  # This page is in site/pages/, one level below the site root.
+  root <- "../maps/generated/snodas/current/"
   card <- function(filename, alt, description) c(
     "::: {.dashboard-map-card}",
     paste0("![](", root, filename, '){fig-alt="', alt, '"}'), "",
@@ -64,7 +65,7 @@ snodas_current_site_page_text <- function(water_year, date = as.Date(NA_characte
          "Snow water equivalent departure from the seasonal median",
          "Observed SWE minus the centered-five-day WY2005-WY2025 median for this calendar date, in inches. Positive values indicate more snow water than the reference median."),
     ":::", "",
-    "SNODAS is a modeled 06:00 UTC snowpack snapshot supplied by NOAA/NSIDC. ",
+    "SNODAS is a modeled 06:00 UTC snowpack snapshot supplied by NOAA/NSIDC.",
     "The departure is an absolute difference, not a percentile or snowfall total.")
 }
 

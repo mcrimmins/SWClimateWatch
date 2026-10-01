@@ -1,6 +1,9 @@
 project:
   type: website
   output-dir: _site
+  resources:
+    - stations/**
+    - maps/generated/snodas/current/*.png
 
 website:
   title: "Southwest Climate Watch"
@@ -168,6 +171,8 @@ website:
           - href: pages/current-snow.qmd
             text: Snow
       # END GENERATED MAP BROWSER
+      - href: pages/station-conditions.qmd
+        text: Station Conditions (beta)
       # BEGIN GENERATED HISTORIC YEARS
       - section: Historic Years
         contents:

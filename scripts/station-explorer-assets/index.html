@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Southwest station conditions · beta</title>
+  <link rel="stylesheet" href="leaflet.css">
+  <link rel="stylesheet" href="explorer.css">
+  <script src="leaflet.js" defer></script>
+  <script src="explorer.js" defer></script>
+</head>
+<body>
+  <main>
+    <header class="page-head">
+      <div>
+        <p class="eyebrow">Southwest Climate Watch · beta</p>
+        <h1>Station conditions</h1>
+        <p id="period" class="subtitle"></p>
+      </div>
+      <p class="prototype-note">Beta station view. Recent observations may arrive late or be revised; delayed and partial values are marked.</p>
+    </header>
+
+    <section class="map-card" aria-label="Interactive station map">
+      <div class="map-toolbar">
+        <label for="summary-period">Summary period</label>
+        <select id="summary-period">
+          <option value="7day">7 days</option>
+          <option value="30day" selected>30 days</option>
+          <option value="90day">90 days</option>
+          <option value="6month">6 months</option>
+          <option value="12month">12 months</option>
+        </select>
+        <label for="map-metric">Color stations by</label>
+        <select id="map-metric">
+          <option value="pcpn_value">Precipitation total</option>
+          <option value="tmean_value">Mean temperature</option>
+          <option value="pcpn_anomaly">Precipitation departure</option>
+          <option value="tmean_anomaly">Temperature departure</option>
+          <option value="pcpn_percentile">Precipitation percentile</option>
+          <option value="tmean_percentile">Temperature percentile</option>
+        </select>
+        <label class="basemap-switch"><input id="basemap-toggle" type="checkbox" checked> Basemap</label>
+        <label class="basemap-switch"><input id="label-unavailable" type="checkbox"> Label unavailable</label>
+        <span id="map-count" class="map-count"></span>
+      </div>
+      <div id="map" role="application" aria-label="Map of fixed weather stations in and around Arizona and New Mexico"></div>
+      <div id="legend" class="legend" aria-label="Map color legend"></div>
+      <p class="map-note">Numbered labels show values; ≥ is a provisional precipitation lower bound, * is a temperature result from a partial current period, and dashed edges indicate a caution or pending report. Nearby labels become colored dots until you zoom in. Muted dots are unavailable stations, not zeros. Hover for a quick summary; click or tap for details. ThreadEx area series are in the tables only. <span id="basemap-status"></span></p>
+      <details class="coverage-panel">
+        <summary id="coverage-title">Why are some values unavailable?</summary>
+        <div id="coverage-breakdown"></div>
+        <a href="coverage-by-station.csv" download>Download station-by-station coverage audit</a>
+      </details>
+    </section>
+
+    <section id="station-detail" class="detail-section" aria-label="Selected station detail" hidden>
+      <div class="detail-head">
+        <div>
+          <p class="eyebrow">Selected station</p>
+          <h2 id="detail-title">Station detail</h2>
+          <p id="detail-subtitle"></p>
+        </div>
+        <button id="detail-close" type="button" aria-label="Close station detail">Close</button>
+      </div>
+      <div id="detail-content" aria-live="polite"></div>
+    </section>
+
+    <section class="data-section" aria-label="Station data tables">
+      <div class="data-controls">
+        <label>Find station <input id="search" type="search" placeholder="Name or state" autocomplete="off"></label>
+        <label>State <select id="state-filter"><option value="">All states</option></select></label>
+        <label class="check"><input id="available-only" type="checkbox"> Values available for map metric only</label>
+      </div>
+      <div id="selected" class="selected" aria-live="polite">Select a station on the map or in a table.</div>
+      <div class="tabs" role="tablist" aria-label="Station data categories">
+        <button id="tab-current" role="tab" aria-selected="true" aria-controls="panel-current" data-tab="current">Current values</button>
+        <button id="tab-ranks" role="tab" aria-selected="false" aria-controls="panel-ranks" data-tab="ranks" tabindex="-1">Percentiles &amp; ranks</button>
+        <button id="tab-extremes" role="tab" aria-selected="false" aria-controls="panel-extremes" data-tab="extremes" tabindex="-1">Recent extremes</button>
+      </div>
+      <section id="panel-current" role="tabpanel" aria-labelledby="tab-current" class="tab-panel"></section>
+      <section id="panel-ranks" role="tabpanel" aria-labelledby="tab-ranks" class="tab-panel" hidden></section>
+      <section id="panel-extremes" role="tabpanel" aria-labelledby="tab-extremes" class="tab-panel" hidden></section>
+    </section>
+
+    <aside class="methods">
+      <h2>Reading this preview</h2>
+      <p>Precipitation comparisons need every day. When only the most recent one or two reports are missing (one for a 7-day period), ≥ marks the observed total as a provisional lower bound; no departure or rank is shown until the period is complete. Mean temperature can use at least 95% valid paired high/low days if no gap exceeds two consecutive days. At 98% or more it displays normally; at 95–&lt;98%, * marks the partial current result, including its departure and rank. Dashed edges identify these and other cautions. Missing days are never filled with zero.</p>
+      <p>The 6- and 12-month options are rolling calendar periods ending on the displayed date; their day counts vary with the calendar. Departures compare the current period with at least 15 eligible corresponding periods from 1991–2020 (15–19 receive a caution). Percentiles and ranks compare one corresponding period per earlier year across the station’s usable record; at least 25 years are required (25–29 receive a caution). Historical precipitation periods must be complete; historical temperature periods use the same 95% rule. A higher percentile means a wetter or warmer period. Ties use a midpoint percentile.</p>
+      <p>The extremes tab shows the largest daily precipitation, highest maximum temperature, and lowest minimum temperature within the selected period. These are rolling-period values, not formal annual Climdex indices. Missing, stale, or quality-flagged values are not imputed. Station records may have different comparison periods; check the years and sample count in the rank table.</p>
+      <p>Source: RCC-ACIS station observations. Map boundaries are geographic context only. No live station request is made when this page opens.</p>
+    </aside>
+  </main>
+  <script id="explorer-data" type="application/json">__EXPLORER_DATA__</script>
+</body>
+</html>

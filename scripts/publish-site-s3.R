@@ -16,7 +16,10 @@ swc_publish_result <- tryCatch({
     dry_run = FALSE,
     delete = FALSE,
     render = TRUE,
-    extra_validation = swc_daily_publish_validate_snow
+    extra_validation = function(output_dir) {
+      swc_daily_publish_validate_snow(output_dir)
+      swc_daily_publish_validate_stations(output_dir)
+    }
   )
   swc_ntfy_send_safe("success", "Southwest Climate Watch published successfully: https://cales.arizona.edu/climate/watch/")
   result

@@ -349,3 +349,65 @@ requires an external index and therefore is not a strictly PRISM-only product.
 11. Extreme-temperature frequencies and seasonal freeze products — implemented.
 12. ENSO composites and configurable analog-year comparisons.
 13. Separately validated SPI module.
+
+## Deferred: daily-refresh performance review (October 1, 2026)
+
+Keep all products enabled for now. Revisit their cost and value before changing
+the public map suite. In the October 1 full update, 30 PRISM requests took 54
+seconds and processing took 10 seconds; rebuilding 25 map groups took 1 hour
+40 minutes. The full update-and-publish attempt took 2 hours 11 minutes and
+stopped at the Current Snow link validation before any S3 sync. That publishing
+failure was a separate relative-path issue, not the cause of slow map builds.
+
+| Group (two maps each) | October 1 build time | Daily decision to revisit |
+| --- | ---: | --- |
+| Current dry-spell length and percentile | 43m 25s | Highest priority to optimize; the percentile is also a homepage card. |
+| Longest dry spell in 180 days and percentile | 16m 21s | Candidate to pause if its distinct monitoring value is limited. |
+| 90-day wet-day intensity and percentile | 11m 08s | Compare value with wet-day count and precipitation totals. |
+| 90-day very-wet-day contribution and percentile | 8m 55s | Candidate for less-frequent or on-demand production. |
+
+Together these groups used about 80 of the 100 map-build minutes (roughly
+80%). The expense was predominantly the calendar-day reference calculations,
+not downloads, raster clipping, or PNG rendering. A repeat build for the same
+calendar date can reuse its cache and be much faster; a new calendar date may
+need a new reference cache. Current dry spell, wet-day intensity, and very-wet
+contribution already have exact incremental paths from the preceding calendar
+date. Those paths were unavailable for September 29 because the September 28
+cache files were absent; all three September 29 manifests report `direct`.
+Measure a consecutive-date run before treating the cold-build times as routine
+daily costs. Source revisions can also invalidate a parent cache.
+
+Options to evaluate, without yet committing to one:
+
+1. **Verify the existing incremental path on the next consecutive date.**
+   Record `build_method` and elapsed time for current dry spell, wet-day
+   intensity, and very-wet contribution. This is a low-effort measurement,
+   not a change to the maps or their statistics.
+2. **Profile and optimize the current dry-spell cold build if needed.** This run
+   computed a 365-day reference and then expanded to 730 days, spending about
+   11 and 30 minutes respectively. Investigate whether that duplicated pass
+   can be avoided without changing the metric. Retain tests for long spells
+   and exact rank results. Moderate-to-high development effort; savings need
+   benchmarking.
+3. **Pause complete low-priority groups using `config/map-products.yml`.** Both
+   products in a group must be disabled to skip its expensive reference build;
+   disabling only the percentile still invokes the shared calculation. The
+   measured group times above are approximate upper bounds on per-run savings,
+   not guaranteed future timings. If pausing current dry spell, first replace
+   its homepage card and remove its navigation entry through the normal site
+   generator. Low configuration effort, but a scientific/product decision.
+4. **Separate daily core maps from slower enrichment maps.** A weekly or
+   on-demand cadence could reduce ordinary daily runs, but every retained map
+   must visibly show its actual data date; never present an older map as today's.
+   Moderate workflow and publication-validation effort.
+5. **Prebuild selected calendar-day reference caches off the daily path.** This
+   shifts computation rather than eliminating it and increases local storage;
+   benchmark a small date range and disk usage before considering a broad
+   backfill. Higher effort, and less attractive given the project's lean-data
+   objective.
+
+Next review should compare several *new-date* runs, time the calculations
+inside the four groups, and decide which maps users rely on before disabling
+anything. The operational timing files are
+`data/diagnostics/daily-update-timings.csv` and
+`data/diagnostics/map-update-timings.csv`.

@@ -1,0 +1,28 @@
+---
+title: "Station Conditions (beta)"
+page-layout: full
+toc: false
+---
+
+This beta view uses RCC-ACIS station observations. The date shown below is the
+latest verified station snapshot; a delayed station is marked in the map and
+tables rather than silently carried forward.
+
+[Open the station explorer full screen](../stations/index.html){.btn .btn-sm .btn-outline-primary}
+
+<iframe id="station-explorer-frame" src="../stations/index.html?embedded=1" title="Interactive station conditions map and tables" style="width:100%;height:2200px;border:0;display:block" loading="eager"></iframe>
+
+<script>
+(() => {
+  const frame = document.getElementById("station-explorer-frame");
+  frame.addEventListener("load", () => {
+    const body = frame.contentDocument?.body;
+    if (!body) return;
+    const resize = () => {
+      frame.style.height = `${Math.max(800, body.scrollHeight + 12)}px`;
+    };
+    resize();
+    new ResizeObserver(resize).observe(body);
+  });
+})();
+</script>

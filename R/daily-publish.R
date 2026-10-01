@@ -1,4 +1,4 @@
-# One local, date-aware PRISM + SNODAS update followed by validated site sync.
+# One local, date-aware PRISM + SNODAS + station update followed by site sync.
 
 # ntfy is opt-in. Never store a topic or access token in repository files.
 swc_ntfy_notify <- function(event, message, perform = httr2::req_perform) {
@@ -142,6 +142,46 @@ swc_daily_publish_update_snow <- function(today = Sys.Date()) {
   list(data = data, maps = maps)
 }
 
+swc_daily_publish_update_stations <- function(today = Sys.Date()) {
+  context <- new.env(parent = .GlobalEnv)
+  for (path in c("R/config.R", "R/acis-station-inventory.R",
+                 "R/acis-station-daily-pilot.R", "R/map-southwest.R",
+                 "R/acis-station-current-prototype.R",
+                 "R/acis-station-explorer-prototype.R",
+                 "R/acis-station-explorer-update-pilot.R",
+                 "R/acis-station-publication-audit.R",
+                 "R/acis-station-site.R"))
+    sys.source(path, envir = context)
+  context$run_swc_station_beta_update(today = today)
+}
+
+swc_daily_publish_validate_stations <- function(output_dir) {
+  page <- file.path(output_dir, "pages", "station-conditions.html")
+  station_dir <- file.path(output_dir, "stations")
+  needed <- c(page, file.path(station_dir, c(
+    "index.html", "explorer.js", "explorer.css", "leaflet.js",
+    "leaflet.css", "station-explorer-data.csv")))
+  if (!all(file.exists(needed)) || any(file.info(needed)$size <= 0))
+    stop("Rendered station beta page or its resources are missing; S3 sync stopped.",
+         call. = FALSE)
+  html <- paste(readLines(page, warn = FALSE), collapse = "\n")
+  if (!grepl("../stations/index.html?embedded=1", html, fixed = TRUE))
+    stop("Rendered station beta page does not link its explorer; S3 sync stopped.",
+         call. = FALSE)
+  rows <- utils::read.csv(file.path(station_dir, "station-explorer-data.csv"),
+                          stringsAsFactors = FALSE)
+  if (!nrow(rows) || !all(c("uid", "as_of") %in% names(rows)) ||
+      length(unique(rows$as_of)) != 1L ||
+      is.na(as.Date(rows$as_of[[1L]])))
+    stop("Rendered station data are invalid; S3 sync stopped.", call. = FALSE)
+  details <- file.path(station_dir, "station-details",
+                       paste0(unique(rows$uid), ".json"))
+  if (!all(file.exists(details)) || any(file.info(details)$size <= 0))
+    stop("Rendered station details are missing; S3 sync stopped.",
+         call. = FALSE)
+  invisible(TRUE)
+}
+
 swc_daily_publish_validate_snow <- function(
     output_dir,
     page_source = file.path("site", "pages", "current-snow.qmd")) {
@@ -153,13 +193,18 @@ swc_daily_publish_validate_snow <- function(
   source_text <- paste(readLines(page_source, warn = FALSE), collapse = "\n")
   html <- paste(readLines(rendered, warn = FALSE), collapse = "\n")
   filenames <- c("swe-observed.png", "swe-departure.png")
+  references <- paste0("../maps/generated/snodas/current/", filenames)
   if (all(vapply(filenames, grepl, logical(1), x = source_text,
                  fixed = TRUE))) {
     paths <- file.path(output_dir, "maps", "generated", "snodas",
                        "current", filenames)
     if (!all(file.exists(paths)) || any(file.info(paths)$size <= 0) ||
-        !all(vapply(filenames, grepl, logical(1), x = html,
-                    fixed = TRUE))) {
+        !all(vapply(paste0("](", references), grepl, logical(1),
+                    x = source_text, fixed = TRUE)) ||
+        !all(vapply(paste0('src="', references, '"'), grepl, logical(1),
+                    x = html, fixed = TRUE)) ||
+        !all(vapply(paste0('href="', references, '"'), grepl, logical(1),
+                    x = html, fixed = TRUE))) {
       stop("Rendered Current Snow images are missing or unlinked; S3 sync stopped.",
            call. = FALSE)
     }
@@ -189,7 +234,10 @@ swc_daily_publish_sync <- function(dry_run = FALSE) {
   deploy_swc_site(
     destination = "s3://cales-climate-reports/climate/watch/",
     region = "us-west-2", dry_run = dry_run, delete = FALSE,
-    render = TRUE, extra_validation = swc_daily_publish_validate_snow)
+    render = TRUE, extra_validation = function(output_dir) {
+      swc_daily_publish_validate_snow(output_dir)
+      swc_daily_publish_validate_stations(output_dir)
+    })
 }
 
 run_swc_daily_publish <- function(
@@ -200,6 +248,7 @@ run_swc_daily_publish <- function(
                          "runs.csv"),
     prism_update = swc_daily_publish_update_prism,
     snow_update = swc_daily_publish_update_snow,
+    station_update = swc_daily_publish_update_stations,
     site_fingerprint = swc_daily_publish_site_fingerprint,
     publish = swc_daily_publish_sync,
     notify = swc_ntfy_notify) {
@@ -264,10 +313,25 @@ run_swc_daily_publish <- function(
       message("SNODAS quality gate held the new map; retaining the last verified snow page.")
       send("warning", "SNODAS quality gate held the new map. The last verified snow page will be retained.")
     }
+    stage <- "station update"
+    stations <- tryCatch(station_update(today), error = function(error)
+      list(status = "ERROR", error = conditionMessage(error)))
+    if (!is.list(stations) || length(stations$status) != 1L ||
+        is.na(stations$status))
+      stop("Station update returned an invalid status.", call. = FALSE)
+    if (identical(stations$status, "ERROR")) {
+      warning("Station update failed; retaining the last verified beta page: ",
+              stations$error, call. = FALSE)
+      send("warning", "Station update failed. The last verified station page will be retained.")
+    } else if (identical(stations$status, "UPDATED_WITH_STALE_STATIONS")) {
+      send("warning", paste0("Station page updated with ", stations$pending,
+                             " delayed station caches; see beta-update-runs.csv."))
+    }
     send("progress", paste0(
       "Data checks complete. PRISM: ",
       if (record$prism_data_changed) "changed" else "unchanged",
-      "; SNODAS: ", record$snow_status, "."))
+      "; SNODAS: ", record$snow_status,
+      "; stations: ", stations$status, "."))
     stage <- "site publication"
     current <- site_fingerprint()
     previous <- swc_daily_publish_read_marker(marker_path)
@@ -279,7 +343,8 @@ run_swc_daily_publish <- function(
       message("Site source is unchanged since the last successful sync; upload skipped.")
       send("success", "Daily update complete. The site is unchanged; upload skipped.")
       return(invisible(list(status = record$status, prism = prism,
-                            snow = snow, published = FALSE)))
+                            snow = snow, stations = stations,
+                            published = FALSE)))
     }
     send("progress", "Rendering and validating the site, then syncing it to S3.")
     publish(dry_run = dry_run)
@@ -293,6 +358,7 @@ run_swc_daily_publish <- function(
       send("success", "Southwest Climate Watch published successfully: https://cales.arizona.edu/climate/watch/")
     }
     invisible(list(status = record$status, prism = prism, snow = snow,
+                   stations = stations,
                    published = record$published))
   }, error = function(error) {
     record$error <- conditionMessage(error)

@@ -431,6 +431,35 @@ Each call downloads at most the requested number of monthly files, processes all
 new raw files, and reports remaining download and processing counts. Repeating
 the command resumes from the manifests and existing files.
 
+## Station-data research pilot
+
+A bounded, resumable RCC-ACIS station inventory and annual completeness audit
+is available separately from the daily website workflow. It screens long
+records across Arizona, New Mexico, and the map's border pad, including
+ThreadEx area records. It does not publish station products yet. See the
+[station inventory guide](docs/station-inventory.md) for the command, outputs,
+and interpretation limits. A separate [daily station pilot](docs/station-daily-pilot.md)
+reviews gaps, ACIS flags, source IDs, and reporting freshness for 15 fixed
+stations and three ThreadEx area series; it also does not publish site maps.
+The [Climate Perspectives station-network comparison](docs/station-reference-network.md)
+crosswalks dated CSV exports against ACIS identifiers across the full padded
+map footprint. It can resumably audit additional station records by variable,
+without changing the current pilot or daily publication workflow. This is the
+first step toward a wider station map/table, full-record percentiles, and
+selected extremes indices. Its follow-on daily-quality audit reviews each
+unique ACIS record once, reuses completed pilot summaries, and retains only
+compact results; see the same guide for the local command.
+The [current station prototype](docs/station-reference-network.md#current-conditions-research-prototype)
+adds conservative 30-day precipitation and mean-temperature eligibility rules,
+compressed resumable daily caches, and a local map-and-sortable-table preview.
+It remains outside the public site and daily publishing workflow.
+The [interactive station explorer prototype](docs/station-explorer-prototype.md)
+builds a local map linked to three sortable table tabs from those same caches,
+with selectable 7-, 30-, 90-day and 6-/12-month windows, complete-window
+departures, full-record ranks, and recent extremes. A screened snapshot is now
+included as a Station Conditions beta page and refreshed by the daily publish
+workflow; the standalone local build still makes no new ACIS requests.
+
 ## S3 deployment
 
 For the **daily local update and publication**, run this single command from
@@ -440,8 +469,8 @@ the project root in the RStudio console:
 source("scripts/daily-update-and-publish.R")
 ```
 
-This is a **live** workflow. It checks PRISM and in-season SNODAS, rebuilds
-current maps as needed, and renders and validates the site before syncing to
+This is a **live** workflow. It checks PRISM and in-season SNODAS, refreshes
+station data, rebuilds current maps as needed, and renders and validates the site before syncing to
 `s3://cales-climate-reports/climate/watch/`. Remote deletion is off. See the
 [publishing guide](docs/publishing.md) for all one-line options, including a
 dry run and a site-only deployment that does not check for new climate data.

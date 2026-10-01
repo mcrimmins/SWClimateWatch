@@ -15,6 +15,7 @@ site/.quarto/
 data/raw/*
 data/processed/*
 site/maps/generated/*
+site/stations/
 data/diagnostics/
 docs/prism-data-methods.html
 !data/raw/.gitkeep
