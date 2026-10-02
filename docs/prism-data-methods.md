@@ -708,6 +708,11 @@ water_year_maps
   raster pass. This grouped exact calculation reduces the normal build from 150
   full archive passes to approximately 30; it does not approximate the dry-run
   statistic.
+- When Rcpp and a working local C++ toolchain are available, the grouped pass
+  uses the equivalent compiled window calculation in
+  `src/prism-longest-dry-spell.cpp`. If compilation is unavailable, it uses the
+  tested R calculation; the threshold, missing-data rule, and resulting maps
+  do not change. Compilation happens once per R session, not for every cell.
 - `calculate_prism_longest_dry_spell_products()` writes the current count and
   its empirical type-8 percentile rank. The percentile compares like with like:
   historical 180-day windows ending at the same time of year.

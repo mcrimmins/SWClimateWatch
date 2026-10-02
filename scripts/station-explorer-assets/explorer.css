@@ -21,8 +21,10 @@ select:focus-visible,input:focus-visible,button:focus-visible{outline:3px solid 
 #map{height:clamp(420px,54vw,720px);background:#f1f2ef;border-block:1px solid #d9ddda}
 .leaflet-container{background:#f1f2ef}
 .leaflet-tile-pane{filter:saturate(.68) contrast(.94) brightness(1.035)}
-.leaflet-tooltip{font:13px/1.4 system-ui,-apple-system,Segoe UI,sans-serif;white-space:normal;max-width:280px}
-.tooltip-name{font-weight:700;font-size:14px;margin-bottom:.2rem}
+.leaflet-tooltip{font:13px/1.4 system-ui,-apple-system,Segoe UI,sans-serif;white-space:normal;width:230px;max-width:calc(100vw - 24px);overflow-wrap:break-word}
+.tooltip-name{font-weight:700;font-size:14px;margin-bottom:.3rem}
+.tooltip-metric strong{white-space:nowrap}
+.tooltip-status{color:#586871;font-size:12px;margin-top:.25rem}
 .station-value-icon{background:transparent;border:0}
 .station-value-label{display:flex;align-items:center;justify-content:center;min-height:23px;padding:1px 4px;border:1px solid #24343b;border-radius:3px;box-shadow:0 1px 3px #0007;font:700 12px/1 system-ui,-apple-system,Segoe UI,sans-serif;white-space:nowrap}
 .station-value-label.selected{outline:2px solid #fff;box-shadow:0 0 0 3px #1c2b35,0 2px 5px #0008}
@@ -68,11 +70,30 @@ select:focus-visible,input:focus-visible,button:focus-visible{outline:3px solid 
 .detail-charts figure{margin:0;border:1px solid #e1e7e8;border-radius:7px;padding:.55rem;background:#fbfcfc}
 .detail-charts figcaption{font-weight:700;font-size:.93rem;margin:0 0 .3rem}
 .detail-charts svg{display:block;width:100%;height:auto}
+.chart-day{cursor:crosshair}
+.chart-day:focus-visible{stroke:#152d3b;stroke-width:2;outline:none}
+.chart-three-day-band{fill:#72aeba;fill-opacity:.24}
+.chart-wettest-bar{stroke:#193f55;stroke-width:1.4}
+.chart-peak-marker{fill:#ad542d}
+.chart-temperature-extreme{stroke:#fff;stroke-width:2}
+.chart-controls{display:flex;justify-content:space-between;gap:.5rem;margin-top:.35rem}
+.chart-controls button{border:1px solid #b7c7cc;border-radius:4px;background:#fff;color:#284858;padding:.2rem .45rem;font-size:.78rem;cursor:pointer}
+.chart-controls button:focus-visible{outline:2px solid #176d88;outline-offset:2px}
+.chart-readout{min-height:2.7em;margin:.35rem 0 0;padding:.4rem .55rem;border-radius:4px;background:#edf4f6;color:#284858;font-size:.82rem;line-height:1.35}
 .chart-grid{stroke:#dbe4e7;stroke-width:1}
 .chart-axis,.chart-unit{fill:#566a74;font:12px system-ui,-apple-system,Segoe UI,sans-serif}
 .chart-unit{font-weight:700}
+.chart-empty-label{fill:#697b83;font:15px system-ui,-apple-system,Segoe UI,sans-serif}
 .chart-empty{color:#697b83;min-height:150px;display:grid;place-items:center}
 .detail-chart-note{font-size:.8rem;color:#677983;margin:.45rem 0 .9rem}
+.detail-extremes{border-top:1px solid #e1e7e8;padding:.8rem 0;margin-top:.3rem}
+.detail-extremes h3{font-size:1rem;margin:0 0 .5rem}
+.detail-extreme-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:.5rem}
+.detail-extreme-card{display:grid;gap:.2rem;background:#f3f7f8;border:1px solid #dce8eb;border-radius:5px;padding:.5rem .65rem}
+.detail-extreme-card strong{font-size:.8rem;color:#455e69}
+.detail-extreme-card span{font-size:1.05rem;font-weight:700;color:#203d4a}
+.detail-extreme-card small{font-size:.76rem;color:#61727b}
+.detail-extremes p{font-size:.8rem;color:#61727b;margin:.5rem 0 0}
 .detail-lower{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:1.25rem;border-top:1px solid #e1e7e8;padding-top:.75rem}
 .detail-lower h3{font-size:1rem;margin:0 0 .35rem}
 .detail-lower p,.detail-lower li{font-size:.85rem;color:#51646d}

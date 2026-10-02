@@ -65,6 +65,50 @@ testthat::test_that("longest dry spell is exact within its moving window", {
   testthat::expect_equal(as.numeric(terra::values(result)), 3)
 })
 
+testthat::test_that("grouped longest-dry-spell windows match individual runs", {
+  set.seed(42)
+  windows <- seq_len(5L)
+  candidates <- list(rep(0, 184L), rep(0.1, 184L),
+                     c(rep(0, 90L), 0.1, rep(0, 93L)),
+                     c(NA_real_, rep(0, 183L)),
+                     c(rep(0, 183L), NA_real_),
+                     rep(NA_real_, 184L))
+  candidates <- c(candidates, replicate(100L, {
+    x <- sample(c(0, 0.03, 0.04, 0.1, NA_real_), 184L, replace = TRUE,
+                prob = c(0.65, 0.1, 0.1, 0.13, 0.02))
+    x
+  }, simplify = FALSE))
+  for (values in candidates) {
+    expected <- vapply(windows, function(start)
+      prism_longest_dry_run(values[start:(start + 179L)], 0.04),
+      numeric(1))
+    actual <- prism_longest_dry_runs_for_windows(
+      values, windows, 180L, 0.04)
+    testthat::expect_equal(actual, expected)
+  }
+})
+
+testthat::test_that("compiled longest-dry-spell windows match the R fallback", {
+  accelerated <- prism_longest_dry_spell_accelerator(quiet = TRUE)
+  if (is.null(accelerated)) testthat::skip("C++ compiler unavailable")
+  set.seed(87)
+  windows <- seq_len(5L)
+  candidates <- list(rep(0, 184L), rep(0.1, 184L),
+                     c(NA_real_, rep(0, 183L)),
+                     c(rep(0, 183L), NaN))
+  candidates <- c(candidates, replicate(100L,
+    sample(c(0, 0.0399, 0.04, 0.1, NA_real_), 184L, replace = TRUE),
+    simplify = FALSE))
+  for (values in candidates) {
+    expected <- prism_longest_dry_runs_for_windows(
+      values, windows, 180L, 0.04)
+    actual <- accelerated(
+      values, windows, 180L,
+      0.04 - swc_prism$wet_day_storage_tolerance_inches)
+    testthat::expect_equal(actual, expected)
+  }
+})
+
 testthat::test_that("longest-dry-spell cache is written and reused", {
   fixture <- make_longest_dry_spell_fixture()
   manifest_path <- file.path(fixture$processed_dir, "longest-dry-spell-manifest.csv")

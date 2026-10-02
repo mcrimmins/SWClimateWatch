@@ -218,6 +218,11 @@ testthat::test_that("one selected period controls summaries and extremes", {
   testthat::expect_equal(rows$tmean_value, rep(60, 5))
   testthat::expect_equal(rows$max_daily_pcpn_date,
                          as.character(rows$period_start))
+  testthat::expect_equal(rows$max_3day_pcpn, rep(0.3, 5), tolerance = 1e-8)
+  testthat::expect_equal(rows$max_3day_pcpn_start_date,
+                         as.character(rows$period_start))
+  testthat::expect_equal(rows$max_3day_pcpn_end_date,
+                         as.character(as.Date(rows$period_start) + 2L))
 })
 
 testthat::test_that("provisional precipitation is not ranked; partial temperature is", {
@@ -261,6 +266,84 @@ testthat::test_that("recent extremes require a complete valid window", {
   flagged <- acis_station_recent_extreme(daily, "maxt", as.Date("2020-01-30"))
   testthat::expect_equal(flagged$status, "FLAGGED")
   testthat::expect_true(is.na(flagged$value))
+})
+
+testthat::test_that("three-day precipitation extreme uses complete consecutive days", {
+  dates <- seq.Date(as.Date("2020-01-01"), as.Date("2020-01-07"), by = "day")
+  daily <- data.frame(date = dates, variable = "pcpn",
+                      numeric_value = c(0.1, 0.2, 0, 1, 1, 1, 0),
+                      observed = TRUE, flag = "", source = "TEST",
+                      trace = FALSE, accumulated = FALSE)
+  result <- acis_station_recent_three_day_precip(
+    daily, as.Date("2020-01-07"), days = 7L)
+  testthat::expect_equal(result$value, 3)
+  testthat::expect_equal(result$start_date, "2020-01-04")
+  testthat::expect_equal(result$end_date, "2020-01-06")
+  daily$numeric_value[] <- 0
+  tied <- acis_station_recent_three_day_precip(
+    daily, as.Date("2020-01-07"), days = 7L)
+  testthat::expect_equal(tied$start_date, "2020-01-01")
+  daily$flag[[3L]] <- "T"
+  testthat::expect_equal(acis_station_recent_three_day_precip(
+    daily, as.Date("2020-01-07"), days = 7L)$value, 0)
+  daily$observed[[3L]] <- FALSE
+  incomplete <- acis_station_recent_three_day_precip(
+    daily, as.Date("2020-01-07"), days = 7L)
+  testthat::expect_true(is.na(incomplete$value))
+  testthat::expect_equal(incomplete$status, "INCOMPLETE")
+})
+
+testthat::test_that("hot and dry spell metrics use complete daily windows", {
+  dates <- seq.Date(as.Date("2026-01-01"), as.Date("2026-01-07"), by = "day")
+  daily <- do.call(rbind, lapply(c("maxt", "mint", "pcpn"), function(variable) {
+    data.frame(date = dates, variable = variable,
+               numeric_value = switch(variable,
+                                      maxt = c(80, 81, 70, 82, 83, 84, 70),
+                                      mint = c(50, 60, 60, 60, 50, 50, 50),
+                                      pcpn = c(0, 0, 0.1, 0, 0, 0, 0.1)),
+               observed = TRUE, flag = "", accumulated = FALSE)
+  }))
+  hot <- acis_station_recent_streak(daily, "maxt", dates[[7L]], 7L,
+                                    threshold_values = rep(75, 7))
+  testthat::expect_equal(hot$count, 5L)
+  testthat::expect_equal(hot$longest, 3L)
+  testthat::expect_equal(hot$start_date, "2026-01-04")
+  dry <- acis_station_recent_streak(daily, "pcpn", dates[[7L]], 7L,
+                                    threshold = 0.04, below = TRUE)
+  testthat::expect_equal(dry$longest, 3L)
+  testthat::expect_equal(dry$start_date, "2026-01-04")
+  daily$observed[daily$variable == "pcpn" & daily$date == dates[[5L]]] <- FALSE
+  testthat::expect_true(is.na(acis_station_recent_streak(
+    daily, "pcpn", dates[[7L]], 7L, threshold = 0.04,
+    below = TRUE)$longest))
+})
+
+testthat::test_that("station heat thresholds use the seasonal baseline and coverage gate", {
+  dates <- seq.Date(as.Date("1991-01-01"), as.Date("2026-01-07"), by = "day")
+  daily <- data.frame(date = dates, variable = "maxt", numeric_value = 70,
+                      observed = TRUE, flag = "", accumulated = FALSE)
+  current <- seq.Date(as.Date("2026-01-01"), as.Date("2026-01-07"), by = "day")
+  testthat::expect_equal(acis_station_temperature_thresholds(
+    daily, "maxt", current), rep(70, 7))
+  daily$flag[as.integer(format(daily$date, "%Y")) %in% 1991:2010] <- "S"
+  testthat::expect_true(all(is.na(acis_station_temperature_thresholds(
+    daily, "maxt", current))))
+})
+
+testthat::test_that("freeze departure compares matching cool-season dates", {
+  dates <- seq.Date(as.Date("1990-10-01"), as.Date("2026-10-02"), by = "day")
+  daily <- data.frame(date = dates, variable = "mint", numeric_value = 40,
+                      observed = TRUE, flag = "", accumulated = FALSE)
+  daily$numeric_value[daily$date %in% as.Date(c("2026-10-01", "2026-10-02"))] <- 32
+  freeze <- acis_station_freeze_season(daily, as.Date("2026-10-02"))
+  testthat::expect_equal(freeze$count, 2L)
+  testthat::expect_equal(freeze$normal, 0)
+  testthat::expect_equal(freeze$anomaly, 2)
+  testthat::expect_equal(freeze$normal_years, 30L)
+  testthat::expect_equal(freeze$start, "2026-10-01")
+  daily$observed[daily$date == as.Date("2026-10-02")] <- FALSE
+  testthat::expect_true(is.na(acis_station_freeze_season(
+    daily, as.Date("2026-10-02"))$count))
 })
 
 testthat::test_that("coverage audit separates current gaps from reference shortages", {

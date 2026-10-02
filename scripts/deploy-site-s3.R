@@ -54,6 +54,39 @@ swc_deploy_run <- function(command, args, label) {
   invisible(status)
 }
 
+swc_deploy_validation_summary <- function(
+    current_path = file.path("data", "diagnostics", "map-product-status.csv"),
+    archive_path = file.path("data", "diagnostics", "archive-publication-status.csv")) {
+  if (!file.exists(current_path) || !file.exists(archive_path)) {
+    stop("Rendered map validation reports are missing; S3 upload stopped.",
+         call. = FALSE)
+  }
+  current <- utils::read.csv(current_path, stringsAsFactors = FALSE)
+  archive <- utils::read.csv(archive_path, stringsAsFactors = FALSE)
+  if (!nrow(current) || !nrow(archive) ||
+      !all(c("enabled", "validation_status") %in% names(current)) ||
+      !all(c("water_year", "validation_status", "legacy_layout") %in%
+             names(archive)) || anyNA(current$enabled) ||
+      anyNA(current$validation_status) || anyNA(archive$validation_status)) {
+    stop("Rendered map validation reports are invalid; S3 upload stopped.",
+         call. = FALSE)
+  }
+  enabled <- current[current$enabled, , drop = FALSE]
+  result <- list(
+    current_passed = sum(enabled$validation_status == "PASS"),
+    current_total = nrow(enabled),
+    archive_passed = sum(archive$validation_status == "PASS"),
+    archive_total = nrow(archive),
+    archive_years = length(unique(archive$water_year)),
+    legacy_layout_maps = sum(archive$legacy_layout, na.rm = TRUE))
+  if (result$current_passed != result$current_total ||
+      result$archive_passed != result$archive_total) {
+    stop("Rendered map validation reports contain failures; S3 upload stopped.",
+         call. = FALSE)
+  }
+  result
+}
+
 deploy_swc_site <- function(
     destination,
     region = "us-west-2",
@@ -101,6 +134,7 @@ deploy_swc_site <- function(
     c("scripts/validate-map-products.R", "--require-rendered"),
     "Validate rendered maps and pages"
   )
+  validation <- swc_deploy_validation_summary()
   output_dir <- normalizePath(output_dir, winslash = "/", mustWork = TRUE)
   if (!is.null(extra_validation)) extra_validation(output_dir)
   swc_deploy_run(
@@ -113,5 +147,6 @@ deploy_swc_site <- function(
   } else {
     message("Site sync complete: ", destination)
   }
-  invisible(list(destination = destination, dry_run = dry_run, delete = delete))
+  invisible(list(destination = destination, dry_run = dry_run, delete = delete,
+                 validation = validation))
 }

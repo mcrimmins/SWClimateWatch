@@ -8,7 +8,7 @@ body-classes: snow-current-page
 
 SNODAS water year 2027 covers October 1, 2026 through May 31, 2027. Snow water equivalent (SWE) is modeled snowpack water, not daily snowfall. The maps use the latest verified regional data available, which may lag today's date.
 
-**Latest map date: October 1, 2026**
+**Latest map date: October 2, 2026**
 
 ::: {.dashboard-map-grid}
 ::: {.dashboard-map-card}

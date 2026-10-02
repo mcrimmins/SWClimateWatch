@@ -377,6 +377,16 @@ cache files were absent; all three September 29 manifests report `direct`.
 Measure a consecutive-date run before treating the cold-build times as routine
 daily costs. Source revisions can also invalidate a parent cache.
 
+The October 2 consecutive-date update confirmed this distinction: map groups
+took 31m 39s rather than 1h 40m. Current dry spell fell to 1m 24s, wet-day
+intensity to 1m 25s, and very-wet contribution to 1m 28s using their
+incremental caches. The 180-day longest-dry-spell group still took 11m 13s
+and remained the largest map cost. An optional compiled implementation of its
+exact grouped-window calculation has been added with an R fallback. On a
+small in-memory raster it matched every cell and ran the calculation about
+three times faster; its effect on the full regional build remains to be timed
+locally before estimating routine daily savings or disabling any product.
+
 Options to evaluate, without yet committing to one:
 
 1. **Verify the existing incremental path on the next consecutive date.**

@@ -7,6 +7,7 @@
 source(file.path("scripts", "deploy-site-s3.R"))
 source(file.path("scripts", "load-daily-publish.R"))
 
+swc_site_publish_started <- Sys.time()
 swc_ntfy_send_safe("started", "Site-only publication started.")
 swc_publish_result <- tryCatch({
   swc_ntfy_send_safe("progress", "Rendering and validating the site, then syncing it to S3.")
@@ -21,9 +22,25 @@ swc_publish_result <- tryCatch({
       swc_daily_publish_validate_stations(output_dir)
     }
   )
-  swc_ntfy_send_safe("success", "Southwest Climate Watch published successfully: https://cales.arizona.edu/climate/watch/")
+  result$elapsed_seconds <- round(as.numeric(difftime(
+    Sys.time(), swc_site_publish_started, units = "secs")), 3)
+  lines <- c(paste0("Site-only publication complete in ",
+                    swc_publish_elapsed(result$elapsed_seconds), "."),
+             sprintf("Validated maps: %d/%d current, %d/%d historic passed.",
+                     result$validation$current_passed,
+                     result$validation$current_total,
+                     result$validation$archive_passed,
+                     result$validation$archive_total),
+             "https://cales.arizona.edu/climate/watch/")
+  message(paste(lines, collapse = "\n"))
+  swc_ntfy_send_safe("success", paste(lines, collapse = "\n"))
   result
 }, error = function(error) {
-  swc_ntfy_send_safe("error", "Site-only publication failed. Check the RStudio console for details.")
+  duration <- swc_publish_elapsed(as.numeric(difftime(
+    Sys.time(), swc_site_publish_started, units = "secs")))
+  message("Site-only publication failed after ", duration, ".")
+  swc_ntfy_send_safe("error", paste0(
+    "Site-only publication failed after ", duration,
+    ". Check the RStudio console for details."))
   stop(error)
 })

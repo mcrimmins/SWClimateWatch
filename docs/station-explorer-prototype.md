@@ -76,7 +76,7 @@ page. None of these options renders, uploads, or links the public site.
 Selecting a map point or table station loads its detail file through the local
 server; the main page does not embed all daily histories. The detail panel
 charts daily precipitation and high/low temperature for the selected period,
-shows usable-record dates and current-window coverage, and places the current
+  shows usable-record dates and current-window coverage, and places the current
 period on a percentile gauge. The percentile gauge reuses the already-computed
 full-record rank; it is not a new climatology or a replacement for the
 station-by-station comparison-year information in the table.
@@ -122,8 +122,9 @@ coverage section summarizes the selected map metric and links to the full CSV.
   their 1991–2020 departures, or their full-record percentile ranks. The legend
   changes with metric and period. Each station label shows its selected numeric
   value on that legend's color; a dash means unavailable, not zero.
-- Hover for a compact precipitation and temperature summary. Click or tap a
-  fixed-station label for a larger bubble with station ID, selected value,
+- Hover for the selected map metric, its departure when applicable, and a
+  brief data-caution indicator. Click or tap a fixed-station label for a
+  larger bubble with station ID, selected value,
   departure, rank, comparison years, data coverage, and any reason the selected
   value is unavailable. Available values are numbered; unavailable stations
   are small muted dots by default, with an option to label them. Nearby
@@ -131,7 +132,7 @@ coverage section summarizes the selected map metric and links to the full CSV.
   clickable. A basemap toggle can remove tile detail when it is too busy.
   Search, state, and value-availability filters act on both map and tables.
 - The tables are numerically sortable and have three tabs: current values,
-  percentiles and ranks, and recent single-day extremes. ThreadEx series are
+  percentiles and ranks, and recent daily/three-day extremes. ThreadEx series are
   present in each table but are never plotted as physical point locations.
 
 ## Statistical definitions and limitations
@@ -177,10 +178,25 @@ coverage section summarizes the selected map metric and links to the full CSV.
   periods; the popup reports how many temperature comparison periods are
   partial. This is a project screening policy, not an estimate for missing
   temperatures.
-- Recent extremes are the largest daily precipitation, highest maximum
-  temperature, and lowest minimum temperature in the latest complete selected
-  period. They are rolling-window indicators, **not** the formal annual or
-  monthly Climdex indices. Ties use the first date.
+- Recent extremes are the wettest day, wettest three consecutive days, highest
+  maximum temperature, and lowest minimum temperature in the selected period.
+  Each requires a complete, unflagged daily series for its variable. The
+  three-day total reports both start and end dates and uses trace as zero.
+  Ties use the earliest occurrence. These are rolling-window indicators,
+  **not** historical records or formal annual/monthly Climdex indices.
+- Additional frequency and persistence indicators count unusually hot days
+  (maximum temperature above the station's centered-five-day 1991–2020 90th
+  percentile), unusually warm nights (minimum temperature above the matching
+  threshold), the longest unusually hot run, and the longest dry run (<0.04
+  inch per day). These use the selected period and require complete, unflagged
+  observations and, for temperature, at least 15 baseline years for every day.
+- Freeze nights use minimum temperature at or below 32°F during the latest
+  October–March cool season. Through March the count is season-to-date; from
+  April through September the completed season remains shown. Its departure
+  is observed count minus the mean count for matching season-to-date periods
+  in at least 15 complete 1991–2020 seasons. Positive means more freeze nights
+  than average. Incomplete current seasons or inadequate historical coverage
+  are withheld rather than treating missing nights as nonfreezing.
 
 The broad station network remains a beta research selection, not a final
 publication decision. Before removing the beta label, review source/component changes, product
@@ -192,32 +208,31 @@ The repeatable, local [publication-readiness audit](station-publication-readines
 separates unavailable products from calculable products that still need
 human station-record review.
 
-## Planned daily-chart interaction (deferred)
+## Daily-chart interaction
 
-Make the selected station's daily plots interactive without changing the
-underlying station-screening rules:
+Hover, focus, or tap a chart day to see its date and precipitation total or
+daily high and low in a readout below the chart. Trace precipitation, missing
+observations, and quality-flagged values are distinguished; missing is never
+shown as zero. The temperature lines retain gaps for unavailable values.
+Keyboard users can move by date with the left and right arrows and jump to
+the first or last date with Home or End. Previous/next-day buttons also let
+touch users inspect narrow daily marks in longer periods. This changes
+presentation only, not station screening.
 
-- Hover, keyboard focus, or tap a precipitation bar to see its calendar date
-  and daily total in inches. Explicitly distinguish trace, missing, and
-  quality-flagged reports; never present a missing day as zero.
-- Hover, focus, or tap either temperature series to see the date and the
-  observed daily high and low in degrees F. Identify missing or flagged values
-  rather than connecting a line across them as though observed.
-- Offer restrained, optional annotations for extremes in the displayed period:
-  the wettest single day and its date, the largest rolling three-day
-  precipitation total and its start/end dates, and possibly the highest high
-  and lowest low. A three-day annotation should mark the three-day span, not
-  imply that its total fell on one bar. Keep annotations sparse so they do not
-  obscure the daily data; a toggle or compact summary is acceptable.
-- Decide separately whether an extreme is for the currently selected plot
-  window, a season, or the station's full period of record. Label the scope,
-  completeness requirement, tie rule, and comparison years before publishing
-  any ranking or formal WMO/Climdex-style index. The existing recent-extremes
-  table is not a formal climate-extremes-index series.
+## Selected-period extreme annotations
 
-This is a usability and product-scoping request, not yet an implemented chart
-feature. Preserve the present static plots until the event definitions and
-mobile/accessible interaction are tested.
+The detail view puts four extremes in a compact summary below the charts.
+The precipitation chart marks the wettest day and shades the full three-day
+span; the temperature chart marks the highest high and lowest low. Hover and
+keyboard readouts identify the marked dates. Incomplete periods show an
+unavailable extreme instead of a potentially understated maximum. The
+three-day calculation uses only consecutive daily observations, not a
+three-day total assigned to a single bar.
+
+Seasonal and full-period-of-record extremes, comparison-year rankings, and
+formal WMO/Climdex-style indices remain separate future products. They need
+their own period, completeness, tie, and comparison-year definitions before
+publication.
 
 The source and quality-audit context is in
 [station-reference-network.md](station-reference-network.md) and

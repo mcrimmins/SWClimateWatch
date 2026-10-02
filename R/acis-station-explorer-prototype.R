@@ -282,6 +282,142 @@ acis_station_recent_extreme <- function(daily, variable, as_of,
        date = as.character(recent$date[[index]]), status = "AVAILABLE")
 }
 
+acis_station_recent_three_day_precip <- function(daily, as_of, days = 30L,
+                                                 period = NULL) {
+  if (!is.null(period)) days <- acis_station_period_dates(as_of, period)$days
+  metric <- acis_station_window_metric(daily, "pcpn", as_of, days)
+  unavailable <- list(value = NA_real_, start_date = NA_character_,
+                      end_date = NA_character_, status = metric$status)
+  if (metric$status != "AVAILABLE" || days < 3L) return(unavailable)
+  recent <- daily[daily$variable == "pcpn" &
+                    daily$date >= as.Date(as_of) - as.integer(days) + 1L &
+                    daily$date <= as.Date(as_of), , drop = FALSE]
+  recent <- recent[order(recent$date), , drop = FALSE]
+  expected <- seq.Date(as.Date(as_of) - as.integer(days) + 1L,
+                       as.Date(as_of), by = "day")
+  if (nrow(recent) != length(expected) || anyNA(recent$date) ||
+      !all(as.Date(recent$date) == expected)) {
+    return(unavailable)
+  }
+  totals <- round(recent$numeric_value[-c(1L, 2L)] +
+                    recent$numeric_value[-c(1L, length(expected))] +
+                    recent$numeric_value[-c(length(expected) - 1L,
+                                             length(expected))], 2L)
+  index <- which.max(totals)
+  list(value = totals[[index]],
+       start_date = as.character(recent$date[[index]]),
+       end_date = as.character(recent$date[[index + 2L]]),
+       status = "AVAILABLE")
+}
+
+# A station-specific seasonal threshold, using the same centered five-day
+# 1991-2020 convention as the gridded percentile products. Keep Feb 29 in the
+# calendar so its neighbors contribute even in non-leap reference years.
+acis_station_temperature_thresholds <- function(daily, variable,
+                                                dates, percentile = 0.9,
+                                                min_years = acis_station_min_normal_years) {
+  calendar <- format(seq.Date(as.Date("2000-01-01"),
+                              as.Date("2000-12-31"), by = "day"), "%m-%d")
+  reference <- daily[daily$variable == variable &
+                       as.integer(format(daily$date, "%Y")) %in% 1991:2020 &
+                       !is.na(daily$observed) & daily$observed &
+                       is.finite(daily$numeric_value) &
+                       (is.na(daily$flag) | daily$flag == "") &
+                       abs(daily$numeric_value) <= 150, , drop = FALSE]
+  reference$calendar_index <- match(format(reference$date, "%m-%d"), calendar)
+  reference$year <- as.integer(format(reference$date, "%Y"))
+  calendar_bins <- split(seq_len(nrow(reference)), reference$calendar_index)
+  target_index <- match(format(as.Date(dates), "%m-%d"), calendar)
+  thresholds <- rep(NA_real_, length(dates))
+  for (index in unique(target_index[!is.na(target_index)])) {
+    neighbors <- ((index + (-2L:2L) - 1L) %% length(calendar)) + 1L
+    sample_index <- unlist(calendar_bins[as.character(neighbors)],
+                           use.names = FALSE)
+    if (length(unique(reference$year[sample_index])) >= min_years) {
+      thresholds[target_index == index] <- as.numeric(stats::quantile(
+        reference$numeric_value[sample_index], percentile, names = FALSE))
+    }
+  }
+  thresholds
+}
+
+acis_station_recent_streak <- function(daily, variable, as_of, days,
+                                       threshold = NULL, threshold_values = NULL,
+                                       below = FALSE) {
+  metric <- acis_station_window_metric(daily, variable, as_of, days)
+  empty <- list(count = NA_integer_, longest = NA_integer_,
+                start_date = NA_character_, end_date = NA_character_)
+  if (metric$status != "AVAILABLE") return(empty)
+  dates <- seq.Date(as.Date(as_of) - as.integer(days) + 1L,
+                    as.Date(as_of), by = "day")
+  rows <- daily[daily$variable == variable & daily$date %in% dates, , drop = FALSE]
+  rows <- rows[match(dates, rows$date), , drop = FALSE]
+  if (anyNA(rows$date)) return(empty)
+  thresholds <- if (is.null(threshold_values)) rep(threshold, days) else
+    threshold_values
+  if (length(thresholds) != days || any(!is.finite(thresholds))) return(empty)
+  event <- if (below) rows$numeric_value < thresholds else
+    rows$numeric_value > thresholds
+  runs <- rle(event)
+  event_runs <- which(runs$values)
+  if (!length(event_runs)) return(list(count = 0L, longest = 0L,
+                                      start_date = NA_character_,
+                                      end_date = NA_character_))
+  winner <- event_runs[[which.max(runs$lengths[event_runs])]]
+  end_index <- cumsum(runs$lengths)[[winner]]
+  start_index <- end_index - runs$lengths[[winner]] + 1L
+  list(count = sum(event), longest = runs$lengths[[winner]],
+       start_date = as.character(dates[[start_index]]),
+       end_date = as.character(dates[[end_index]]))
+}
+
+acis_station_cool_season_dates <- function(as_of) {
+  as_of <- as.Date(as_of)
+  year <- as.integer(format(as_of, "%Y"))
+  month <- as.integer(format(as_of, "%m"))
+  season_year <- if (month >= 10L) year + 1L else year
+  start <- as.Date(sprintf("%04d-10-01", season_year - 1L))
+  finish <- as.Date(sprintf("%04d-03-31", season_year))
+  list(start = start, end = min(as_of, finish), season_year = season_year)
+}
+
+acis_station_freeze_season <- function(daily, as_of,
+                                      normal_years = 1991:2020,
+                                      min_years = acis_station_min_normal_years) {
+  season <- acis_station_cool_season_dates(as_of)
+  days <- as.integer(season$end - season$start) + 1L
+  empty <- list(count = NA_integer_, normal = NA_real_, anomaly = NA_real_,
+                normal_years = 0L, start = as.character(season$start),
+                end = as.character(season$end))
+  current <- acis_station_window_metric(daily, "mint", season$end, days)
+  if (current$status != "AVAILABLE") return(empty)
+  values <- daily[daily$variable == "mint" & daily$date >= season$start &
+                    daily$date <= season$end, "numeric_value"]
+  count <- sum(values <= 32)
+  prior <- vapply(normal_years, function(year) {
+    start <- as.Date(sprintf("%04d-10-01", year - 1L))
+    end <- as.Date(sprintf("%04d-%s", year, format(season$end, "%m-%d")))
+    if (format(season$end, "%m") %in% c("10", "11", "12")) {
+      end <- as.Date(sprintf("%04d-%s", year - 1L,
+                             format(season$end, "%m-%d")))
+    }
+    # A non-leap reference season has no February 29. March 1 gives the
+    # same number of elapsed cool-season days as the leap-year target.
+    if (is.na(end)) end <- as.Date(sprintf("%04d-03-01", year))
+    length_days <- as.integer(end - start) + 1L
+    if (acis_station_window_metric(daily, "mint", end,
+                                   length_days)$status != "AVAILABLE") return(NA_real_)
+    sum(daily$numeric_value[daily$variable == "mint" &
+                              daily$date >= start & daily$date <= end] <= 32)
+  }, numeric(1))
+  usable <- prior[is.finite(prior)]
+  normal <- if (length(usable) >= min_years) mean(usable) else NA_real_
+  list(count = count, normal = normal,
+       anomaly = if (is.finite(normal)) count - normal else NA_real_,
+       normal_years = length(usable), start = as.character(season$start),
+       end = as.character(season$end))
+}
+
 acis_station_explorer_rows <- function(stations, as_of,
                                        cache_dir = file.path(
                                          "data", "processed", "acis-stations",
@@ -306,6 +442,20 @@ acis_station_explorer_rows <- function(stations, as_of,
     }
     station <- stations[i, , drop = FALSE]
     cache <- caches[[i]]
+    fresh_cache <- !is.null(cache) && as.Date(cache$as_of) >= as_of
+    threshold_start <- min(vapply(periods, function(period) as.numeric(
+      acis_station_period_dates(as_of, period)$start), numeric(1)))
+    threshold_dates <- if (fresh_cache) seq.Date(
+      as.Date(threshold_start, origin = "1970-01-01"), as_of,
+      by = "day") else as.Date(character())
+    hot_thresholds <- if (fresh_cache) acis_station_temperature_thresholds(
+      cache$daily, "maxt", threshold_dates) else numeric()
+    warm_thresholds <- if (fresh_cache) acis_station_temperature_thresholds(
+      cache$daily, "mint", threshold_dates) else numeric()
+    freeze <- if (fresh_cache) acis_station_freeze_season(
+      cache$daily, as_of) else list(count = NA_integer_, normal = NA_real_,
+                                   anomaly = NA_real_, normal_years = 0L,
+                                   start = NA_character_, end = NA_character_)
     lapply(periods, function(period) {
       window <- acis_station_period_dates(as_of, period)
       fresh <- !is.null(cache) && as.Date(cache$as_of) >= as_of
@@ -337,8 +487,29 @@ acis_station_explorer_rows <- function(stations, as_of,
                                     days = window$days, direction = direction)
       }
       wettest <- extreme("pcpn")
+      wettest_three_day <- if (fresh)
+        acis_station_recent_three_day_precip(recent, as_of,
+                                             days = window$days) else
+        list(value = NA_real_, start_date = NA_character_,
+             end_date = NA_character_)
       hottest <- extreme("maxt")
       coldest <- extreme("mint", "min")
+      selected_dates <- seq.Date(window$start, as_of, by = "day")
+      threshold_index <- match(selected_dates, threshold_dates)
+      hot <- if (fresh) acis_station_recent_streak(
+        recent, "maxt", as_of, window$days,
+        threshold_values = hot_thresholds[threshold_index]) else
+          list(count = NA_integer_, longest = NA_integer_,
+               start_date = NA_character_, end_date = NA_character_)
+      warm <- if (fresh) acis_station_recent_streak(
+        recent, "mint", as_of, window$days,
+        threshold_values = warm_thresholds[threshold_index]) else
+          list(count = NA_integer_)
+      dry <- if (fresh) acis_station_recent_streak(
+        recent, "pcpn", as_of, window$days, threshold = 0.04,
+        below = TRUE) else list(longest = NA_integer_,
+                                 start_date = NA_character_,
+                                 end_date = NA_character_)
       data.frame(
         uid = station$uid, sid = station$sid,
         name = station$name, state = station$state,
@@ -377,10 +548,27 @@ acis_station_explorer_rows <- function(stations, as_of,
         tmean_normal_partial_years = t$normal_partial_years,
         max_daily_pcpn = wettest$value,
         max_daily_pcpn_date = wettest$date,
+        max_3day_pcpn = wettest_three_day$value,
+        max_3day_pcpn_start_date = wettest_three_day$start_date,
+        max_3day_pcpn_end_date = wettest_three_day$end_date,
         hottest_day = hottest$value,
         hottest_day_date = hottest$date,
         coldest_night = coldest$value,
         coldest_night_date = coldest$date,
+        unusually_hot_days = hot$count,
+        warm_nights = warm$count,
+        longest_hot_spell = hot$longest,
+        longest_hot_spell_start_date = hot$start_date,
+        longest_hot_spell_end_date = hot$end_date,
+        longest_dry_spell = dry$longest,
+        longest_dry_spell_start_date = dry$start_date,
+        longest_dry_spell_end_date = dry$end_date,
+        freeze_nights = freeze$count,
+        freeze_nights_normal = freeze$normal,
+        freeze_nights_anomaly = freeze$anomaly,
+        freeze_normal_years = freeze$normal_years,
+        freeze_season_start = freeze$start,
+        freeze_season_end = freeze$end,
         stringsAsFactors = FALSE)
     })
   })

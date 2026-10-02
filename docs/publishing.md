@@ -97,8 +97,16 @@ quality hold sends a warning while the last verified snow page remains in
 place. A station refresh failure also sends a warning while the last verified
 station page remains in place. The site-only live publishing command sends start, publishing, success,
 or failure notices too. Dry runs send **no** phone alerts. Alert messages are
-deliberately high-level; consult the local console and daily-publish log for
-the underlying error. A failed ntfy delivery warns locally but does not stop
+deliberately high-level. The final daily notice and console summary include total
+wall time, PRISM request/change/processing counts, whether maps were rebuilt,
+snow and station status, and current/historic map pass counts when the site was
+rendered. The site-only final notice includes wall time and map pass counts.
+An unchanged-site run skips rendering and therefore does not repeat old
+validation counts. Older-layout pilot maps are tracked in the detailed
+archive validation report but omitted from routine phone notices because they
+do not change the outcome of a daily run. Consult the local console and
+`data/diagnostics/daily-publish/runs.csv` for the underlying error or exact
+elapsed seconds. A failed ntfy delivery warns locally but does not stop
 the update or deployment. An abrupt computer shutdown cannot send a final
 failure alert.
 

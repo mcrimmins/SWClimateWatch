@@ -186,28 +186,39 @@
     return definition.colors[bin];
   };
   const tooltip = station => {
-    const precip = finite(station.pcpn_value) ?
-      `${station.pcpn_status === "PROVISIONAL" ? "≥" : ""}${format(station.pcpn_value, 2)} in.` : statusLabel(station.pcpn_status);
-    const temp = finite(station.tmean_value) ?
-      `${format(station.tmean_value, 1)} °F${station.tmean_status === "PARTIAL" ? "*" : ""}` : statusLabel(station.tmean_status);
-    const precipAnomaly = finite(station.pcpn_anomaly) ?
-      `${Number(station.pcpn_anomaly) >= 0 ? "+" : ""}${format(station.pcpn_anomaly, 2)} in. departure` :
-      "departure unavailable";
-    const tempAnomaly = finite(station.tmean_anomaly) ?
-      `${Number(station.tmean_anomaly) >= 0 ? "+" : ""}${format(station.tmean_anomaly, 1)} °F departure${station.tmean_status === "PARTIAL" ? "*" : ""}` :
-      "departure unavailable";
-    const selectedReason = finite(station[metricEl.value]) ? "" :
-      `<br><strong>Map value unavailable:</strong> ${escapeHtml(
-        station[`${metricEl.value}_reason`] || "Needs review")}`;
-    const selectedCaution = finite(station[metricEl.value]) && cautionText(station) ?
-      `<br><strong>Use with caution:</strong> ${escapeHtml(cautionText(station))}` : "";
-    const pending = station.pcpn_status === "PROVISIONAL" ?
-      `<br><strong>Reporting pending:</strong> ${station.pcpn_pending_days} recent ${Number(station.pcpn_pending_days) === 1 ? "day" : "days"}; precipitation comparisons withheld` : "";
+    const metric = metricEl.value;
+    const variable = metric.startsWith("pcpn") ? "pcpn" : "tmean";
+    const definition = definitionFor(metric);
+    const value = station[metric];
+    const available = finite(value);
+    const pending = variable === "pcpn" && station.pcpn_status === "PROVISIONAL";
+    const partial = variable === "tmean" && station.tmean_status === "PARTIAL";
+    let shown = "Unavailable";
+    if (available) {
+      if (metric.endsWith("percentile")) shown = `${compactNumber(value, 0)}%`;
+      else if (metric.endsWith("anomaly"))
+        shown = signed(value, definition.digits, definition.unit);
+      else shown = `${pending ? "≥" : ""}${compactNumber(value, definition.digits)} ${definition.unit}`;
+    }
+    const notes = [];
+    if (available && metric.endsWith("_value")) {
+      const departure = station[`${variable}_anomaly`];
+      notes.push(finite(departure) ?
+        `Departure ${signed(departure, variable === "pcpn" ? 2 : 1, definition.unit)}` :
+        "Departure unavailable");
+    }
+    if (pending) notes.push("Reporting pending");
+    if (partial) notes.push("Partial temperature data");
+    const cautionCodes = new Set(String(station[`${metric}_caution_codes`] || "")
+      .split(";").filter(code => code && code !== "PROVISIONAL_PRECIP" &&
+        code !== "PARTIAL_TEMPERATURE"));
+    if (available && cautionCodes.size)
+      notes.push(`⚠ ${cautionCodes.size} data caution${cautionCodes.size === 1 ? "" : "s"}`);
+    if (!available && !pending) notes.push("Click for reason");
+    const label = definition.title.replace(/\s*\([^)]*\)$/, "");
     return `<div class="tooltip-name">${escapeHtml(station.name)} · ${escapeHtml(station.state)}</div>` +
-      `${escapeHtml(periodLabels[periodEl.value])} summary<br>` +
-      `Precipitation: ${escapeHtml(precip)} (${escapeHtml(precipAnomaly)})<br>` +
-      `Mean temperature: ${escapeHtml(temp)} (${escapeHtml(tempAnomaly)})` +
-      selectedReason + selectedCaution + pending;
+      `<div class="tooltip-metric">${escapeHtml(label)}: <strong>${escapeHtml(shown)}</strong></div>` +
+      (notes.length ? `<div class="tooltip-status">${escapeHtml(notes.join(" · "))}</div>` : "");
   };
   const compactNumber = (value, digits) => finite(value) ?
     String(Number(Number(value).toFixed(digits))) : "—";
@@ -489,13 +500,53 @@
       `<text x="${width - right}" y="${top + 11}" text-anchor="end" class="chart-unit">${escapeHtml(unit)}</text>` +
       `</svg>`;
   }
-  function precipitationChart(days) {
+  function precipitationDayText(day, station) {
+    const when = date(day.date);
+    if (day.pcpn_status === "FLAGGED") return `${when}: precipitation quality flagged; daily total withheld.`;
+    if (!finite(day.pcpn)) return `${when}: precipitation missing; not zero.`;
+    const report = day.pcpn_status === "TRACE" ?
+      `${when}: trace precipitation (less than 0.01 in.); counted as 0 in. in summaries.` :
+      `${when}: precipitation ${format(day.pcpn, 2)} in.`;
+    const wettest = day.date === station.max_daily_pcpn_date ? " Wettest day in this period." : "";
+    const span = day.date === station.max_3day_pcpn_start_date ?
+      " Wettest three-day span starts here." :
+      day.date === station.max_3day_pcpn_end_date ?
+        " Wettest three-day span ends here." : "";
+    return report + wettest + span;
+  }
+  function temperatureDayText(day, station) {
+    const observation = (value, status) => status === "FLAGGED" ? "quality flagged" :
+      finite(value) ? `${format(value, 1)} °F` : "missing";
+    return `${date(day.date)}: high ${observation(day.maxt, day.maxt_status)}; ` +
+      `low ${observation(day.mint, day.mint_status)}.` +
+      (day.date === station.hottest_day_date ? " Highest high in this period." : "") +
+      (day.date === station.coldest_night_date ? " Lowest low in this period." : "");
+  }
+  function chartHit(x, width, text, first) {
+    return `<rect class="chart-day" x="${x}" y="14" width="${width}" height="131" ` +
+      `fill="transparent" tabindex="${first ? 0 : -1}" role="button" ` +
+      `aria-label="${escapeHtml(text)}" data-chart-readout="${escapeHtml(text)}">` +
+      `<title>${escapeHtml(text)}</title></rect>`;
+  }
+  function chartControls() {
+    return `<div class="chart-controls"><button type="button" data-chart-step="-1" ` +
+      `aria-label="Previous chart day">← Previous day</button><button type="button" ` +
+      `data-chart-step="1" aria-label="Next chart day">Next day →</button></div>`;
+  }
+  function precipitationChart(days, station) {
     const usable = days.filter(day => finite(day.pcpn)).map(day => Number(day.pcpn));
-    if (!usable.length) return `<p class="chart-empty">No usable daily precipitation values in this period.</p>`;
+    if (!days.length) return `<p class="chart-empty">No daily precipitation dates in this period.</p>`;
     const width = 760, left = 43, right = 12, top = 14, bottomY = 145;
     const plotWidth = width - left - right;
-    const max = Math.max(0.25, Math.ceil(Math.max(...usable) * 2) / 2);
+    const max = Math.max(0.25, Math.ceil(Math.max(0, ...usable) * 2) / 2);
     const step = plotWidth / days.length;
+    const threeDayStart = days.findIndex(day =>
+      day.date === station.max_3day_pcpn_start_date);
+    const threeDayBand = finite(station.max_3day_pcpn) && threeDayStart >= 0 ?
+      `<rect class="chart-three-day-band" x="${left + threeDayStart * step}" ` +
+      `y="${top}" width="${3 * step}" height="${bottomY - top}">` +
+      `<title>Wettest three-day span: ${escapeHtml(date(station.max_3day_pcpn_start_date))}–` +
+      `${escapeHtml(date(station.max_3day_pcpn_end_date))}</title></rect>` : "";
     const bars = days.map((day, i) => {
       const x = left + i * step + Math.max(0.2, step * 0.1);
       const barWidth = Math.max(0.8, step * 0.8);
@@ -506,18 +557,28 @@
       }
       const height = Math.max(Number(day.pcpn) > 0 ? 1 : 0,
         Number(day.pcpn) / max * (bottomY - top));
-      return `<rect x="${x}" y="${bottomY - height}" width="${barWidth}" height="${height}" fill="#327eaa">` +
-        `<title>${escapeHtml(day.date)}: ${compactNumber(day.pcpn, 2)} in.${day.pcpn_status === "TRACE" ? " (trace)" : ""}</title></rect>`;
+      const wettest = day.date === station.max_daily_pcpn_date;
+      const marker = wettest ? `<path class="chart-peak-marker" d="M${x + barWidth / 2 - 4},` +
+        `${Math.max(top + 4, bottomY - height - 8)} h8 l-4,5 z"/>` : "";
+      return `<rect x="${x}" y="${bottomY - height}" width="${barWidth}" height="${height}" ` +
+        `fill="#327eaa"${wettest ? ' class="chart-wettest-bar"' : ""}>` +
+        `<title>${escapeHtml(day.date)}: ${compactNumber(day.pcpn, 2)} in.${day.pcpn_status === "TRACE" ? " (trace)" : ""}</title></rect>` +
+        marker;
     }).join("");
-    return chartFrame(bars, 0, max, days[0].date, days.at(-1).date,
+    const hits = days.map((day, i) => chartHit(left + i * step, step,
+      precipitationDayText(day, station), i === 0)).join("");
+    const empty = usable.length ? "" :
+      `<text x="380" y="75" text-anchor="middle" class="chart-empty-label">No usable daily precipitation reports</text>`;
+    return chartFrame(threeDayBand + bars + empty + hits, 0, max,
+      days[0].date, days.at(-1).date,
       "inches", "Daily precipitation bars; muted ticks mark missing or flagged days");
   }
-  function temperatureChart(days) {
+  function temperatureChart(days, station) {
     const usable = days.flatMap(day => [day.maxt, day.mint])
       .filter(finite).map(Number);
-    if (!usable.length) return `<p class="chart-empty">No usable daily high or low temperatures in this period.</p>`;
-    let min = Math.floor(Math.min(...usable) / 10) * 10;
-    let max = Math.ceil(Math.max(...usable) / 10) * 10;
+    if (!days.length) return `<p class="chart-empty">No daily temperature dates in this period.</p>`;
+    let min = usable.length ? Math.floor(Math.min(...usable) / 10) * 10 : 0;
+    let max = usable.length ? Math.ceil(Math.max(...usable) / 10) * 10 : 100;
     if (min === max) { min -= 5; max += 5; }
     const width = 760, left = 43, right = 12, top = 14, bottomY = 145;
     const x = i => left + (i + 0.5) * (width - left - right) / days.length;
@@ -535,7 +596,21 @@
         `<title>${escapeHtml(day.date)}: ${compactNumber(day[field], 1)} °F</title></circle>` : "").join("") : "";
       return `<path d="${segments}" fill="none" stroke="${color}" stroke-width="2"/>${points}`;
     };
-    return chartFrame(line("maxt", "#b35b37") + line("mint", "#326a9e"),
+    const step = (width - left - right) / days.length;
+    const hits = days.map((day, i) => chartHit(left + i * step, step,
+      temperatureDayText(day, station), i === 0)).join("");
+    const marker = (field, selectedDate, color) => {
+      const i = days.findIndex(day => day.date === selectedDate);
+      return i >= 0 && finite(days[i][field]) ?
+        `<circle class="chart-temperature-extreme" cx="${x(i)}" ` +
+        `cy="${y(days[i][field])}" r="5" fill="${color}"/>` : "";
+    };
+    const marks = marker("maxt", station.hottest_day_date, "#b35b37") +
+      marker("mint", station.coldest_night_date, "#326a9e");
+    const empty = usable.length ? "" :
+      `<text x="380" y="75" text-anchor="middle" class="chart-empty-label">No usable daily temperature reports</text>`;
+    return chartFrame(line("maxt", "#b35b37") + line("mint", "#326a9e") +
+      marks + empty + hits,
       min, max, days[0].date, days.at(-1).date, "°F",
       "Daily maximum temperature in orange and minimum temperature in blue; gaps mark unavailable days");
   }
@@ -561,6 +636,61 @@
     return `<li><strong>${escapeHtml(label)}</strong>: ${escapeHtml(date(record.first_valid))}–` +
       `${escapeHtml(date(record.last_valid))} · ${record.valid_days.toLocaleString()} usable days</li>`;
   }
+  function selectedExtremeCard(label, value, digits, when) {
+    const available = finite(value);
+    return `<div class="detail-extreme-card"><strong>${escapeHtml(label)}</strong>` +
+      `<span>${available ? `${format(value, digits)}${digits === 1 ? " °F" : " in."}` : "Unavailable"}</span>` +
+      `<small>${available ? escapeHtml(when) : "Selected period has missing or flagged days"}</small></div>`;
+  }
+  function selectedCountCard(label, value, when, suffix = "days") {
+    const available = finite(value);
+    return `<div class="detail-extreme-card"><strong>${escapeHtml(label)}</strong>` +
+      `<span>${available ? `${format(value, 0)} ${suffix}` : "Unavailable"}</span>` +
+      `<small>${available ? escapeHtml(when) : "Incomplete observations or seasonal baseline"}</small></div>`;
+  }
+  function selectedExtremeSummary(station) {
+    const threeDayDates = finite(station.max_3day_pcpn) ?
+      `${date(station.max_3day_pcpn_start_date)}–${date(station.max_3day_pcpn_end_date)}` : "";
+    return `<section class="detail-extremes"><h3>Extremes in this ${escapeHtml(periodLabels[station.period])} period</h3>` +
+      `<div class="detail-extreme-grid">` +
+      selectedExtremeCard("Wettest day", station.max_daily_pcpn, 2,
+        date(station.max_daily_pcpn_date)) +
+      selectedExtremeCard("Wettest 3 consecutive days", station.max_3day_pcpn, 2,
+        threeDayDates) +
+      selectedExtremeCard("Highest high", station.hottest_day, 1,
+        date(station.hottest_day_date)) +
+      selectedExtremeCard("Lowest low", station.coldest_night, 1,
+        date(station.coldest_night_date)) + `</div>` +
+      `<h3>Frequency and persistence</h3><div class="detail-extreme-grid">` +
+      selectedCountCard("Unusually hot days", station.unusually_hot_days,
+        "Maximum temperature above this station's seasonal 90th percentile") +
+      selectedCountCard("Unusually warm nights", station.warm_nights,
+        "Minimum temperature above this station's seasonal 90th percentile") +
+      selectedCountCard("Longest hot spell", station.longest_hot_spell,
+        finite(station.longest_hot_spell) && station.longest_hot_spell > 0 ?
+          `${date(station.longest_hot_spell_start_date)}–${date(station.longest_hot_spell_end_date)}` :
+          "No unusually hot days in this period") +
+      selectedCountCard("Longest dry spell", station.longest_dry_spell,
+        finite(station.longest_dry_spell) && station.longest_dry_spell > 0 ?
+          `${date(station.longest_dry_spell_start_date)}–${date(station.longest_dry_spell_end_date)}` :
+          "No dry days in this period") + `</div>` +
+      `<h3>Cool-season freeze nights</h3><div class="detail-extreme-grid">` +
+      selectedCountCard("Nights at or below 32°F", station.freeze_nights,
+        `${date(station.freeze_season_start)}–${date(station.freeze_season_end)}`, "nights") +
+      `<div class="detail-extreme-card"><strong>Difference from average</strong>` +
+      `<span>${finite(station.freeze_nights_anomaly) ?
+        `${station.freeze_nights_anomaly > 0 ? "+" : ""}${format(station.freeze_nights_anomaly, 1)} nights` :
+        "Unavailable"}</span>` +
+      `<small>${finite(station.freeze_nights_anomaly) ?
+        `${format(station.freeze_nights_normal, 1)} average nights · ${station.freeze_normal_years} comparable 1991–2020 seasons` :
+        "Complete observations and 15 comparable seasons required"}</small></div></div>` +
+      `<p>These are observed extremes within the selected period, not historical records or formal climate indices. ` +
+      `Each requires a complete, unflagged daily series for its variable; the three-day total uses consecutive days. ` +
+      `Ties use the earliest occurrence. Hot-day and warm-night thresholds use a centered five-day 1991–2020 station baseline. ` +
+      `A dry day has less than 0.04 inch of precipitation. Freeze nights are counted October–March, independently of the selected period; ` +
+      `the difference is observed minus the mean count for the same season-to-date dates in eligible 1991–2020 seasons. ` +
+      `Positive means more freeze nights than usual. The October–March total stays displayed after March 31 until the next October.</p></section>`;
+  }
   function detailContent(station, detail) {
     const days = detail.daily.filter(day => day.date >= station.period_start &&
       day.date <= station.as_of);
@@ -580,10 +710,15 @@
       `<div class="detail-stats"><p><strong>Precipitation:</strong> ${coverage("pcpn")}</p>` +
       `<p><strong>Mean temperature:</strong> ${coverage("tmean")}</p></div>` +
       `<div class="detail-charts"><figure><figcaption>Daily precipitation</figcaption>` +
-      precipitationChart(days) + `</figure><figure><figcaption>Daily high and low temperature</figcaption>` +
-      temperatureChart(days) + `</figure></div>` +
+      precipitationChart(days, station) + chartControls() +
+      `<p class="chart-readout" aria-live="polite">Hover, focus, or tap a day for its precipitation report.</p></figure>` +
+      `<figure><figcaption>Daily high and low temperature</figcaption>` +
+      temperatureChart(days, station) + chartControls() +
+      `<p class="chart-readout" aria-live="polite">Hover, focus, or tap a day for its high and low.</p></figure></div>` +
       `<p class="detail-chart-note">Daily bars are observations, not a cumulative total. ` +
-      `Trace precipitation is zero; missing and flagged days are not filled.</p>` +
+      `Trace precipitation counts as zero; missing and flagged days are not filled. ` +
+      `Use the day buttons or left and right arrow keys to move between chart dates.</p>` +
+      selectedExtremeSummary(station) +
       `<div class="detail-lower"><section><h3>Historical standing</h3>` +
       `<p>Each rank compares one eligible corresponding ${escapeHtml(periodLabels[station.period])} ` +
       `period per earlier year. Precipitation requires all days; mean temperature allows at most 5% missing paired days and no gap over two days.</p>` +
@@ -652,10 +787,19 @@
       { key: "name", label: "Station" }, { key: "state", label: "State" },
       { key: "max_daily_pcpn", label: "Largest daily precip (in.)", numeric: true, digits: 2 },
       { key: "max_daily_pcpn_date", label: "Date" },
+      { key: "max_3day_pcpn", label: "Largest 3-day precip (in.)", numeric: true, digits: 2 },
+      { key: "max_3day_pcpn_start_date", label: "Start date" },
+      { key: "max_3day_pcpn_end_date", label: "End date" },
       { key: "hottest_day", label: "Hottest day (°F)", numeric: true, digits: 1 },
       { key: "hottest_day_date", label: "Date" },
       { key: "coldest_night", label: "Coldest night (°F)", numeric: true, digits: 1 },
-      { key: "coldest_night_date", label: "Date" }
+      { key: "coldest_night_date", label: "Date" },
+      { key: "unusually_hot_days", label: "Unusually hot days", numeric: true },
+      { key: "warm_nights", label: "Unusually warm nights", numeric: true },
+      { key: "longest_hot_spell", label: "Longest hot spell (days)", numeric: true },
+      { key: "longest_dry_spell", label: "Longest dry spell (days)", numeric: true },
+      { key: "freeze_nights", label: "Cool-season freeze nights", numeric: true },
+      { key: "freeze_nights_anomaly", label: "Freeze departure (nights)", numeric: true, digits: 1 }
     ]
   };
 
@@ -772,8 +916,13 @@
       "* marks a temperature result from 95–<98% valid paired days with no gap over two days; ≥98% displays normally. Dashed map edges mark cautions or pending reports. " +
       "Departures use at least 15 eligible 1991–2020 years; 15–19 receive a caution. — means unavailable. ThreadEx is an area composite, not a point station.";
     else caption.textContent =
-      `Dates and values refer to the most extreme single valid day in a complete ${periodLabels[periodEl.value]} period; ` +
-      "they are unavailable for incomplete periods. Ties use the first date. — means unavailable.";
+      `Recent extremes and hot/dry spell metrics refer to this ${periodLabels[periodEl.value]} period. ` +
+      "Freeze count and departure instead refer to the latest October–March cool season (to date while underway). " +
+      "Each count needs a complete, unflagged series for its variable; incomplete results are withheld. " +
+      "Hot days and warm nights exceed station-specific centered-five-day 1991–2020 90th-percentile thresholds; " +
+      "dry days have less than 0.04 inch of precipitation. Freeze nights are at or below 32°F; " +
+      "their departure is from the average count for matching season-to-date periods in 1991–2020 (at least 15 seasons required). " +
+      "Ties use the earliest occurrence. These are not historical records or formal climate indices. — means unavailable.";
     panel.append(caption);
   }
   function renderTables() { Object.keys(columns).forEach(renderTable); }
@@ -819,6 +968,43 @@
   searchEl.addEventListener("input", refresh);
   stateEl.addEventListener("change", refresh);
   availableEl.addEventListener("change", refresh);
+  function showChartDay(target, makeTabStop = false) {
+    const hit = target.closest?.(".chart-day");
+    if (!hit || !detailContentEl.contains(hit)) return;
+    const figure = hit.closest("figure");
+    const readout = figure?.querySelector(".chart-readout");
+    if (readout) readout.textContent = hit.dataset.chartReadout;
+    if (makeTabStop) {
+      figure.querySelectorAll(".chart-day").forEach(day => day.tabIndex = -1);
+      hit.tabIndex = 0;
+    }
+  }
+  detailContentEl.addEventListener("pointerover", event => showChartDay(event.target));
+  detailContentEl.addEventListener("focusin", event => showChartDay(event.target, true));
+  detailContentEl.addEventListener("click", event => {
+    const step = event.target.closest?.("[data-chart-step]");
+    if (step && detailContentEl.contains(step)) {
+      const figure = step.closest("figure");
+      const days = [...figure.querySelectorAll(".chart-day")];
+      if (!days.length) return;
+      const current = days.findIndex(day => day.tabIndex === 0);
+      const next = Math.max(0, Math.min(days.length - 1,
+        Math.max(0, current) + Number(step.dataset.chartStep)));
+      showChartDay(days[next], true);
+      return;
+    }
+    showChartDay(event.target, true);
+  });
+  detailContentEl.addEventListener("keydown", event => {
+    const hit = event.target.closest?.(".chart-day");
+    if (!hit || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    const days = [...hit.closest("figure").querySelectorAll(".chart-day")];
+    const index = days.indexOf(hit);
+    const next = event.key === "Home" ? 0 : event.key === "End" ? days.length - 1 :
+      Math.max(0, Math.min(days.length - 1, index + (event.key === "ArrowRight" ? 1 : -1)));
+    event.preventDefault();
+    days[next].focus();
+  });
   document.getElementById("detail-close").addEventListener("click", () => {
     selectedUid = null;
     detailEl.hidden = true;

@@ -202,6 +202,114 @@ testthat::test_that("live workflow reports milestones and a success", {
                                "success"))
 })
 
+testthat::test_that("final notices report elapsed time and fresh run statistics", {
+  directory <- tempfile("swc-summary-")
+  dir.create(directory)
+  on.exit(unlink(directory, recursive = TRUE), add = TRUE)
+  notices <- list()
+  prism <- function() list(summary = data.frame(
+    data_changed = TRUE, downloaded = 27L, downloaded_changed = 3L,
+    processed = 3L, maps_rebuilt = TRUE))
+  publish <- function(dry_run) list(validation = list(
+    current_passed = 51L, current_total = 51L,
+    archive_passed = 352L, archive_total = 352L,
+    archive_years = 44L, legacy_layout_maps = 16L))
+  args <- list(today = as.Date("2026-10-02"), dry_run = FALSE,
+               marker_path = file.path(directory, "success.csv"),
+               log_path = file.path(directory, "runs.csv"),
+               prism_update = prism,
+               snow_update = daily_publish_snow_fixture,
+               station_update = function(today) list(
+                 status = "UPDATED", stations = 62L, mapped = 51L,
+                 pending = 0L),
+               site_fingerprint = function() "new-site", publish = publish,
+               notify = function(event, message)
+                 notices[[length(notices) + 1L]] <<- list(
+                   event = event, message = message))
+  first <- do.call(run_swc_daily_publish, args)
+  success <- tail(notices, 1L)[[1L]]$message
+  testthat::expect_match(success, "Published in [0-9]+[smh]")
+  testthat::expect_match(success, "PRISM: 27 checked, 3 changed, 3 processed; maps rebuilt")
+  testthat::expect_match(success, "Stations: updated; 62 records \\(51 mapped\\)")
+  testthat::expect_match(success, "51/51 current, 352/352 historic passed")
+  testthat::expect_false(grepl("legacy", success, fixed = TRUE))
+  testthat::expect_true(is.finite(first$elapsed_seconds))
+  testthat::expect_equal(first$validation$current_passed, 51L)
+  notices <- list()
+  second <- do.call(run_swc_daily_publish, args)
+  testthat::expect_identical(second$status, "SKIPPED_UNCHANGED")
+  testthat::expect_match(tail(notices, 1L)[[1L]]$message,
+                         "upload skipped", fixed = TRUE)
+  testthat::expect_false(grepl("Validated maps", tail(notices, 1L)[[1L]]$message,
+                              fixed = TRUE))
+})
+
+testthat::test_that("failure notice includes elapsed time and stage, not raw error", {
+  directory <- tempfile("swc-error-summary-")
+  dir.create(directory)
+  on.exit(unlink(directory, recursive = TRUE), add = TRUE)
+  last_notice <- NULL
+  testthat::expect_error(run_swc_daily_publish(
+    today = as.Date("2026-10-02"), dry_run = FALSE,
+    marker_path = file.path(directory, "success.csv"),
+    log_path = file.path(directory, "runs.csv"),
+    prism_update = daily_publish_prism_fixture(FALSE),
+    snow_update = daily_publish_snow_fixture,
+    station_update = daily_publish_station_fixture,
+    site_fingerprint = function() "new-site",
+    publish = function(dry_run) stop("private render detail"),
+    notify = function(event, message) if (event == "error")
+      last_notice <<- message), "private render detail")
+  testthat::expect_match(last_notice, "Failed in [0-9]+[smh]")
+  testthat::expect_match(last_notice, "Stage: site publication")
+  testthat::expect_false(grepl("private render detail", last_notice, fixed = TRUE))
+})
+
+testthat::test_that("invalid PRISM result still reports the original failure", {
+  directory <- tempfile("swc-invalid-prism-")
+  dir.create(directory)
+  on.exit(unlink(directory, recursive = TRUE), add = TRUE)
+  notice <- NULL
+  testthat::expect_error(run_swc_daily_publish(
+    dry_run = FALSE,
+    marker_path = file.path(directory, "success.csv"),
+    log_path = file.path(directory, "runs.csv"),
+    prism_update = function() list(summary = data.frame(other = TRUE)),
+    snow_update = daily_publish_snow_fixture,
+    station_update = daily_publish_station_fixture,
+    site_fingerprint = function() "unchanged",
+    publish = function(dry_run) stop("should not publish"),
+    notify = function(event, message) if (event == "error")
+      notice <<- message), "PRISM update returned an invalid summary")
+  testthat::expect_match(notice, "Stage: PRISM update")
+})
+
+testthat::test_that("deployment summary keeps validation counts compact", {
+  source(file.path(project_root, "scripts", "deploy-site-s3.R"), local = TRUE)
+  directory <- tempfile("swc-validation-")
+  dir.create(directory)
+  on.exit(unlink(directory, recursive = TRUE), add = TRUE)
+  current <- file.path(directory, "current.csv")
+  archive <- file.path(directory, "archive.csv")
+  write.csv(data.frame(enabled = c(TRUE, TRUE, FALSE),
+                       validation_status = c("PASS", "PASS", "PASS")),
+            current, row.names = FALSE)
+  write.csv(data.frame(water_year = c(2024L, 2024L, 2025L),
+                       validation_status = rep("PASS", 3L),
+                       legacy_layout = c(FALSE, TRUE, FALSE)),
+            archive, row.names = FALSE)
+  result <- swc_deploy_validation_summary(current, archive)
+  testthat::expect_equal(result$current_passed, 2L)
+  testthat::expect_equal(result$current_total, 2L)
+  testthat::expect_equal(result$archive_years, 2L)
+  testthat::expect_equal(result$legacy_layout_maps, 1L)
+  write.csv(data.frame(water_year = 2024L,
+                       validation_status = "FAIL", legacy_layout = FALSE),
+            archive, row.names = FALSE)
+  testthat::expect_error(swc_deploy_validation_summary(current, archive),
+                         "contain failures")
+})
+
 testthat::test_that("dry runs do not send phone alerts", {
   directory <- tempfile("swc-notify-preview-")
   dir.create(directory)

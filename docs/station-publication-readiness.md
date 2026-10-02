@@ -59,7 +59,8 @@ The automatic rules are:
   broad bounds catch impossible outputs without trimming plausible extremes.
 
 `DISPLAY` and `DISPLAY_CAUTION` need no manual approval. Cautions appear
-as a dashed outline on local map labels and as text in tooltips and popups.
+as a dashed outline on local map labels, a compact count in hover tooltips,
+and full explanatory text in click popups.
 The raw computed values remain in the audit file even when a display value
 is hidden. Source-ID transitions and historical flags remain visible in
 the quality-context file, but are not automatic blockers: they are common in these

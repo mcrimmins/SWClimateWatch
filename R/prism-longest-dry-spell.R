@@ -31,6 +31,41 @@ prism_longest_dry_runs_for_windows <- function(
   }, numeric(1))
 }
 
+prism_longest_dry_spell_accelerator <- local({
+  attempted <- FALSE
+  compiled <- NULL
+  function(quiet = FALSE) {
+    if (attempted) return(compiled)
+    attempted <<- TRUE
+    if (!isTRUE(getOption("swc.longest_dry_spell_acceleration", TRUE)) ||
+        !requireNamespace("Rcpp", quietly = TRUE)) return(NULL)
+    path <- file.path("src", "prism-longest-dry-spell.cpp")
+    if (!file.exists(path)) {
+      path <- file.path("..", "..", "src", "prism-longest-dry-spell.cpp")
+    }
+    if (!file.exists(path) && exists("project_root", inherits = TRUE)) {
+      path <- file.path(get("project_root", inherits = TRUE), "src",
+                        "prism-longest-dry-spell.cpp")
+    }
+    if (!file.exists(path)) return(NULL)
+    environment <- new.env(parent = globalenv())
+    error <- tryCatch({
+      Rcpp::sourceCpp(path, env = environment, rebuild = FALSE,
+                      showOutput = FALSE, verbose = FALSE)
+      NULL
+    }, error = function(error) error)
+    if (is.null(error) && exists("swc_longest_dry_windows_cpp",
+                                  envir = environment, inherits = FALSE)) {
+      compiled <<- get("swc_longest_dry_windows_cpp", envir = environment)
+      if (!quiet) message("Using compiled longest-dry-spell window calculation.")
+    } else if (!quiet) {
+      message("Compiled longest-dry-spell calculation unavailable; using R fallback",
+              if (inherits(error, "error")) paste0(": ", conditionMessage(error)) else ".")
+    }
+    compiled
+  }
+})
+
 prism_longest_dry_spell_from_raster <- function(
     raster,
     end_date,
@@ -86,6 +121,7 @@ prism_longest_dry_spells_for_end_dates <- function(
   # instead of reopening a 180-layer calculation for each ending date.
   group_id <- cumsum(c(TRUE, diff(as.integer(end_dates)) != 1L))
   end_date_groups <- split(end_dates, group_id)
+  accelerated <- prism_longest_dry_spell_accelerator(quiet)
   started <- proc.time()[["elapsed"]]
   layers <- vector("list", length(end_date_groups))
   completed <- 0L
@@ -107,13 +143,20 @@ prism_longest_dry_spells_for_end_dates <- function(
     window_starts <- as.integer(
       group_dates - duration_days + 1L - min(needed)
     ) + 1L
-    layers[[index]] <- terra::app(
-      raster[[selected]],
-      fun = prism_longest_dry_runs_for_windows,
-      window_starts = window_starts,
-      duration_days = duration_days,
-      wet_day_threshold = wet_day_threshold
-    )
+    if (is.null(accelerated)) {
+      layers[[index]] <- terra::app(
+        raster[[selected]], fun = prism_longest_dry_runs_for_windows,
+        window_starts = window_starts, duration_days = duration_days,
+        wet_day_threshold = wet_day_threshold
+      )
+    } else {
+      layers[[index]] <- terra::app(
+        raster[[selected]], fun = accelerated,
+        window_starts = window_starts, duration_days = duration_days,
+        wet_cutoff = wet_day_threshold -
+          swc_prism$wet_day_storage_tolerance_inches
+      )
+    }
     terra::time(layers[[index]]) <- group_dates
     names(layers[[index]]) <- paste0(
       "pcpn_longest_dry_spell_", sprintf("%03d", duration_days),

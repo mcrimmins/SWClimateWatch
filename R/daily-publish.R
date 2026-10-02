@@ -52,6 +52,87 @@ swc_ntfy_send_safe <- function(event, message, notify = swc_ntfy_notify) {
 }
 # Source scripts/load-daily-publish.R first. No work runs when this file is sourced.
 
+swc_publish_elapsed <- function(seconds) {
+  seconds <- max(0, round(as.numeric(seconds)))
+  if (seconds >= 3600L) {
+    return(sprintf("%dh %02dm %02ds", seconds %/% 3600L,
+                   (seconds %% 3600L) %/% 60L, seconds %% 60L))
+  }
+  if (seconds >= 60L) return(sprintf("%dm %02ds", seconds %/% 60L,
+                                     seconds %% 60L))
+  sprintf("%ds", seconds)
+}
+
+swc_daily_publish_summary_lines <- function(record, prism = NULL, snow = NULL,
+                                            stations = NULL, validation = NULL,
+                                            failed_stage = NULL) {
+  status <- switch(record$status[[1L]],
+                   PUBLISHED = "Published", PREVIEW = "Preview complete",
+                   SKIPPED_UNCHANGED = "Update complete; upload skipped",
+                   FAILED = "Failed", record$status[[1L]])
+  first <- paste0("Daily site workflow: ", status, " in ",
+                  swc_publish_elapsed(record$elapsed_seconds[[1L]]), ".")
+  if (!is.null(failed_stage)) first <- paste0(first, " Stage: ", failed_stage, ".")
+  lines <- first
+  if (is.list(prism) && is.data.frame(prism$summary) && nrow(prism$summary)) {
+    row <- prism$summary[1L, , drop = FALSE]
+    changed <- if (!"data_changed" %in% names(row)) "unknown" else
+      if (isTRUE(row$data_changed[[1L]])) "changed" else "unchanged"
+    if (all(c("downloaded", "downloaded_changed", "processed",
+              "maps_rebuilt") %in% names(row))) {
+      lines <- c(lines, sprintf(
+        "PRISM: %d checked, %d changed, %d processed; maps %s.",
+        row$downloaded, row$downloaded_changed, row$processed,
+        if (isTRUE(row$maps_rebuilt[[1L]])) "rebuilt" else "skipped"))
+    } else lines <- c(lines, paste0("PRISM: data ", changed, "."))
+  }
+  if (is.list(snow) && is.list(snow$maps) && length(snow$maps$status) == 1L) {
+    snow_line <- paste0("Snow: ", gsub("_", " ", tolower(snow$maps$status)),
+                        if (!is.null(snow$maps$date) &&
+                            length(snow$maps$date) == 1L &&
+                            !is.na(snow$maps$date))
+                          paste0(" (", as.character(snow$maps$date), ")")
+                        else "")
+    if (is.list(snow$data) && is.data.frame(snow$data$summary) &&
+        nrow(snow$data$summary) &&
+        "processed_this_run" %in% names(snow$data$summary)) {
+      snow_line <- paste0(snow_line, "; ",
+                          snow$data$summary$processed_this_run[[1L]],
+                          " daily grids processed")
+    }
+    lines <- c(lines, paste0(snow_line, "."))
+  }
+  if (is.list(stations) && length(stations$status) == 1L) {
+    station_line <- paste0("Stations: ",
+                           gsub("_", " ", tolower(stations$status)))
+    if (length(stations$stations) == 1L && is.numeric(stations$stations) &&
+        is.finite(stations$stations)) {
+      station_line <- paste0(station_line, "; ", stations$stations,
+                             " records",
+                             if (length(stations$mapped) == 1L &&
+                                 is.numeric(stations$mapped) &&
+                                 is.finite(stations$mapped))
+                               paste0(" (", stations$mapped, " mapped)") else "")
+    }
+    if (length(stations$pending) == 1L && is.numeric(stations$pending) &&
+        is.finite(stations$pending) &&
+        stations$pending > 0L)
+      station_line <- paste0(station_line, "; ", stations$pending, " delayed")
+    lines <- c(lines, paste0(station_line, "."))
+  }
+  if (is.list(validation) &&
+      all(c("current_passed", "current_total", "archive_passed",
+            "archive_total") %in% names(validation))) {
+    lines <- c(lines, sprintf(
+      "Validated maps: %d/%d current, %d/%d historic passed.",
+      validation$current_passed, validation$current_total,
+      validation$archive_passed, validation$archive_total))
+  }
+  if (identical(record$status[[1L]], "PUBLISHED"))
+    lines <- c(lines, "https://cales.arizona.edu/climate/watch/")
+  lines
+}
+
 swc_daily_publish_site_fingerprint <- function(site_dir = "site") {
   if (!file.exists(file.path(site_dir, "_quarto.yml"))) {
     stop("The Quarto site source directory is missing.", call. = FALSE)
@@ -279,6 +360,18 @@ run_swc_daily_publish <- function(
     if (!dry_run) swc_ntfy_send_safe(event, message, notify = notify)
     invisible(NULL)
   }
+  prism <- snow <- stations <- publication <- NULL
+  finish <- function(event, failed_stage = NULL) {
+    record$elapsed_seconds <<- round(as.numeric(difftime(
+      Sys.time(), started, units = "secs")), 3)
+    lines <- swc_daily_publish_summary_lines(
+      record, prism, snow, stations,
+      if (is.list(publication)) publication$validation else NULL,
+      failed_stage = failed_stage)
+    message(paste(lines, collapse = "\n"))
+    if (!is.null(event)) send(event, paste(lines, collapse = "\n"))
+    lines
+  }
   stage <- "PRISM update"
   tryCatch({
     send("started", paste0("Daily update started for ", today, "."))
@@ -341,13 +434,15 @@ run_swc_daily_publish <- function(
     if (!changed) {
       record$status <- "SKIPPED_UNCHANGED"
       message("Site source is unchanged since the last successful sync; upload skipped.")
-      send("success", "Daily update complete. The site is unchanged; upload skipped.")
+      lines <- finish("success")
       return(invisible(list(status = record$status, prism = prism,
                             snow = snow, stations = stations,
-                            published = FALSE)))
+                            published = FALSE,
+                            elapsed_seconds = record$elapsed_seconds,
+                            summary_lines = lines)))
     }
     send("progress", "Rendering and validating the site, then syncing it to S3.")
-    publish(dry_run = dry_run)
+    publication <- publish(dry_run = dry_run)
     if (dry_run) {
       record$status <- "PREVIEW"
     } else {
@@ -355,15 +450,18 @@ run_swc_daily_publish <- function(
       swc_daily_publish_write_marker(marker_path, site_fingerprint())
       record$status <- "PUBLISHED"
       record$published <- TRUE
-      send("success", "Southwest Climate Watch published successfully: https://cales.arizona.edu/climate/watch/")
     }
+    lines <- finish(if (dry_run) NULL else "success")
     invisible(list(status = record$status, prism = prism, snow = snow,
                    stations = stations,
-                   published = record$published))
+                   published = record$published,
+                   validation = if (is.list(publication)) publication$validation
+                   else NULL,
+                   elapsed_seconds = record$elapsed_seconds,
+                   summary_lines = lines))
   }, error = function(error) {
     record$error <- conditionMessage(error)
-    send("error", paste0("Daily publish failed during ", stage,
-                          ". See the local daily-publish log for details."))
+    finish("error", failed_stage = stage)
     stop(error)
   })
 }
