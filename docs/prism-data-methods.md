@@ -801,7 +801,10 @@ water_year_maps
   version, processed-source signature, byte size, and checksum. Because the
   standard baseline is fixed, routine daily updates reuse this cache.
 - `prism_current_water_year_maximum()` calculates the maximum-so-far from the
-  active water year's October 1 through the latest date.
+  active water year's October 1 through the latest date. The daily map plan
+  defers the maximum, its rank, and concentration through October 1-2, while
+  the site shows waiting pages. All three resume automatically with data
+  through October 3; other current maps continue to update.
 - `calculate_current_prism_water_year_maximum_products()` writes the observed
   maximum and its empirical type-8 rank against complete historical maxima.
   The active-year rank is provisional until September 30 because additional

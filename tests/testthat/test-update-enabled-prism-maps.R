@@ -39,6 +39,27 @@ testthat::test_that("shared water-year work remains when only concentration is e
   testthat::expect_true(plan$water_year_maximum_work)
 })
 
+testthat::test_that("3-day water-year groups wait for a complete October period", {
+  products <- read_map_product_config(file.path(project_root, "config", "map-products.yml"))
+  dates <- function(date) c(Temperature = date, Precipitation = date)
+  for (date in c("2026-10-01", "2026-10-02")) {
+    plan <- plan_enabled_prism_map_updates(products, dates(date))
+    testthat::expect_length(plan$water_year_maximum, 0L)
+    testthat::expect_length(plan$water_year_concentration, 0L)
+    testthat::expect_length(plan$water_year_maximum_work, 0L)
+    testthat::expect_true(plan$water_year_work)
+    testthat::expect_equal(plan$water_year,
+                           c("total", "percent-normal", "percentile-rank"))
+  }
+  for (date in c("2026-09-30", "2026-10-03")) {
+    plan <- plan_enabled_prism_map_updates(products, dates(date))
+    testthat::expect_equal(plan$water_year_maximum,
+                           c("maximum", "percentile-rank"))
+    testthat::expect_true(plan$water_year_concentration)
+    testthat::expect_true(plan$water_year_maximum_work)
+  }
+})
+
 testthat::test_that("paired map builders validate selected outputs", {
   testthat::expect_equal(
     validate_southwest_map_products("departure", c("observed-day", "departure")),

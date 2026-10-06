@@ -154,6 +154,52 @@ testthat::test_that("map site generation honors enabled products", {
   testthat::expect_true(any(grepl("text: Snow", navigation, fixed = TRUE)))
 })
 
+testthat::test_that("early water-year pages show a waiting message, then restore maps", {
+  root <- tempfile("map-early-water-year-")
+  dir.create(root)
+  on.exit(unlink(root, recursive = TRUE), add = TRUE)
+  site_dir <- file.path(root, "site")
+  dir.create(site_dir)
+  writeLines(c("website:", "  sidebar:", "    contents:",
+               "      # BEGIN GENERATED MAP BROWSER",
+               "      # END GENERATED MAP BROWSER",
+               "      - href: pages/methods.qmd"),
+             file.path(site_dir, "_quarto.yml"))
+  config_path <- file.path(project_root, "config", "map-products.yml")
+  dates <- c(Temperature = "2026-10-02", Precipitation = "2026-10-02")
+  products <- build_map_product_site(config_path, site_dir,
+                                     require_images = FALSE,
+                                     expected_data_dates = dates)
+  deferred <- c("pcpn_water_year_max_03day",
+                "pcpn_water_year_max_percentile_03day",
+                "pcpn_water_year_concentration_03day")
+  for (id in deferred) {
+    page <- readLines(map_product_page_path(id, site_dir), warn = FALSE)
+    testthat::expect_true(any(grepl("Not yet available.", page, fixed = TRUE)))
+    testthat::expect_true(any(grepl("2026-10-02", page, fixed = TRUE)))
+    testthat::expect_false(any(grepl("Open full-resolution PNG", page, fixed = TRUE)))
+  }
+  normal <- readLines(map_product_page_path("pcpn_water_year_total", site_dir),
+                      warn = FALSE)
+  testthat::expect_true(any(grepl("Open full-resolution PNG", normal, fixed = TRUE)))
+  validation <- validate_map_product_publication(
+    products, site_dir, expected_data_dates = dates,
+    report_path = NULL, fail = FALSE)
+  status <- validation$status[validation$status$id %in% deferred, ]
+  testthat::expect_true(all(status$validation_status == "PASS"))
+  testthat::expect_true(all(status$freshness_policy ==
+                            "awaiting-three-day-period"))
+
+  dates[] <- "2026-10-03"
+  build_map_product_site(config_path, site_dir, require_images = FALSE,
+                         expected_data_dates = dates)
+  for (id in deferred) {
+    page <- readLines(map_product_page_path(id, site_dir), warn = FALSE)
+    testthat::expect_false(any(grepl("Not yet available.", page, fixed = TRUE)))
+    testthat::expect_true(any(grepl("Open full-resolution PNG", page, fixed = TRUE)))
+  }
+})
+
 testthat::test_that("dashboard rejects unknown, duplicate, and disabled products", {
   path <- tempfile(fileext = ".yml")
   base <- c(

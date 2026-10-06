@@ -9,7 +9,7 @@ body-classes: dashboard-page
 ::: {.dashboard-intro}
 Key temperature and precipitation indicators for Arizona and New Mexico.
 
-**Data through September 30, 2026** · Reference period: 1991–2020
+**Data through October 03, 2026** · Reference period: 1991–2020
 
 Explore all maps from Current Maps in the navigation menu.
 :::

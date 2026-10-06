@@ -55,6 +55,41 @@ read_map_product_config <- function(path = file.path("config", "map-products.yml
   products
 }
 
+map_product_early_water_year_three_day <- function(products, expected_data_dates = NULL) {
+  unavailable <- rep(FALSE, nrow(products))
+  if (is.null(expected_data_dates) ||
+      !"Precipitation" %in% names(expected_data_dates)) return(unavailable)
+  date <- as.Date(expected_data_dates[["Precipitation"]])
+  if (length(date) != 1L || is.na(date) ||
+      !format(date, "%m-%d") %in% c("10-01", "10-02")) return(unavailable)
+  unavailable <- products$enabled & products$id %in% c(
+    "pcpn_water_year_max_03day",
+    "pcpn_water_year_max_percentile_03day",
+    "pcpn_water_year_concentration_03day"
+  )
+  unavailable
+}
+
+map_product_early_water_year_three_day_page <- function(product, date) {
+  first_date <- as.Date(sprintf("%s-10-03", format(as.Date(date), "%Y")))
+  c(
+    "---",
+    paste0('title: "', gsub('"', '\\"', product$label), '"'),
+    'description-meta: "A complete three-day water-year period is not yet available."',
+    "body-classes: product-page",
+    "toc: false",
+    "page-layout: full",
+    "---",
+    "",
+    "::: {.product-interpretation}",
+    "**Not yet available.** This water-year map requires three complete days of precipitation, starting October 1.",
+    paste0("PRISM data currently extend through ", format(as.Date(date)),
+           "; the first eligible period ends ", format(first_date),
+           ". The map will appear here automatically when those data arrive."),
+    ":::"
+  )
+}
+
 `%||%` <- function(x, y) if (is.null(x)) y else x
 
 read_map_dashboard_config <- function(
@@ -289,6 +324,8 @@ validate_map_product_publication <- function(
       }
     }
   }
+  temporarily_unavailable <- map_product_early_water_year_three_day(
+    products, expected_data_dates)
 
   rows <- lapply(seq_len(nrow(products)), function(index) {
     product <- products[index, , drop = FALSE]
@@ -320,13 +357,35 @@ validate_map_product_publication <- function(
     rendered_download_link <- any(grepl("Open full-resolution PNG", rendered_text, fixed = TRUE))
     seasonal <- map_product_is_seasonal(product$id)
     expected_date <- expected_dates[[index]]
-    freshness_checked <- isTRUE(product$enabled) && !seasonal && !is.na(expected_date)
+    waiting <- temporarily_unavailable[[index]]
+    freshness_checked <- isTRUE(product$enabled) && !waiting &&
+      !seasonal && !is.na(expected_date)
     freshness_ok <- !freshness_checked || (
       !is.na(companion$date) && companion$date == expected_date
     )
 
     problems <- character()
-    if (isTRUE(product$enabled)) {
+    if (waiting) {
+      if (!file.exists(page_path)) problems <- c(problems, "waiting source page is missing")
+      if (!navigation_link) problems <- c(problems, "navigation link is missing")
+      if (!any(grepl("Not yet available.", page_text, fixed = TRUE)) ||
+          !any(grepl(format(expected_date), page_text, fixed = TRUE))) {
+        problems <- c(problems, "waiting source page is stale or incorrect")
+      }
+      if (page_image_link || page_download_link) {
+        problems <- c(problems, "waiting source page still links an old map")
+      }
+      if (isTRUE(require_rendered)) {
+        if (!file.exists(rendered_path)) problems <- c(problems, "rendered waiting page is missing")
+        if (!any(grepl("Not yet available.", rendered_text, fixed = TRUE)) ||
+            !any(grepl(format(expected_date), rendered_text, fixed = TRUE))) {
+          problems <- c(problems, "rendered waiting page is stale or incorrect")
+        }
+        if (rendered_image_link || rendered_download_link) {
+          problems <- c(problems, "rendered waiting page still links an old map")
+        }
+      }
+    } else if (isTRUE(product$enabled)) {
       if (!file.exists(image_path)) problems <- c(problems, "map image is missing")
       if (file.exists(image_path) && !image$readable) problems <- c(problems, "map image is not a readable PNG")
       if (!is.na(image$bytes) && image$bytes < minimum_image_bytes) {
@@ -378,9 +437,11 @@ validate_map_product_publication <- function(
       scale = product$scale,
       validation_status = if (length(problems) == 0L) "PASS" else "FAIL",
       problems = paste(problems, collapse = "; "),
-      actual_data_date = if (is.na(companion$date)) NA_character_ else format(companion$date),
+      actual_data_date = if (waiting || is.na(companion$date)) NA_character_ else format(companion$date),
       expected_data_date = if (is.na(expected_date)) NA_character_ else format(expected_date),
-      freshness_policy = if (seasonal) "seasonal-retention" else if (freshness_checked) "current" else "not-checked",
+      freshness_policy = if (waiting) "awaiting-three-day-period" else
+        if (seasonal) "seasonal-retention" else
+          if (freshness_checked) "current" else "not-checked",
       image_bytes = image$bytes,
       image_width = image$width,
       image_height = image$height,
@@ -509,10 +570,14 @@ build_map_product_site <- function(
     minimum_image_bytes = 10000,
     status_path = file.path("data", "diagnostics", "map-product-status.csv")) {
   products <- read_map_product_config(config_path)
+  temporarily_unavailable <- map_product_early_water_year_three_day(
+    products, expected_data_dates)
   enabled <- products[products$enabled, , drop = FALSE]
   dashboard <- read_map_dashboard_config(config_path, products)
   if (isTRUE(require_images)) {
-    image_paths <- file.path(site_dir, "maps", "generated", enabled$image)
+    image_paths <- file.path(site_dir, "maps", "generated",
+                             products$image[products$enabled &
+                                            !temporarily_unavailable])
     missing <- !file.exists(image_paths)
     if (any(missing)) {
       stop("Enabled map image is missing: ", image_paths[which(missing)[[1L]]], call. = FALSE)
@@ -526,8 +591,11 @@ build_map_product_site <- function(
   stale <- setdiff(existing, expected)
   if (length(stale) > 0L) unlink(stale)
   for (index in seq_len(nrow(enabled))) {
+    waiting <- temporarily_unavailable[match(enabled$id[[index]], products$id)]
     writeLines(
-      map_product_page_text(enabled[index, , drop = FALSE]),
+      if (waiting) map_product_early_water_year_three_day_page(
+        enabled[index, , drop = FALSE], expected_data_dates[["Precipitation"]])
+      else map_product_page_text(enabled[index, , drop = FALSE]),
       map_product_page_path(enabled$id[[index]], site_dir),
       useBytes = TRUE
     )

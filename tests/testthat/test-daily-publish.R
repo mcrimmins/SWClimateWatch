@@ -12,6 +12,41 @@ daily_publish_station_fixture <- function(today) {
   list(status = "UPDATED", date = as.Date(today) - 1L, pending = 0L)
 }
 
+testthat::test_that("staging destination has a separate publication marker", {
+  live <- swc_daily_publish_live_destination()
+  stage <- "s3://cales-climate-reports/climate/watch-staging/"
+  testthat::expect_identical(swc_daily_publish_destination(""), live)
+  testthat::expect_identical(swc_daily_publish_destination(stage), stage)
+  testthat::expect_identical(swc_daily_publish_marker_path(live),
+                             file.path("data", "diagnostics", "daily-publish",
+                                       "last-success.csv"))
+  testthat::expect_false(identical(swc_daily_publish_marker_path(stage),
+                                   swc_daily_publish_marker_path(live)))
+  testthat::expect_identical(swc_daily_publish_marker_path(stage),
+                             swc_daily_publish_marker_path(stage))
+  testthat::expect_error(swc_daily_publish_destination("s3://bucket/"),
+                         "dedicated site prefix")
+})
+
+testthat::test_that("invalid destination stops before any data update", {
+  called <- FALSE
+  testthat::expect_error(run_swc_daily_publish(
+    destination = "s3://bucket/", prism_update = function() {
+      called <<- TRUE
+      stop("should not update")
+    }), "dedicated site prefix")
+  testthat::expect_false(called)
+})
+
+testthat::test_that("staging notice names its S3 destination, not the live URL", {
+  record <- data.frame(status = "PUBLISHED", elapsed_seconds = 2)
+  lines <- swc_daily_publish_summary_lines(
+    record, destination = "s3://cales-climate-reports/climate/watch-staging/")
+  testthat::expect_true(any(grepl("watch-staging", lines, fixed = TRUE)))
+  testthat::expect_false(any(grepl("https://cales.arizona.edu/climate/watch/",
+                                  lines, fixed = TRUE)))
+})
+
 testthat::test_that("ntfy stays off without a topic and rejects unsafe topic names", {
   previous <- Sys.getenv("SWC_NTFY_TOPIC", unset = NA_character_)
   on.exit({

@@ -39,7 +39,7 @@ The maps below use a **wet-day threshold of at least 0.04 inch**, a **freeze thr
 - **Mean precipitation per wet day:** Average precipitation on qualifying wet days in the latest 90 days. Its companion rank compares that intensity with seasonally matched historical periods. Areas with no wet days are blank.
 - **Very-wet-day contribution:** Calculate the share of the latest 90-day total supplied by days above the local 1991–2020 annual wet-day 95th-percentile amount. Its companion rank shows whether that share is unusual for the season. Totals below 0.10 inch are blank.
 - **Water-year total, percent of normal, and rank:** Accumulate precipitation since October 1. Percent of normal compares with the 1991–2020 average through the *same date*; the rank compares with historical water-year-to-date totals through that date. A low rank means an unusually dry water year so far.
-- **Water-year maximum three-day precipitation and rank:** Find the largest complete three-day total since October 1. The rank compares it with annual maxima from complete 1991–2020 water years, so the current year's result remains provisional until September 30.
+- **Water-year maximum three-day precipitation and rank:** Find the largest complete three-day total since October 1. These maps wait for data through October 3 rather than treating one or two days as a three-day event. The rank compares with annual maxima from complete 1991–2020 water years, so the current year's result remains provisional until September 30.
 - **Water-year precipitation concentration:** Divide the largest three-day total by the water-year total. High percentages mean that one short period supplied a larger share of the year's precipitation. Totals below 0.10 inch are blank.
 
 ## Historic Years

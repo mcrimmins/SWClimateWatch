@@ -1,6 +1,7 @@
-# LIVE deployment entry point for the Southwest Climate Watch website.
+# Site-only deployment entry point for the Southwest Climate Watch website.
 # Source this file from the project root in RStudio to render, validate, and
-# upload site/_site/ to its dedicated S3 prefix. This changes remote objects.
+# upload site/_site/ to the confirmed live S3 prefix by default, or to the
+# SWC_S3_DESTINATION staging prefix when that is set. This changes remote objects.
 # It does not download or process new PRISM data, and it does not delete remote
 # objects that are absent locally.
 
@@ -8,11 +9,13 @@ source(file.path("scripts", "deploy-site-s3.R"))
 source(file.path("scripts", "load-daily-publish.R"))
 
 swc_site_publish_started <- Sys.time()
-swc_ntfy_send_safe("started", "Site-only publication started.")
+swc_site_destination <- swc_daily_publish_destination()
+swc_ntfy_send_safe("started", paste0("Site-only publication started: ",
+                                     swc_site_destination))
 swc_publish_result <- tryCatch({
   swc_ntfy_send_safe("progress", "Rendering and validating the site, then syncing it to S3.")
   result <- deploy_swc_site(
-    destination = "s3://cales-climate-reports/climate/watch/",
+    destination = swc_site_destination,
     region = "us-west-2",
     dry_run = FALSE,
     delete = FALSE,
@@ -31,7 +34,10 @@ swc_publish_result <- tryCatch({
                      result$validation$current_total,
                      result$validation$archive_passed,
                      result$validation$archive_total),
-             "https://cales.arizona.edu/climate/watch/")
+             if (identical(swc_site_destination,
+                           swc_daily_publish_live_destination()))
+               "https://cales.arizona.edu/climate/watch/"
+             else paste0("S3 destination: ", swc_site_destination))
   message(paste(lines, collapse = "\n"))
   swc_ntfy_send_safe("success", paste(lines, collapse = "\n"))
   result

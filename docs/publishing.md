@@ -50,6 +50,71 @@ are not stored in this repository. A failed render or validation stops the
 sync. The daily workflow validates both the Current Snow and Station Conditions
 pages before syncing.
 
+## Preparing a separate production machine
+
+The laptop remains the development environment. Do not schedule the VM or let
+it write to the live prefix until it has completed a staging run from a tested
+Git commit. The daily publisher normally uses the existing live destination,
+`s3://cales-climate-reports/climate/watch/`. Set `SWC_S3_DESTINATION` to an
+**explicit dedicated staging prefix** on the VM during testing; for example,
+`s3://cales-climate-reports/climate/watch-staging/`. The same setting applies
+to the site-only publisher. The destination is validated before the daily
+workflow starts, and staging has its own last-success marker, so a staging
+sync cannot make the live run appear already published. The S3 sync still does
+not delete remote objects. Unset `SWC_S3_DESTINATION` to restore the confirmed
+live default. Keep the staging value in the VM's service environment, not in
+tracked source files.
+
+Run `Rscript scripts/check-production-readiness.R` from the project root on
+both machines before the first VM update. This is a read-only check of code,
+R packages, Quarto, AWS CLI, and the principal data and site assets. It prints
+the resolved S3 destination and time zone. It does **not** make network
+requests, verify IAM permissions, check free disk or RAM, compare versions,
+validate every manifest checksum, or prove that Linux maps look identical.
+Set the VM's `TZ=America/Phoenix` before scheduling so `Sys.Date()` has the
+intended Arizona date.
+
+### One-time transfer checklist
+
+- [ ] Select and record a tested Git commit. Clone that commit on the VM;
+  do not run daily production from an automatically advancing `main` branch.
+- [ ] Install R, the packages listed by the preflight, a C++ compiler for the
+  Rcpp dry-spell calculation, Quarto, AWS CLI, and the geospatial/ImageMagick
+  system libraries needed by `terra`, `sf`, and `magick`.
+- [ ] Transfer `data/raw/prism/` **with its manifest** and all of
+  `data/processed/`. Their relative paths in the manifests must remain
+  unchanged. Transfer `data/diagnostics/` as well: it contains station-network
+  selection, update inventories, pending-work markers, and publication state.
+- [ ] Transfer `site/maps/generated/` and `site/stations/`; both are ignored by
+  Git but needed to render the existing current/historic maps and station page.
+  The regional SNODAS grids are in `data/processed/snodas/`; the retained
+  full-domain `data/raw/snodas/` archives are optional for routine publishing
+  and may be kept separately for research audits.
+- [ ] Do **not** transfer `site/_site/`, Quarto caches, `.Rhistory`, `.RData`,
+  `.Renviron`, AWS credentials, or other laptop-specific secrets. Rendered
+  output should be produced afresh on the VM. Use a private transfer location,
+  not the public website prefix.
+- [ ] Compare file counts and checksums for the transferred manifests and a
+  sample of large grids, run the read-only preflight, then render/validate and
+  preview the S3 sync. Check the VM's free disk and peak memory separately.
+- [ ] Run at least several daily cycles against staging, comparing map dates,
+  image appearance, station counts, validation results, and total run time with
+  the laptop. Only then switch the VM destination to the live prefix and make
+  it the sole routine writer. Keep laptop publishing for manual recovery.
+
+The laptop inventory on October 2, 2026 was approximately 10.4 GiB under
+`data/raw/`, 9.0 GiB under `data/processed/`, 0.1 GiB under
+`data/diagnostics/`, and 0.7 GiB under `site/maps/generated/`. These sizes
+will change as updates accumulate; allow substantial space for temporary
+downloads, rendering, and future seasons. `site/_site/` was about 0.4 GiB but
+does not need to be copied. Before making a VM release procedure, account for
+daily updates to some tracked `.qmd` pages: a plain `git pull` in a running
+checkout could conflict with generated changes. Use a controlled release and
+data-persistence plan rather than resetting the working tree.
+The raw PRISM manifest also contains one old empty-AOI entry for January 2020
+maximum temperature that points to a former path; the current AOI-named file
+is present. Do not mistake that pre-existing legacy row for a transfer loss.
+
 ## Checking the result
 
 The normal daily command prints a final status. In the same RStudio session,

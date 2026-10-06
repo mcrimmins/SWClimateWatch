@@ -52,6 +52,41 @@ swc_ntfy_send_safe <- function(event, message, notify = swc_ntfy_notify) {
 }
 # Source scripts/load-daily-publish.R first. No work runs when this file is sourced.
 
+swc_daily_publish_live_destination <- function() {
+  "s3://cales-climate-reports/climate/watch/"
+}
+
+swc_daily_publish_deploy_script <- function() {
+  path <- file.path("scripts", "deploy-site-s3.R")
+  if (!file.exists(path)) {
+    path <- file.path("..", "..", "scripts", "deploy-site-s3.R")
+  }
+  if (!file.exists(path) && exists("project_root", inherits = TRUE)) {
+    path <- file.path(get("project_root", inherits = TRUE),
+                      "scripts", "deploy-site-s3.R")
+  }
+  if (!file.exists(path)) stop("Cannot find scripts/deploy-site-s3.R.", call. = FALSE)
+  path
+}
+
+swc_daily_publish_destination <- function(
+    destination = Sys.getenv("SWC_S3_DESTINATION", unset = "")) {
+  if (length(destination) == 1L && !is.na(destination) &&
+      !nzchar(destination)) destination <- swc_daily_publish_live_destination()
+  source(swc_daily_publish_deploy_script(), local = TRUE)
+  swc_deploy_destination(destination)
+}
+
+swc_daily_publish_marker_path <- function(destination) {
+  destination <- swc_daily_publish_destination(destination)
+  directory <- file.path("data", "diagnostics", "daily-publish")
+  if (identical(destination, swc_daily_publish_live_destination())) {
+    return(file.path(directory, "last-success.csv"))
+  }
+  suffix <- substr(digest::digest(destination, algo = "sha256"), 1L, 12L)
+  file.path(directory, paste0("last-success-", suffix, ".csv"))
+}
+
 swc_publish_elapsed <- function(seconds) {
   seconds <- max(0, round(as.numeric(seconds)))
   if (seconds >= 3600L) {
@@ -65,7 +100,8 @@ swc_publish_elapsed <- function(seconds) {
 
 swc_daily_publish_summary_lines <- function(record, prism = NULL, snow = NULL,
                                             stations = NULL, validation = NULL,
-                                            failed_stage = NULL) {
+                                            failed_stage = NULL,
+                                            destination = swc_daily_publish_live_destination()) {
   status <- switch(record$status[[1L]],
                    PUBLISHED = "Published", PREVIEW = "Preview complete",
                    SKIPPED_UNCHANGED = "Update complete; upload skipped",
@@ -128,8 +164,11 @@ swc_daily_publish_summary_lines <- function(record, prism = NULL, snow = NULL,
       validation$current_passed, validation$current_total,
       validation$archive_passed, validation$archive_total))
   }
-  if (identical(record$status[[1L]], "PUBLISHED"))
+  if (!identical(destination, swc_daily_publish_live_destination())) {
+    lines <- c(lines, paste0("S3 destination: ", destination))
+  } else if (identical(record$status[[1L]], "PUBLISHED")) {
     lines <- c(lines, "https://cales.arizona.edu/climate/watch/")
+  }
   lines
 }
 
@@ -310,10 +349,11 @@ swc_daily_publish_validate_snow <- function(
   invisible(TRUE)
 }
 
-swc_daily_publish_sync <- function(dry_run = FALSE) {
-  source(file.path("scripts", "deploy-site-s3.R"), local = TRUE)
+swc_daily_publish_sync <- function(
+    dry_run = FALSE, destination = swc_daily_publish_destination()) {
+  source(swc_daily_publish_deploy_script(), local = TRUE)
   deploy_swc_site(
-    destination = "s3://cales-climate-reports/climate/watch/",
+    destination = swc_daily_publish_destination(destination),
     region = "us-west-2", dry_run = dry_run, delete = FALSE,
     render = TRUE, extra_validation = function(output_dir) {
       swc_daily_publish_validate_snow(output_dir)
@@ -323,20 +363,24 @@ swc_daily_publish_sync <- function(dry_run = FALSE) {
 
 run_swc_daily_publish <- function(
     today = Sys.Date(), dry_run = TRUE, force_publish = FALSE,
-    marker_path = file.path("data", "diagnostics", "daily-publish",
-                            "last-success.csv"),
+    destination = swc_daily_publish_destination(),
+    marker_path = swc_daily_publish_marker_path(destination),
     log_path = file.path("data", "diagnostics", "daily-publish",
                          "runs.csv"),
     prism_update = swc_daily_publish_update_prism,
     snow_update = swc_daily_publish_update_snow,
     station_update = swc_daily_publish_update_stations,
     site_fingerprint = swc_daily_publish_site_fingerprint,
-    publish = swc_daily_publish_sync,
+    publish = NULL,
     notify = swc_ntfy_notify) {
   if (!is.logical(dry_run) || length(dry_run) != 1L || is.na(dry_run) ||
       !is.logical(force_publish) || length(force_publish) != 1L ||
       is.na(force_publish)) {
     stop("`dry_run` and `force_publish` must be TRUE or FALSE.", call. = FALSE)
+  }
+  destination <- swc_daily_publish_destination(destination)
+  if (is.null(publish)) {
+    publish <- function(dry_run) swc_daily_publish_sync(dry_run, destination)
   }
   today <- as.Date(today)
   if (length(today) != 1L || is.na(today)) {
@@ -367,14 +411,17 @@ run_swc_daily_publish <- function(
     lines <- swc_daily_publish_summary_lines(
       record, prism, snow, stations,
       if (is.list(publication)) publication$validation else NULL,
-      failed_stage = failed_stage)
+      failed_stage = failed_stage, destination = destination)
     message(paste(lines, collapse = "\n"))
     if (!is.null(event)) send(event, paste(lines, collapse = "\n"))
     lines
   }
   stage <- "PRISM update"
   tryCatch({
-    send("started", paste0("Daily update started for ", today, "."))
+    send("started", paste0("Daily update started for ", today, ".",
+                            if (!identical(destination,
+                                           swc_daily_publish_live_destination()))
+                              paste0(" Destination: ", destination) else ""))
     prism <- prism_update()
     if (!is.list(prism) || !is.data.frame(prism$summary) ||
         nrow(prism$summary) != 1L ||
@@ -437,6 +484,7 @@ run_swc_daily_publish <- function(
       lines <- finish("success")
       return(invisible(list(status = record$status, prism = prism,
                             snow = snow, stations = stations,
+                            destination = destination,
                             published = FALSE,
                             elapsed_seconds = record$elapsed_seconds,
                             summary_lines = lines)))
@@ -454,6 +502,7 @@ run_swc_daily_publish <- function(
     lines <- finish(if (dry_run) NULL else "success")
     invisible(list(status = record$status, prism = prism, snow = snow,
                    stations = stations,
+                   destination = destination,
                    published = record$published,
                    validation = if (is.list(publication)) publication$validation
                    else NULL,

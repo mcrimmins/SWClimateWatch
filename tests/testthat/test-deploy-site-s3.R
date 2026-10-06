@@ -27,8 +27,9 @@ testthat::test_that("live publish entry point uses the dedicated confirmed prefi
   testthat::expect_silent(parse(file = path))
   script <- paste(readLines(path, warn = FALSE), collapse = "\n")
   testthat::expect_match(
-    script, 'destination = "s3://cales-climate-reports/climate/watch/"', fixed = TRUE
+    script, "swc_site_destination <- swc_daily_publish_destination()", fixed = TRUE
   )
+  testthat::expect_match(script, "destination = swc_site_destination", fixed = TRUE)
   testthat::expect_match(script, "region = \"us-west-2\"", fixed = TRUE)
   testthat::expect_match(script, "dry_run = FALSE", fixed = TRUE)
   testthat::expect_match(script, "delete = FALSE", fixed = TRUE)

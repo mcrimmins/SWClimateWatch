@@ -7,6 +7,9 @@ To update the climate data and publish the website from the project root in
 RStudio, run `source("scripts/daily-update-and-publish.R")`. See the
 [publishing guide](docs/publishing.md) for previews, forced publishing, and
 site-only options.
+The [production-machine checklist](docs/publishing.md#preparing-a-separate-production-machine)
+covers a staging destination and the data transfer needed for a VM; it does
+not change the existing laptop publishing command.
 The [publishing guide](docs/publishing.md#optional-phone-notifications-with-ntfy)
 also explains optional ntfy phone alerts for progress, errors, and success.
 

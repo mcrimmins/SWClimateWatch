@@ -13,7 +13,9 @@ enabled_map_product_values <- function(products, ids, values) {
 }
 
 plan_enabled_prism_map_updates <- function(
-    products = read_map_product_config()) {
+    products = read_map_product_config(), expected_data_dates = NULL) {
+  products$enabled[map_product_early_water_year_three_day(
+    products, expected_data_dates)] <- FALSE
   select <- function(ids, values) enabled_map_product_values(products, ids, values)
   plan <- list(
     temperature_values = select(
@@ -119,13 +121,17 @@ update_enabled_prism_maps <- function(
     swc.map.product.scale_modes = stats::setNames(products$scale, products$id)
   )
   on.exit(options(old_options), add = TRUE)
-  plan <- plan_enabled_prism_map_updates(products)
-  results <- list()
-  run_id <- paste0(format(Sys.time(), "%Y%m%dT%H%M%SZ", tz = "UTC"), "-", Sys.getpid())
   expected_dates <- tryCatch(
     map_product_expected_data_dates(products),
     error = function(error) NULL
   )
+  unavailable <- map_product_early_water_year_three_day(products, expected_dates)
+  if (any(unavailable) && !quiet) {
+    message("Deferring water-year 3-day maps until PRISM data include October 3.")
+  }
+  plan <- plan_enabled_prism_map_updates(products, expected_dates)
+  results <- list()
+  run_id <- paste0(format(Sys.time(), "%Y%m%dT%H%M%SZ", tz = "UTC"), "-", Sys.getpid())
   timing_rows <- list()
   record_timing <- function(name, status, started_utc, elapsed_seconds, output_count) {
     row <- data.frame(
