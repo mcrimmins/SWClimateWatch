@@ -455,12 +455,12 @@ compact results; see the same guide for the local command.
 The [current station prototype](docs/station-reference-network.md#current-conditions-research-prototype)
 adds conservative 30-day precipitation and mean-temperature eligibility rules,
 compressed resumable daily caches, and a local map-and-sortable-table preview.
-It remains outside the public site and daily publishing workflow.
+Its local research preview remains separate from the public site and daily publishing workflow.
 The [interactive station explorer prototype](docs/station-explorer-prototype.md)
 builds a local map linked to three sortable table tabs from those same caches,
 with selectable 7-, 30-, 90-day and 6-/12-month windows, complete-window
 departures, full-record ranks, and recent extremes. A screened snapshot is now
-included as a Station Conditions beta page and refreshed by the daily publish
+included as the Station Conditions page and refreshed by the daily publish
 workflow; the standalone local build still makes no new ACIS requests.
 
 ## S3 deployment

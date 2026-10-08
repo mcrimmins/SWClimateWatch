@@ -1,10 +1,10 @@
 ---
-title: "Station Conditions (beta)"
+title: "Station Conditions"
 page-layout: full
 toc: false
 ---
 
-This beta view uses RCC-ACIS station observations. The date shown below is the
+This view uses RCC-ACIS station observations. The date shown below is the
 latest verified station snapshot; a delayed station is marked in the map and
 tables rather than silently carried forward.
 

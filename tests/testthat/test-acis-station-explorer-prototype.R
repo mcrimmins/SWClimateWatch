@@ -436,6 +436,7 @@ testthat::test_that("explorer HTML embeds parseable local data", {
     states = boundaries, counties = boundaries,
     publication_products = screened)
   html <- paste(readLines(path, warn = FALSE), collapse = "\n")
+  testthat::expect_false(grepl("beta", html, ignore.case = TRUE))
   embedded <- strsplit(strsplit(html,
     '<script id="explorer-data" type="application/json">',
     fixed = TRUE)[[1L]][[2L]], "</script>", fixed = TRUE)[[1L]][[1L]]

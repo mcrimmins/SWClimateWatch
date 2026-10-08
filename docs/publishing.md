@@ -8,7 +8,7 @@ source("scripts/daily-update-and-publish.R")
 ```
 
 It checks PRISM for new or revised data, updates the current maps when needed,
-checks SNODAS during October-May and the June closeout, refreshes the beta
+checks SNODAS during October-May and the June closeout, refreshes the
 station explorer from RCC-ACIS, then renders, validates, and syncs changed site
 content to the live website. The destination is
 `s3://cales-climate-reports/climate/watch/` in `us-west-2`. No remote files are
@@ -34,14 +34,14 @@ commands build the map catalog and render the site from existing maps; they do
 the [local map-only rebuild](../README.md#local-prism-downloader-development)
 first, then use the site-only publish command.
 
-The station beta requires a verified local snapshot in `site/stations/` before
+The station page requires a verified local snapshot in `site/stations/` before
 the first render. On a machine where you have already built the screened local
 station explorer, stage it without new requests with
 `source("scripts/stage-station-beta.R")`. That snapshot is generated locally and
 is not committed to Git. A failed daily station refresh keeps the last verified
 snapshot; the other map updates can continue. Publication stops if the rendered
 station page or its assets are missing. Individual delayed stations remain marked
-in the beta page rather than silently treated as current.
+on the station page rather than silently treated as current.
 
 The site-only publisher does not update the daily workflow's success marker, so
 the next normal daily run may sync the same site again. All commands require

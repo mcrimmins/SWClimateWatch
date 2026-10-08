@@ -172,7 +172,7 @@ website:
             text: Snow
       # END GENERATED MAP BROWSER
       - href: pages/station-conditions.qmd
-        text: Station Conditions (beta)
+        text: Station Conditions
       # BEGIN GENERATED HISTORIC YEARS
       - section: Historic Years
         contents:

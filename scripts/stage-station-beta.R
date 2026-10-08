@@ -5,5 +5,5 @@ source(file.path("R", "acis-station-inventory.R"))
 source(file.path("R", "acis-station-explorer-prototype.R"))
 source(file.path("R", "acis-station-site.R"))
 station_beta <- swc_station_beta_stage()
-message(sprintf("Staged station beta for %s: %d stations, %d mapped.",
+message(sprintf("Staged station page for %s: %d stations, %d mapped.",
                 station_beta$date, station_beta$stations, station_beta$mapped))

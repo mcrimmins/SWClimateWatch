@@ -282,11 +282,11 @@ swc_daily_publish_validate_stations <- function(output_dir) {
     "index.html", "explorer.js", "explorer.css", "leaflet.js",
     "leaflet.css", "station-explorer-data.csv")))
   if (!all(file.exists(needed)) || any(file.info(needed)$size <= 0))
-    stop("Rendered station beta page or its resources are missing; S3 sync stopped.",
+    stop("Rendered station page or its resources are missing; S3 sync stopped.",
          call. = FALSE)
   html <- paste(readLines(page, warn = FALSE), collapse = "\n")
   if (!grepl("../stations/index.html?embedded=1", html, fixed = TRUE))
-    stop("Rendered station beta page does not link its explorer; S3 sync stopped.",
+    stop("Rendered station page does not link its explorer; S3 sync stopped.",
          call. = FALSE)
   rows <- utils::read.csv(file.path(station_dir, "station-explorer-data.csv"),
                           stringsAsFactors = FALSE)
@@ -460,12 +460,12 @@ run_swc_daily_publish <- function(
         is.na(stations$status))
       stop("Station update returned an invalid status.", call. = FALSE)
     if (identical(stations$status, "ERROR")) {
-      warning("Station update failed; retaining the last verified beta page: ",
+      warning("Station update failed; retaining the last verified station page: ",
               stations$error, call. = FALSE)
       send("warning", "Station update failed. The last verified station page will be retained.")
     } else if (identical(stations$status, "UPDATED_WITH_STALE_STATIONS")) {
       send("warning", paste0("Station page updated with ", stations$pending,
-                             " delayed station caches; see beta-update-runs.csv."))
+                             " delayed station caches; see the station update log."))
     }
     send("progress", paste0(
       "Data checks complete. PRISM: ",

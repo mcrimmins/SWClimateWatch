@@ -1,8 +1,8 @@
-# Station explorer and public beta
+# Station explorer and public page
 
 The local research preview builds the interactive RCC-ACIS station map and
 tabbed tables. A screened snapshot is also staged as the public Station
-Conditions beta page, with a guarded refresh in the daily update. It uses the 62 unique station records in the
+Conditions page, with a guarded refresh in the daily update. It uses the 62 unique station records in the
 reference-network daily audit and their existing full-period local daily
 caches. The 51 fixed stations have map locations; the 11 ThreadEx area-composite
 series are table-only and are explicitly labeled as such.
@@ -43,7 +43,7 @@ source("scripts/build-acis-station-explorer-details.R")
 ## Local daily-refresh pilot
 
 The manual refresh pilot is separate from the unified daily publish command;
-the public beta calls its bounded updater and publication screen internally.
+the public station page calls its bounded updater and publication screen internally.
 It uses yesterday as its target date by default and does nothing beyond a
 cache-status preview unless a positive request limit is set:
 
@@ -198,9 +198,8 @@ coverage section summarizes the selected map metric and links to the full CSV.
   than average. Incomplete current seasons or inadequate historical coverage
   are withheld rather than treating missing nights as nonfreezing.
 
-The broad station network remains a beta research selection, not a final
-publication decision. Before removing the beta label, review source/component changes, product
-coverage, late observations, and the complete-window thresholds. The local
+The broad station network remains subject to source/component changes, product
+coverage limits, late observations, and complete-window thresholds. The local
 preview includes an on-demand daily chart and usable-record summary for the
 selected station, but it does not yet provide a full station metadata page.
 
