@@ -1,0 +1,3 @@
+# Keep the Linux production runner/configuration usable after Windows checkout.
+scripts/run-production-daily.sh text eol=lf
+scripts/production.env.example text eol=lf

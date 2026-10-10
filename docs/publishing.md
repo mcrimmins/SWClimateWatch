@@ -52,6 +52,10 @@ pages before syncing.
 
 ## Preparing a separate production machine
 
+For the VM runner, staging schedule, logs, controlled code releases and live
+cutover, see [VM daily operations](vm-daily-operations.md). The runner uses an
+explicit private destination setting and a shared lock for updates/releases.
+
 The laptop remains the development environment. Do not schedule the VM or let
 it write to the live prefix until it has completed a staging run from a tested
 Git commit. The daily publisher normally uses the existing live destination,
@@ -75,6 +79,23 @@ Set the VM's `TZ=America/Phoenix` before scheduling so `Sys.Date()` has the
 intended Arizona date.
 
 ### One-time transfer checklist
+
+On the Windows laptop, a checked SCP transfer is available from the project
+root in a terminal (where SSH password prompts are visible):
+
+```cmd
+Rscript scripts/transfer-production-seed.R
+Rscript scripts/transfer-production-seed.R --execute
+```
+
+The first command is a local-only preview. The second copies the seven seed
+directories one at a time, skips directories whose remote file paths and sizes
+already match, and checks each completed directory plus selected MD5 hashes.
+It never deletes VM files or publishes the site. An interrupted directory may
+need to be copied again; a fully verified directory is skipped on the next
+run. The destination defaults to `crimmins@10.222.142.128` and can be changed
+with `SWC_VM_SSH_HOST` if the VM's private address changes. Then run the
+read-only production readiness check on the VM.
 
 - [ ] Select and record a tested Git commit. Clone that commit on the VM;
   do not run daily production from an automatically advancing `main` branch.
