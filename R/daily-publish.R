@@ -101,7 +101,8 @@ swc_publish_elapsed <- function(seconds) {
 swc_daily_publish_summary_lines <- function(record, prism = NULL, snow = NULL,
                                             stations = NULL, validation = NULL,
                                             failed_stage = NULL,
-                                            destination = swc_daily_publish_live_destination()) {
+                                            destination = swc_daily_publish_live_destination(),
+                                            explorer = NULL) {
   status <- switch(record$status[[1L]],
                    PUBLISHED = "Published", PREVIEW = "Preview complete",
                    SKIPPED_UNCHANGED = "Update complete; upload skipped",
@@ -155,6 +156,10 @@ swc_daily_publish_summary_lines <- function(record, prism = NULL, snow = NULL,
         stations$pending > 0L)
       station_line <- paste0(station_line, "; ", stations$pending, " delayed")
     lines <- c(lines, paste0(station_line, "."))
+  }
+  if (is.list(explorer) && all(c("days", "maps", "built", "reused") %in% names(explorer))) {
+    lines <- c(lines, sprintf("Daily Explorer: %d days, %d maps; %d dates rebuilt, %d reused.",
+      explorer$days, explorer$maps, explorer$built, explorer$reused))
   }
   if (is.list(validation) &&
       all(c("current_passed", "current_total", "archive_passed",
@@ -275,6 +280,38 @@ swc_daily_publish_update_stations <- function(today = Sys.Date()) {
   context$run_swc_station_beta_update(today = today)
 }
 
+swc_daily_publish_update_explorer <- function() {
+  source(file.path("scripts", "load-daily-explorer.R"))
+  stage_daily_explorer_site()
+}
+
+swc_daily_publish_validate_explorer <- function(output_dir,
+    source_dir = file.path("site", "daily-explorer")) {
+  adapter <- file.path("R", "daily-explorer-site.R")
+  if (!file.exists(adapter) && file.exists(file.path("..", "..", adapter)))
+    adapter <- file.path("..", "..", adapter)
+  if (!file.exists(adapter) && exists("project_root", inherits = TRUE))
+    adapter <- file.path(get("project_root", inherits = TRUE), adapter)
+  source(adapter, local = TRUE)
+  checked <- validate_daily_explorer_assets(file.path(output_dir, "daily-explorer"))
+  page <- file.path(output_dir, "pages", "daily-explorer.html")
+  if (!file.exists(page) || !grepl("../daily-explorer/index.html?embedded=1",
+      paste(readLines(page, warn = FALSE), collapse = "\n"), fixed = TRUE))
+    stop("Rendered Daily Explorer page is missing or unlinked; S3 sync stopped.")
+  # Ensure Quarto copied the newly staged payload, rather than an older render.
+  staged <- file.path(source_dir, "daily-data.json")
+  rendered <- file.path(output_dir, "daily-explorer", "daily-data.json")
+  if (!file.exists(staged) || !identical(unname(tools::md5sum(staged)), unname(tools::md5sum(rendered))))
+    stop("Rendered Daily Explorer payload is stale; S3 sync stopped.")
+  relative <- c("index.html", "explorer.js", "explorer.css", checked$images)
+  source_paths <- file.path(source_dir, relative)
+  rendered_paths <- file.path(output_dir, "daily-explorer", relative)
+  if (!all(file.exists(source_paths)) || !identical(unname(tools::md5sum(source_paths)),
+      unname(tools::md5sum(rendered_paths))))
+    stop("Rendered Daily Explorer assets are stale; S3 sync stopped.")
+  invisible(checked)
+}
+
 swc_daily_publish_validate_stations <- function(output_dir) {
   page <- file.path(output_dir, "pages", "station-conditions.html")
   station_dir <- file.path(output_dir, "stations")
@@ -358,6 +395,7 @@ swc_daily_publish_sync <- function(
     render = TRUE, extra_validation = function(output_dir) {
       swc_daily_publish_validate_snow(output_dir)
       swc_daily_publish_validate_stations(output_dir)
+      swc_daily_publish_validate_explorer(output_dir)
     })
 }
 
@@ -372,7 +410,8 @@ run_swc_daily_publish <- function(
     station_update = swc_daily_publish_update_stations,
     site_fingerprint = swc_daily_publish_site_fingerprint,
     publish = NULL,
-    notify = swc_ntfy_notify) {
+    notify = swc_ntfy_notify,
+    explorer_update = swc_daily_publish_update_explorer) {
   if (!is.logical(dry_run) || length(dry_run) != 1L || is.na(dry_run) ||
       !is.logical(force_publish) || length(force_publish) != 1L ||
       is.na(force_publish)) {
@@ -404,14 +443,14 @@ run_swc_daily_publish <- function(
     if (!dry_run) swc_ntfy_send_safe(event, message, notify = notify)
     invisible(NULL)
   }
-  prism <- snow <- stations <- publication <- NULL
+  prism <- snow <- stations <- explorer <- publication <- NULL
   finish <- function(event, failed_stage = NULL) {
     record$elapsed_seconds <<- round(as.numeric(difftime(
       Sys.time(), started, units = "secs")), 3)
     lines <- swc_daily_publish_summary_lines(
       record, prism, snow, stations,
       if (is.list(publication)) publication$validation else NULL,
-      failed_stage = failed_stage, destination = destination)
+      failed_stage = failed_stage, destination = destination, explorer = explorer)
     message(paste(lines, collapse = "\n"))
     if (!is.null(event)) send(event, paste(lines, collapse = "\n"))
     lines
@@ -432,6 +471,10 @@ run_swc_daily_publish <- function(
     send("progress", paste0("PRISM update complete: ",
                             if (record$prism_data_changed) "new or revised data"
                             else "no data change", "."))
+    stage <- "Daily Explorer update"
+    explorer <- explorer_update()
+    if (!is.list(explorer) || !identical(explorer$status, "STAGED"))
+      stop("Daily Explorer did not return a staged result; publication stopped.")
     stage <- "SNODAS update"
     snow <- tryCatch(snow_update(today), error = function(error) {
       list(maps = list(status = "ERROR"), error = conditionMessage(error))
@@ -483,7 +526,7 @@ run_swc_daily_publish <- function(
       message("Site source is unchanged since the last successful sync; upload skipped.")
       lines <- finish("success")
       return(invisible(list(status = record$status, prism = prism,
-                            snow = snow, stations = stations,
+                            snow = snow, stations = stations, explorer = explorer,
                             destination = destination,
                             published = FALSE,
                             elapsed_seconds = record$elapsed_seconds,
@@ -501,7 +544,7 @@ run_swc_daily_publish <- function(
     }
     lines <- finish(if (dry_run) NULL else "success")
     invisible(list(status = record$status, prism = prism, snow = snow,
-                   stations = stations,
+                   stations = stations, explorer = explorer,
                    destination = destination,
                    published = record$published,
                    validation = if (is.list(publication)) publication$validation

@@ -9,7 +9,9 @@ source("scripts/daily-update-and-publish.R")
 
 It checks PRISM for new or revised data, updates the current maps when needed,
 checks SNODAS during October-May and the June closeout, refreshes the
-station explorer from RCC-ACIS, then renders, validates, and syncs changed site
+station explorer from RCC-ACIS, stages the current water year plus the preceding
+September of cached PRISM data for
+Daily Explorer, then renders, validates, and syncs changed site
 content to the live website. The destination is
 `s3://cales-climate-reports/climate/watch/` in `us-west-2`. No remote files are
 deleted. It is safe to rerun: existing downloads and processed data are reused,
@@ -29,7 +31,8 @@ last successful daily publication. This is a manual command, not a scheduler.
 **Important:** The full-workflow preview still downloads/checks live data and
 may regenerate local maps. `dry_run = TRUE` prevents only the S3 upload. Use the
 site-only preview if you do not want a climate-data update. The site-only
-commands build the map catalog and render the site from existing maps; they do
+commands build the map catalog, refresh Daily Explorer from cached grids,
+and render the site from existing maps; they do
 **not** regenerate map PNGs after a change to map-drawing code. For that, run
 the [local map-only rebuild](../README.md#local-prism-downloader-development)
 first, then use the site-only publish command.
@@ -47,8 +50,18 @@ The site-only publisher does not update the daily workflow's success marker, so
 the next normal daily run may sync the same site again. All commands require
 Quarto and a configured AWS CLI with write access to the bucket; credentials
 are not stored in this repository. A failed render or validation stops the
-sync. The daily workflow validates both the Current Snow and Station Conditions
-pages before syncing.
+sync. The daily workflow validates Current Snow, Station Conditions and
+Daily Explorer before syncing. Daily Explorer is also validated by the generic
+site-only deploy function, including when `render = FALSE`.
+
+For local preparation with no network access or upload, use
+`source("scripts/stage-daily-explorer.R")`. The first build covers the current
+water year to date plus the preceding September. Subsequent runs retain earlier
+days, reuse unchanged dates, and rebuild revised inputs. A full leap water year
+plus September contains up to 396 dates (2,772 maps when all inputs are available).
+The console and ntfy daily summary report dates rebuilt/reused. See the
+[Daily Explorer release checklist](daily-explorer.md#vm-staging-and-release-checklist)
+before deploying this feature to the VM.
 
 ## Preparing a separate production machine
 

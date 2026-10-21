@@ -35,6 +35,12 @@ documentation remain outside the website source tree.
 
 ## Local build
 
+For the Daily Explorer timeline and single-, seven-, and 30-day map views, see
+[Daily Explorer](docs/daily-explorer.md). The daily publisher stages the
+current water year plus the preceding September automatically, retaining each
+day as the year progresses. Laptop preview commands do not upload anything;
+see that document for the VM staging and controlled-release checklist.
+
 Install Quarto and the R packages `terra`, `sf`, `ggplot2`, `ggrepel`, `magick`, `dplyr`,
 `lubridate`, `maps`, `httr2`, `jsonlite`, `digest`, and `testthat`, then run from the
 repository root. Enter the self-contained site project before starting Quarto:

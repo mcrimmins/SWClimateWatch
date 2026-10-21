@@ -3,6 +3,7 @@ project:
   output-dir: _site
   resources:
     - stations/**
+    - daily-explorer/**
     - maps/generated/snodas/current/*.png
 
 website:
@@ -25,6 +26,8 @@ website:
     contents:
       - href: index.qmd
         text: Home
+      - href: pages/daily-explorer.qmd
+        text: Daily Explorer
       # BEGIN GENERATED MAP BROWSER
       - section: Current Maps
         contents:

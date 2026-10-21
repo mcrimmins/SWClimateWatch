@@ -16,6 +16,7 @@ data/raw/*
 data/processed/*
 site/maps/generated/*
 site/stations/
+site/daily-explorer/
 data/diagnostics/
 docs/prism-data-methods.html
 !data/raw/.gitkeep

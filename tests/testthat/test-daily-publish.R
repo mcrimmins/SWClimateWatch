@@ -1,5 +1,24 @@
 source(file.path(project_root, "R", "daily-publish.R"))
 
+daily_publish_explorer_fixture <- function() {
+  list(status = "STAGED", days = 90L, maps = 630L, built = 1L, reused = 89L)
+}
+
+testthat::test_that("explorer failure stops before S3 and leaves the success marker alone", {
+  directory <- tempfile(); dir.create(directory)
+  on.exit(unlink(directory, recursive = TRUE), add = TRUE)
+  marker <- file.path(directory, "success.csv")
+  swc_daily_publish_write_marker(marker, "previous")
+  published <- FALSE
+  testthat::expect_error(run_swc_daily_publish(dry_run = TRUE,
+    marker_path = marker, log_path = NULL,
+    prism_update = function() list(summary = data.frame(data_changed = FALSE)),
+    explorer_update = function() stop("explorer failed"),
+    publish = function(dry_run) published <<- TRUE), "explorer failed")
+  testthat::expect_false(published)
+  testthat::expect_identical(swc_daily_publish_read_marker(marker), "previous")
+})
+
 daily_publish_prism_fixture <- function(changed = FALSE) {
   function() list(summary = data.frame(data_changed = changed))
 }
@@ -118,6 +137,7 @@ testthat::test_that("live publish records success and skips an unchanged rerun",
                marker_path = marker, log_path = log,
                prism_update = daily_publish_prism_fixture(FALSE),
                snow_update = daily_publish_snow_fixture,
+               explorer_update = daily_publish_explorer_fixture,
                station_update = daily_publish_station_fixture,
                site_fingerprint = function() "source-a", publish = publish,
                notify = function(event, message) invisible(NULL))
@@ -140,6 +160,7 @@ testthat::test_that("dry run and failed sync never advance the success marker", 
                marker_path = marker, log_path = log,
                prism_update = daily_publish_prism_fixture(TRUE),
                snow_update = daily_publish_snow_fixture,
+               explorer_update = daily_publish_explorer_fixture,
                station_update = daily_publish_station_fixture,
                site_fingerprint = function() "source-b",
                publish = function(dry_run) testthat::expect_true(dry_run),
@@ -165,6 +186,7 @@ testthat::test_that("snow failure is logged without blocking updated PRISM maps"
     log_path = file.path(directory, "runs.csv"),
     prism_update = daily_publish_prism_fixture(TRUE),
     snow_update = function(today) stop("snow source unavailable"),
+    explorer_update = daily_publish_explorer_fixture,
     station_update = daily_publish_station_fixture,
     site_fingerprint = function() "prism-map-change",
     publish = function(dry_run) called <<- TRUE,
@@ -188,6 +210,7 @@ testthat::test_that("station failure retains beta snapshot and does not block ot
     log_path = file.path(directory, "runs.csv"),
     prism_update = daily_publish_prism_fixture(TRUE),
     snow_update = daily_publish_snow_fixture,
+    explorer_update = daily_publish_explorer_fixture,
     station_update = function(today) stop("ACIS unavailable"),
     site_fingerprint = function() "other-map-change",
     publish = function(dry_run) called <<- TRUE,
@@ -208,6 +231,7 @@ testthat::test_that("PRISM failure stops publication", {
     log_path = file.path(directory, "runs.csv"),
     prism_update = function() stop("PRISM failed"),
     snow_update = daily_publish_snow_fixture,
+    explorer_update = daily_publish_explorer_fixture,
     station_update = daily_publish_station_fixture,
     site_fingerprint = function() "new",
     publish = function(dry_run) called <<- TRUE,
@@ -227,6 +251,7 @@ testthat::test_that("live workflow reports milestones and a success", {
     log_path = file.path(directory, "runs.csv"),
     prism_update = daily_publish_prism_fixture(TRUE),
     snow_update = daily_publish_snow_fixture,
+    explorer_update = daily_publish_explorer_fixture,
     station_update = daily_publish_station_fixture,
     site_fingerprint = function() "new-site",
     publish = function(dry_run) invisible(NULL),
@@ -254,6 +279,7 @@ testthat::test_that("final notices report elapsed time and fresh run statistics"
                log_path = file.path(directory, "runs.csv"),
                prism_update = prism,
                snow_update = daily_publish_snow_fixture,
+               explorer_update = daily_publish_explorer_fixture,
                station_update = function(today) list(
                  status = "UPDATED", stations = 62L, mapped = 51L,
                  pending = 0L),
@@ -290,6 +316,7 @@ testthat::test_that("failure notice includes elapsed time and stage, not raw err
     log_path = file.path(directory, "runs.csv"),
     prism_update = daily_publish_prism_fixture(FALSE),
     snow_update = daily_publish_snow_fixture,
+    explorer_update = daily_publish_explorer_fixture,
     station_update = daily_publish_station_fixture,
     site_fingerprint = function() "new-site",
     publish = function(dry_run) stop("private render detail"),
@@ -311,6 +338,7 @@ testthat::test_that("invalid PRISM result still reports the original failure", {
     log_path = file.path(directory, "runs.csv"),
     prism_update = function() list(summary = data.frame(other = TRUE)),
     snow_update = daily_publish_snow_fixture,
+    explorer_update = daily_publish_explorer_fixture,
     station_update = daily_publish_station_fixture,
     site_fingerprint = function() "unchanged",
     publish = function(dry_run) stop("should not publish"),
@@ -356,6 +384,7 @@ testthat::test_that("dry runs do not send phone alerts", {
     log_path = file.path(directory, "runs.csv"),
     prism_update = daily_publish_prism_fixture(TRUE),
     snow_update = daily_publish_snow_fixture,
+    explorer_update = daily_publish_explorer_fixture,
     station_update = daily_publish_station_fixture,
     site_fingerprint = function() "new-site",
     publish = function(dry_run) invisible(NULL),
@@ -374,6 +403,7 @@ testthat::test_that("publication errors alert without hiding the original failur
     log_path = file.path(directory, "runs.csv"),
     prism_update = daily_publish_prism_fixture(TRUE),
     snow_update = daily_publish_snow_fixture,
+    explorer_update = daily_publish_explorer_fixture,
     station_update = daily_publish_station_fixture,
     site_fingerprint = function() "new-site",
     publish = function(dry_run) stop("render failed"),
@@ -392,6 +422,7 @@ testthat::test_that("ntfy delivery errors do not fail publication", {
     log_path = file.path(directory, "runs.csv"),
     prism_update = daily_publish_prism_fixture(TRUE),
     snow_update = daily_publish_snow_fixture,
+    explorer_update = daily_publish_explorer_fixture,
     station_update = daily_publish_station_fixture,
     site_fingerprint = function() "new-site",
     publish = function(dry_run) invisible(NULL),

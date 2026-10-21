@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Daily Explorer · Southwest Climate Watch</title>
+  <link rel="stylesheet" href="explorer.css"><script src="explorer.js" defer></script>
+</head>
+<body>
+<main>
+  <header><div><p class="eyebrow" id="context-label">Southwest Climate Watch · Daily Explorer</p>
+    <h1>Daily Explorer</h1><p id="coverage">Loading cached PRISM observations…</p></div>
+    <span class="badge" id="mode-badge">Local preview · Unpublished</span></header>
+  <p id="error" role="alert" hidden></p>
+  <section class="controls card" aria-label="Explore daily conditions">
+    <label>Water year<select id="year"></select></label>
+    <label>Season<select id="season"><option value="all">Full water year</option>
+      <option value="cool">Cool season · Oct–Mar</option><option value="warm">Warm season · Apr–Sep</option>
+      <option value="monsoon">Monsoon · Jun–Sep</option></select></label>
+    <label>Summary region<select id="region"><option value="AZNM">Arizona + New Mexico</option>
+      <option value="AZ">Arizona</option><option value="NM">New Mexico</option></select></label>
+    <label>Variable<select id="variable"><option value="pcpn">Precipitation</option>
+      <option value="tmean">Mean temperature</option><option value="maxt">Maximum temperature</option><option value="mint">Minimum temperature</option></select></label>
+    <label id="view-label">Display<select id="view"><option value="departure">Departure from normal</option>
+      <option value="observed">Observed temperature</option></select></label>
+  </section>
+  <section class="card timeline-card" aria-labelledby="timeline-title">
+    <div class="section-heading"><h2 id="timeline-title">Daily regional conditions</h2>
+      <label>Timeline metric<select id="metric"></select></label></div>
+    <p id="timeline-caption" class="muted"></p>
+    <div id="timeline" class="timeline" role="group" aria-label="Daily values; select a date"></div>
+    <p class="muted small">Select a bar to view that day. Hover or focus for its value. Gaps mean unavailable, not zero. The timeline matches the 7- or 30-day Map View; Single day shows the selected season.</p>
+  </section>
+  <section class="card map-card" aria-labelledby="map-title">
+    <div class="section-heading"><h2 id="map-title">Selected day</h2><div class="date-controls">
+      <button id="previous" aria-label="Previous calendar day">←</button>
+      <input type="date" id="date" aria-label="Selected date">
+      <button id="next" aria-label="Next calendar day">→</button></div></div>
+    <div id="stats" class="stats" aria-live="polite"></div>
+    <p class="muted small">Maps always show Arizona, New Mexico, and surrounding context. The summary-region selector changes the timeline, statistics, and notable-day list.</p>
+    <img id="map" alt="" width="1116" height="780">
+    <p id="unavailable" class="empty" hidden></p>
+    <div class="map-actions"><a id="open-map" href="#" target="_blank" rel="noopener">Open map PNG ↗</a>
+      <label>Map view<select id="compare"><option value="single">Single day</option>
+        <option value="7">7 days</option><option value="30">30 days</option></select></label></div>
+    <p id="comparison-caption" class="muted small" aria-live="polite" hidden></p>
+    <div id="comparison" class="comparison" hidden></div>
+  </section>
+  <section class="card" aria-labelledby="notable-title">
+    <div class="section-heading"><h2 id="notable-title">Notable days</h2><label>Find days by<select id="ranking"></select></label></div>
+    <p class="muted small">Ordered within the selected season and summary region. These are browsing metrics, not verified impacts or historical records.</p>
+    <div class="table-scroll"><table><thead><tr><th>Date</th><th id="ranking-title">Value</th><th>Map</th></tr></thead>
+      <tbody id="notable"></tbody></table></div>
+  </section>
+  <details class="card methods" open><summary>How to read this explorer</summary>
+    <p>Source: PRISM Climate Group daily grids via RCC-ACIS. Dates identify the source daily reporting period; they do not imply that all observations cover a local midnight-to-midnight day. Recent grids are preliminary and may be revised. Maps are built from cached PRISM grids after data updates.</p>
+    <p>Regional summaries use native grid cells whose centers fall within state boundaries, weighted by cell area. The combined region is weighted by area, not an average of the two state means. At least 95% of the region must have usable values for each displayed statistic. Coverage percentages refer to valid data, not the area affected by an event.</p>
+    <p>Daily mean temperature is (maximum + minimum) / 2, using only cells with both inputs. Its normal is the mean of the matching maximum- and minimum-temperature normals. Temperature departures subtract the 1991–2020 calendar-day mean using a centered five-day reference window. Warm/cold coverage for maximum and minimum temperature is the percentage above the 90th or below the 10th calendar-day percentile from that same baseline and window; mean-temperature percentile coverage is not calculated. These are daily coverage measures, not formal annual Climdex indices. Freezing means minimum temperature ≤32°F.</p>
+    <p>Precipitation coverage is the percentage receiving at least the stated amount. The spatial 99th percentile describes rainfall across the region that day, including dry cells; it is not a historical percentile. Absolute and seasonal-relative measures are deliberately separate. A zero-rain day can rank in a dry season; it is not automatically noteworthy.</p>
+    <p>All dates share fixed map color classes. Maps use native-resolution cells. Missing map cells use the background color, not the zero-value class. Missing reference data can leave departures or percentile coverage unavailable while observed values remain usable. The seven-day comparison is centered on the selected date; the 30-day grid ends on that date. Grids and their timelines can cross season and water-year boundaries using built dates, and retain unavailable days as gaps. Selecting a thumbnail updates the large map and, when needed, the water year and season selectors.</p>
+  </details>
+</main>
+</body>
+</html>

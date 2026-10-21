@@ -123,6 +123,7 @@ deploy_swc_site <- function(
   if (render) {
     quarto <- swc_deploy_quarto()
     swc_deploy_run(rscript, "scripts/build-map-product-site.R", "Build and validate map catalog")
+    swc_deploy_run(rscript, "scripts/stage-daily-explorer.R", "Stage cached Daily Explorer")
     swc_deploy_run(quarto, c("render", "site"), "Render Quarto site")
   }
   output_dir <- file.path(project_dir, "site", "_site")
@@ -135,6 +136,8 @@ deploy_swc_site <- function(
     "Validate rendered maps and pages"
   )
   validation <- swc_deploy_validation_summary()
+  source(file.path("R", "daily-publish.R"), local = TRUE)
+  swc_daily_publish_validate_explorer(output_dir)
   output_dir <- normalizePath(output_dir, winslash = "/", mustWork = TRUE)
   if (!is.null(extra_validation)) extra_validation(output_dir)
   swc_deploy_run(
