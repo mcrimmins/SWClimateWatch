@@ -26,8 +26,6 @@ website:
     contents:
       - href: index.qmd
         text: Home
-      - href: pages/daily-explorer.qmd
-        text: Daily Explorer
       # BEGIN GENERATED MAP BROWSER
       - section: Current Maps
         contents:
@@ -174,6 +172,8 @@ website:
           - href: pages/current-snow.qmd
             text: Snow
       # END GENERATED MAP BROWSER
+      - href: pages/daily-explorer.qmd
+        text: Daily Explorer
       - href: pages/station-conditions.qmd
         text: Station Conditions
       # BEGIN GENERATED HISTORIC YEARS

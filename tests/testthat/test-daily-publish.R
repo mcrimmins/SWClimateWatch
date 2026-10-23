@@ -446,10 +446,12 @@ testthat::test_that("rendered snow page must link its current images", {
   writeLines("<p>waiting for a listed archive</p>", rendered)
   testthat::expect_invisible(swc_daily_publish_validate_snow(directory, page))
   links <- paste0("../maps/generated/snodas/current/",
-                  c("swe-observed.png", "swe-departure.png"))
+                  c("swe-observed.png", "swe-departure.png", "swe-percent-median.png"))
   writeLines(c("**Latest map date: October 1, 2026**",
+               "Seven-day SWE change unavailable (2026-09-24 to 2026-10-01)",
                paste0("![](", links, ")")), page)
   rendered_links <- function(paths) c("<p>October 1, 2026</p>",
+    "<p>Seven-day SWE change unavailable (2026-09-24 to 2026-10-01)</p>",
     paste0('<img src="', paths, '">'),
     paste0('<a href="', paths, '">Open full-resolution PNG</a>'))
   writeLines(rendered_links(links), rendered)
@@ -459,6 +461,7 @@ testthat::test_that("rendered snow page must link its current images", {
   dir.create(image_dir, recursive = TRUE)
   writeBin(as.raw(1L), file.path(image_dir, "swe-observed.png"))
   writeBin(as.raw(1L), file.path(image_dir, "swe-departure.png"))
+  writeBin(as.raw(1L), file.path(image_dir, "swe-percent-median.png"))
   testthat::expect_invisible(swc_daily_publish_validate_snow(directory, page))
   writeLines(sub("October 1, 2026", "old date", rendered_links(links)), rendered)
   testthat::expect_error(swc_daily_publish_validate_snow(directory, page),
@@ -466,4 +469,14 @@ testthat::test_that("rendered snow page must link its current images", {
   writeLines(rendered_links(sub("^\\.\\./", "../../", links)), rendered)
   testthat::expect_error(swc_daily_publish_validate_snow(directory, page),
                          "unlinked")
+  links <- c(links, "../maps/generated/snodas/current/swe-change-7day.png")
+  writeLines(c("**Latest map date: October 1, 2026**",
+    "Net SWE change from 2026-09-24 to 2026-10-01",
+    paste0("![](", links, ")")), page)
+  writeLines(rendered_links(links), rendered)
+  testthat::expect_error(swc_daily_publish_validate_snow(directory, page), "images are missing")
+  writeBin(as.raw(1L), file.path(image_dir, "swe-change-7day.png"))
+  testthat::expect_invisible(swc_daily_publish_validate_snow(directory, page))
+  writeLines(sub("2026-09-24", "2026-09-23", rendered_links(links)), rendered)
+  testthat::expect_error(swc_daily_publish_validate_snow(directory, page), "comparison dates are stale")
 })

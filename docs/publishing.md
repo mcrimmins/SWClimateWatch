@@ -53,6 +53,12 @@ are not stored in this repository. A failed render or validation stops the
 sync. The daily workflow validates Current Snow, Station Conditions and
 Daily Explorer before syncing. Daily Explorer is also validated by the generic
 site-only deploy function, including when `render = FALSE`.
+Current Snow checks observed SWE, absolute departure and percent-of-median
+images and their full-resolution links. Seven-day change is checked when
+available; otherwise the rendered page must retain the explicit unavailable
+notice. Latest map dates and exact seven-day endpoints must match the source.
+The new snow comparisons require no additional daily downloads or baseline
+builds; unchanged images are reused after checksum verification.
 
 For local preparation with no network access or upload, use
 `source("scripts/stage-daily-explorer.R")`. The first build covers the current

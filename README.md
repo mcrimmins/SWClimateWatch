@@ -275,9 +275,14 @@ source grids. A separate [bounded October-May daily updater](docs/snodas-daily-u
 refreshes directory listings, downloads at most five listed archives per run,
 resumes from verified regional files, and releases full-domain archives after
 checking the SWE/depth pair. It allows a brief June closeout for late May
-postings. It also stages observed SWE and daily median-departure maps only
-when their quality gate passes; the unified script can then render and deploy
-the site in the same manually started run. The [end-of-season snow archive pilot](docs/snodas-seasonal-archive.md)
+postings. Current Snow stages observed SWE, daily median departure, and SWE
+as a percent of the date-specific median when the current-map quality gate
+passes. Exact seven-day net SWE change is included when both endpoints pass
+verification and quality checks; otherwise a dated unavailable notice replaces
+that card. Percentages require a median of at least 1 inch and 18 reference years.
+The unified script can then render and deploy the site. See the
+[snow comparison methods and local preview](docs/snodas-next-steps.md#current-snow-integration).
+The [end-of-season snow archive pilot](docs/snodas-seasonal-archive.md)
 builds peak SWE and snow-covered-day maps from each completed October-May
 season for review. Its [read-only snow QC pilots](docs/snodas-seasonal-archive.md#read-only-event-level-qc-pilot)
 group high-SWE patches into episodes and screen for strong relative anomalies

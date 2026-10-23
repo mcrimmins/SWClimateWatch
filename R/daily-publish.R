@@ -349,7 +349,9 @@ swc_daily_publish_validate_snow <- function(
   }
   source_text <- paste(readLines(page_source, warn = FALSE), collapse = "\n")
   html <- paste(readLines(rendered, warn = FALSE), collapse = "\n")
-  filenames <- c("swe-observed.png", "swe-departure.png")
+  filenames <- c("swe-observed.png", "swe-departure.png", "swe-percent-median.png")
+  change_available <- grepl("swe-change-7day.png", source_text, fixed = TRUE)
+  if (change_available) filenames <- c(filenames, "swe-change-7day.png")
   references <- paste0("../maps/generated/snodas/current/", filenames)
   if (all(vapply(filenames, grepl, logical(1), x = source_text,
                  fixed = TRUE))) {
@@ -377,6 +379,18 @@ swc_daily_publish_validate_snow <- function(
     if (!grepl(date_label, html, fixed = TRUE)) {
       stop("Rendered Current Snow date is stale; S3 sync stopped.",
            call. = FALSE)
+    }
+    map_date <- as.Date(date_label, format = "%B %d, %Y")
+    endpoints <- paste(map_date - 7L, "to", map_date)
+    if (is.na(map_date) || !grepl(endpoints, source_text, fixed = TRUE) ||
+        !grepl(endpoints, html, fixed = TRUE)) {
+      stop("Rendered Current Snow comparison dates are stale; S3 sync stopped.", call. = FALSE)
+    }
+    if (!change_available &&
+        (!grepl("Seven-day SWE change unavailable", source_text, fixed = TRUE) ||
+         !grepl("Seven-day SWE change unavailable", html, fixed = TRUE) ||
+         grepl("swe-change-7day.png", html, fixed = TRUE))) {
+      stop("Rendered Current Snow seven-day availability is stale; S3 sync stopped.", call. = FALSE)
     }
   } else if (!grepl("waiting for a listed", source_text, fixed = TRUE) ||
              !grepl("waiting for a listed", html, fixed = TRUE)) {
