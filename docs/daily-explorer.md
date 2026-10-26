@@ -312,6 +312,30 @@ recorded hash and the same lock/preservation procedure; it does not roll back
 data. With deletion disabled, obsolete unlinked S3 explorer assets may remain
 after rollback, but navigation comes from the rolled-back site render.
 
+## Archived forecast discussion links
+
+The [discussion archive scope](forecast-discussion-scope.md) records the links-only
+panel implemented locally October 26, 2026. Open **Forecast discussions** below
+the selected map to find five core Southwest NWS AFD offices, five optional
+surrounding offices, and WPC short/extended, excessive-rainfall, mesoscale-rain
+and heavy-snow/icing discussions. User review and staging precede deployment.
+
+Links search the IEM archive for products issued during the selected UTC date
+(00:00 inclusive through the following 00:00 exclusive), up to 100 issuances,
+oldest first. They follow the selected day, not the entire seven-/30-day grid.
+The page does not claim availability, automatically choose an issuance, infer
+forecast-valid periods or spatially filter national discussions. Read issue and
+valid times in the original text. Office links remain available for either
+summary region because service areas cross state lines.
+
+The panel is collapsed initially and opens external text in new tabs. It makes
+no archive requests itself, adds no daily downloads, embeds no full text, and
+does not invalidate climate-map caches. Only three existing static UI files
+change. Missing archive results cannot block the site's update. Archived text
+is forecast context, not a verified explanation of observed outcomes; PRISM
+reporting periods are not necessarily UTC calendar days. Cached metadata,
+SPC/report sources and automated summaries are not part of this release.
+
 ## Future work: city labels on the rest of the site
 
 Consider adopting the Daily Explorer's smaller city-label size on

@@ -207,6 +207,42 @@ The repeatable, local [publication-readiness audit](station-publication-readines
 separates unavailable products from calculable products that still need
 human station-record review.
 
+## Future scope: custom date periods
+
+Backlog entry, October 25, 2026. Assess a start/end-date selector in addition
+to the existing summary-period presets; no UI or processing change is authorized
+by this note. Runtime, published size and browser responsiveness are constraints.
+
+- Start with dates bounded to the recent daily series already exported in
+  on-demand station detail JSON (currently the longest supported rolling window).
+  Basic observed totals/means and eligible recent extremes could be calculated
+  from those values without new station-history downloads. This still needs a
+  browser/payload benchmark and is not a promise of zero update or browser cost.
+- Decide whether the first version is selected-station-only or changes the
+  whole network map and table. The latter needs daily data for all displayed
+  stations, unlike the current on-demand detail view. Load/cache it only when
+  custom mode is selected; retain the lightweight preset startup path.
+- Preserve current precipitation completeness/lower-bound rules, paired-day
+  temperature thresholds, flags and notation. Specify their behavior for custom
+  durations, one-day windows and maximum allowed range; do not silently apply
+  a permissive long-window missing-day rule to a short event. Test agreement
+  between browser calculations and the existing R definitions.
+- Arbitrary-date departures, percentiles and ranks need matching historical
+  windows and support checks. Existing preset summaries cannot be interpolated
+  into valid custom-period comparisons. Initially withhold unavailable
+  comparisons with an explicit explanation. A later approved design could use
+  constrained precomputed periods or a separate on-demand service; do not ship
+  full historical daily records or precompute every start/end combination.
+- Keep seasonal freeze-night counts explicitly tied to October-March, rather
+  than silently redefining that indicator when custom dates change.
+- Before implementation, benchmark a few representative ranges across the full
+  network: transfer bytes, additional published size, update time, browser memory
+  and calculation/interaction latency on desktop and a mobile-class device.
+  Include missing/flagged/stale stations, leap days and month/year boundaries.
+- Review the scope and cost with the user, then prototype locally. No production
+  or daily-workflow integration until the performance limits and statistical
+  behavior are approved.
+
 ## Daily-chart interaction
 
 Hover, focus, or tap a chart day to see its date and precipitation total or

@@ -39,6 +39,53 @@ const isoDate = value => new Date(`${value}T12:00:00Z`);
 const dayLabel = value => isoDate(value).toLocaleDateString("en-US", {month:"short", day:"numeric", year:"numeric", timeZone:"UTC"});
 const shortLabel = value => isoDate(value).toLocaleDateString("en-US", {month:"short", day:"numeric", timeZone:"UTC"});
 const shift = (date, days) => {const d = isoDate(date); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0,10);};
+// Links only: the climate builder and browser never retrieve discussion text.
+const DISCUSSION_SOURCES = {
+  local: [
+    ["AFDPSR", "Phoenix (PSR)"], ["AFDTWC", "Tucson (TWC)"],
+    ["AFDFGZ", "Flagstaff (FGZ)"], ["AFDABQ", "Albuquerque (ABQ)"],
+    ["AFDEPZ", "El Paso / Santa Teresa (EPZ)"]
+  ],
+  adjacent: [
+    ["AFDVEF", "Las Vegas (VEF)"], ["AFDSGX", "San Diego (SGX)"],
+    ["AFDGJT", "Grand Junction (GJT)"], ["AFDPUB", "Pueblo (PUB)"],
+    ["AFDAMA", "Amarillo (AMA)"]
+  ],
+  national: [
+    ["PMDSPD", "Short-range discussion"], ["PMDEPD", "Extended discussion"],
+    ["QPFERD", "Excessive rainfall discussion"], ["FFGMPD", "Mesoscale precipitation discussions"],
+    ["QPFHSD", "Heavy snow / icing discussion"]
+  ]
+};
+function discussionArchiveUrl(date, product) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(isoDate(date).getTime()) ||
+      isoDate(date).toISOString().slice(0,10) !== date ||
+      !Object.values(DISCUSSION_SOURCES).flat().some(([pil]) => pil === product)) return null;
+  const query = new URLSearchParams({pil: product, fmt: "html",
+    sdate: `${date}T00:00Z`, edate: `${shift(date, 1)}T00:00Z`, limit: "100", order: "asc"});
+  return `https://mesonet.agron.iastate.edu/cgi-bin/afos/retrieve.py?${query}`;
+}
+function renderDiscussions() {
+  const date = selectedDate;
+  $("discussion-date").textContent = date ? ` · ${dayLabel(date)}` : "";
+  $("discussion-content").hidden = !date;
+  $("discussion-no-date").hidden = !!date;
+  for (const [group, sources] of Object.entries(DISCUSSION_SOURCES)) {
+    const list = $(`discussion-${group}`); list.replaceChildren();
+    if (!date) continue;
+    for (const [product, label] of sources) {
+      const href = discussionArchiveUrl(date, product);
+      if (!href) continue;
+      const item = document.createElement("li"), link = document.createElement("a");
+      link.href = href; link.target = "_blank"; link.rel = "noopener noreferrer";
+      link.textContent = label;
+      link.setAttribute("aria-label", `${label}: ${product} archive search for ${date} UTC (opens in a new tab)`);
+      item.append(link); list.append(item);
+    }
+  }
+  if (date) $("discussion-window").textContent =
+    `Issued ${date} 00:00 UTC to ${shift(date, 1)} 00:00 UTC (end exclusive). Links follow this selected day, not the full 7-/30-day grid.`;
+}
 let days = [], byDate = new Map(), selectedDate = "", visibleDates = [];
 function regionValues(date) {return byDate.get(date)?.regions?.[$("region").value]?.[$("variable").value];}
 function metricValue(date, metric) {return regionValues(date)?.[metric] ?? null;}
@@ -179,7 +226,7 @@ function renderNotable() {
 function render() {
   visibleDates = filterDates();
   if (!visibleDates.includes(selectedDate)) selectedDate = visibleDates.at(-1) || "";
-  renderTimeline(); renderMap(); renderComparison(); renderNotable();
+  renderTimeline(); renderMap(); renderComparison(); renderDiscussions(); renderNotable();
 }
 async function initialize() {
   try {

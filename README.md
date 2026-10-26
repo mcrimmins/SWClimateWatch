@@ -369,6 +369,12 @@ See [PRISM map product workplan](docs/map-product-workplan.md) for completed
 products, the next implementation phases, deferred products, and the scientific
 rationale for the public map collection.
 
+The [consolidated development roadmap](docs/development-roadmap.md) retains the
+remaining site enhancements and operational work. Its
+[daily weather/circulation scope](docs/weather-circulation-scope.md) proposes a
+small 500-mb/jet/wind diagnostic pilot, comparing NOAA CORe and ERA5 access and
+daily cost before adding anything to production.
+
 Historical rolling-precipitation samples are cached by duration and ending
 calendar day. Repeated map updates reuse a cache when its processed-source
 signature is unchanged. A normal next-day cache is advanced from its validated

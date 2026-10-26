@@ -4,3 +4,11 @@
 .comparison.month-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
 @media(max-width:1100px){.comparison.month-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:760px){.comparison.month-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.discussions>summary{font-size:19px;font-weight:700;cursor:pointer}
+.discussion-columns{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:12px 0}
+.discussion-columns h3{font-size:15px;margin:8px 0}
+.discussion-links{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:8px}
+.discussion-links a{display:inline-block;padding:7px 10px;border:1px solid var(--line);border-radius:5px;background:#f5f8f8;text-decoration:none;font-size:13px}
+.discussion-links a:hover{text-decoration:underline;background:#edf4f4}
+.discussion-adjacent{margin-top:12px}.discussion-adjacent summary{cursor:pointer;font-size:13px;font-weight:650;margin-bottom:8px}
+@media(max-width:760px){.discussion-columns{grid-template-columns:1fr;gap:10px}}

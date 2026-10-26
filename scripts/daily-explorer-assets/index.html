@@ -45,6 +45,30 @@
     <p id="comparison-caption" class="muted small" aria-live="polite" hidden></p>
     <div id="comparison" class="comparison" hidden></div>
   </section>
+  <details class="card discussions">
+    <summary>Forecast discussions<span id="discussion-date"></span></summary>
+    <p id="discussion-no-date" class="muted" hidden>Choose a cached map date to see discussion archive searches.</p>
+    <div id="discussion-content" hidden>
+      <p id="discussion-window" class="muted small" aria-live="polite"></p>
+      <div class="discussion-columns">
+        <section aria-labelledby="discussion-local-title">
+          <h3 id="discussion-local-title">NWS Area Forecast Discussions</h3>
+          <ul id="discussion-local" class="discussion-links"></ul>
+          <details class="discussion-adjacent">
+            <summary>Surrounding offices</summary>
+            <ul id="discussion-adjacent" class="discussion-links"></ul>
+          </details>
+        </section>
+        <section aria-labelledby="discussion-national-title">
+          <h3 id="discussion-national-title">WPC national discussions</h3>
+          <ul id="discussion-national" class="discussion-links"></ul>
+          <p class="muted small">National coverage; not filtered to AZ/NM. Event discussions may not be issued every day.</p>
+        </section>
+      </div>
+      <p class="muted small">Archive searches open in a new tab at Iowa Environmental Mesonet (IEM), an external archive of NWS-issued text. Each search requests up to 100 issuances, oldest first, including updates/corrections when archived. Availability is not checked here; an empty result is not evidence that no discussion was issued.</p>
+      <p class="muted small">Issue date is not forecast valid date. Text may describe earlier conditions or several future days, and PRISM reporting periods may differ from UTC days. These are nearby-date forecast context, not verified explanations of observed outcomes or evidence of causation. Office coverage crosses state boundaries; links remain available when the summary region changes.</p>
+    </div>
+  </details>
   <section class="card" aria-labelledby="notable-title">
     <div class="section-heading"><h2 id="notable-title">Notable days</h2><label>Find days by<select id="ranking"></select></label></div>
     <p class="muted small">Ordered within the selected season and summary region. These are browsing metrics, not verified impacts or historical records.</p>
