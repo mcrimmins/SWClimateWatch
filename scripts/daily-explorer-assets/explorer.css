@@ -12,3 +12,11 @@
 .discussion-links a:hover{text-decoration:underline;background:#edf4f4}
 .discussion-adjacent{margin-top:12px}.discussion-adjacent summary{cursor:pointer;font-size:13px;font-weight:650;margin-bottom:8px}
 @media(max-width:760px){.discussion-columns{grid-template-columns:1fr;gap:10px}}
+.discussion-links a[aria-current=true]{border-color:var(--accent);background:#fff2e8;color:var(--ink)}
+.discussion-reader{border:1px solid var(--line);border-radius:6px;padding:12px;margin:16px 0;min-width:0}
+.discussion-reader-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.discussion-reader-heading h3{font-size:15px;margin:0;overflow-wrap:anywhere}
+.discussion-reader-actions{display:flex;align-items:center;gap:12px;font-size:13px;flex-wrap:wrap}
+.discussion-reader-actions button{font-size:13px;min-height:32px;padding:4px 9px}
+#discussion-frame{display:block;width:100%;height:520px;border:1px solid var(--line);background:white}
+@media(max-width:760px){#discussion-frame{height:420px}}

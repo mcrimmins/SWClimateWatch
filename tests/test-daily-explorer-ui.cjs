@@ -4,8 +4,12 @@ const vm = require('node:vm');
 const assert = require('node:assert/strict');
 const controls = {compare: {value: 'single'}};
 const element = () => ({children: [], attributes: {}, textContent: '', hidden: false,
+  listeners: {},
   append(...items) {this.children.push(...items);},
   replaceChildren(...items) {this.children = items;},
+  addEventListener(name, callback) {this.listeners[name] = callback;},
+  getAttribute(name) {return name === 'src' ? (this.src || null) : (this.attributes[name] || null);},
+  removeAttribute(name) {delete this.attributes[name]; if (name === 'src') delete this.src; if (name === 'href') delete this.href;},
   setAttribute(name, value) {this.attributes[name] = value;}});
 const context = vm.createContext({URLSearchParams, document: {
   getElementById: id => controls[id], createElement: element}});
@@ -30,12 +34,15 @@ for (const date of ['', 'bad', '2026-02-29', '2026-04-31'])
 assert.equal(evaluate(`discussionArchiveUrl('2026-10-01', 'UNSAFE')`), null);
 assert.equal(evaluate(`discussionArchiveUrl('2026-10-01', 'PMDSPD')`).includes('pil=PMDSPD'), true);
 for (const id of ['discussion-date','discussion-content','discussion-no-date',
-  'discussion-window','discussion-local','discussion-adjacent','discussion-national']) controls[id] = element();
+  'discussion-window','discussion-local','discussion-adjacent','discussion-national',
+  'discussion-reader','discussion-frame','discussion-original','discussion-reader-title',
+  'discussion-reader-status','discussion-close']) controls[id] = element();
 evaluate('selectedDate = "2026-10-01"; renderDiscussions()');
 assert.equal(controls['discussion-content'].hidden, false);
 assert.equal(controls['discussion-local'].children.length, 5);
 assert.equal(controls['discussion-adjacent'].children.length, 5);
 assert.equal(controls['discussion-national'].children.length, 5);
+assert.equal(controls['discussion-frame'].getAttribute('src'), null);
 for (const id of ['discussion-local','discussion-adjacent','discussion-national']) {
   for (const item of controls[id].children) {
     const link = item.children[0];
@@ -45,9 +52,31 @@ for (const id of ['discussion-local','discussion-adjacent','discussion-national'
     assert.equal(new URL(link.href).searchParams.get('sdate'), '2026-10-01T00:00Z');
   }
 }
+// Primary selection loads the reader; modified clicks keep browser new-tab behavior.
+const officeLink = controls['discussion-local'].children[0].children[0];
+let prevented = false;
+officeLink.listeners.click({button:0, ctrlKey:true, preventDefault(){prevented=true;}});
+assert.equal(prevented, false);
+assert.equal(controls['discussion-frame'].getAttribute('src'), null);
+officeLink.listeners.click({button:0, preventDefault(){prevented=true;}});
+assert.equal(prevented, true);
+assert.equal(controls['discussion-reader'].hidden, false);
+assert.equal(controls['discussion-frame'].src, officeLink.href);
+assert.equal(controls['discussion-original'].href, officeLink.href);
+assert.match(controls['discussion-reader-title'].textContent, /Phoenix.*Oct 1, 2026/);
+evaluate('renderDiscussions()');
+assert.equal(controls['discussion-frame'].src, officeLink.href);
+assert.equal(controls['discussion-local'].children[0].children[0].attributes['aria-current'], 'true');
+evaluate('openDiscussion("PMDSPD", "Short-range discussion")');
+assert.equal(new URL(controls['discussion-frame'].src).searchParams.get('pil'), 'PMDSPD');
 evaluate('selectedDate = "2026-09-30"; renderDiscussions()');
+assert.equal(controls['discussion-reader'].hidden, true);
+assert.equal(controls['discussion-frame'].getAttribute('src'), null);
 assert.match(controls['discussion-window'].textContent, /2026-09-30.*2026-10-01/);
 assert.equal(controls['discussion-local'].children.length, 5); // No duplicate links.
+evaluate('openDiscussion("AFDPSR", "Phoenix (PSR)"); closeDiscussionReader()');
+assert.equal(controls['discussion-reader'].hidden, true);
+assert.equal(controls['discussion-frame'].getAttribute('src'), null);
 evaluate('selectedDate = ""; renderDiscussions()');
 assert.equal(controls['discussion-content'].hidden, true);
 assert.equal(controls['discussion-no-date'].hidden, false);
@@ -98,4 +127,6 @@ assert.equal(new URL(controls['discussion-national'].children[0].children[0].hre
 const html = fs.readFileSync('scripts/daily-explorer-assets/index.html', 'utf8');
 for (const id of Object.keys(controls).filter(id => id.startsWith('discussion-')))
   assert.ok(html.includes(`id="${id}"`), `Missing discussion panel element ${id}`);
-console.log('Daily Explorer UI: archive links, date windows, leap day, mean metrics and hidden coverage passed.');
+assert.match(html, /id="discussion-frame"[^>]*sandbox=""[^>]*referrerpolicy="no-referrer"/);
+assert.doesNotMatch(html, /id="discussion-frame"[^>]*\bsrc=/);
+console.log('Daily Explorer UI: embedded reader, archive links, date windows and climate metrics passed.');

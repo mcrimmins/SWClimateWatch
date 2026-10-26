@@ -39,7 +39,7 @@ const isoDate = value => new Date(`${value}T12:00:00Z`);
 const dayLabel = value => isoDate(value).toLocaleDateString("en-US", {month:"short", day:"numeric", year:"numeric", timeZone:"UTC"});
 const shortLabel = value => isoDate(value).toLocaleDateString("en-US", {month:"short", day:"numeric", timeZone:"UTC"});
 const shift = (date, days) => {const d = isoDate(date); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0,10);};
-// Links only: the climate builder and browser never retrieve discussion text.
+// No build-time downloads. The external reader loads only on explicit selection.
 const DISCUSSION_SOURCES = {
   local: [
     ["AFDPSR", "Phoenix (PSR)"], ["AFDTWC", "Tucson (TWC)"],
@@ -57,6 +57,34 @@ const DISCUSSION_SOURCES = {
     ["QPFHSD", "Heavy snow / icing discussion"]
   ]
 };
+let discussionDate = "", discussionProduct = "";
+function resetDiscussionReader() {
+  discussionProduct = "";
+  $("discussion-reader").hidden = true;
+  $("discussion-frame").removeAttribute("src");
+  $("discussion-original").removeAttribute("href");
+  $("discussion-reader-status").textContent = "";
+}
+function closeDiscussionReader() {resetDiscussionReader(); renderDiscussions();}
+function openDiscussion(product, label) {
+  const href = discussionArchiveUrl(selectedDate, product);
+  if (!href) return;
+  const frame = $("discussion-frame");
+  discussionProduct = product;
+  $("discussion-reader").hidden = false;
+  $("discussion-reader-title").textContent = `${label} · ${dayLabel(selectedDate)} UTC issuances`;
+  frame.title = `Archived ${label}, issued ${selectedDate} UTC`;
+  $("discussion-original").href = href;
+  $("discussion-reader-status").textContent = "External IEM archive view. If it is blank, unavailable, or blocked, use Open in new tab or try again later.";
+  if (frame.getAttribute("src") !== href) frame.src = href;
+  // Keep the clicked link in place so keyboard focus is not lost.
+  for (const group of Object.keys(DISCUSSION_SOURCES)) {
+    for (const item of $(`discussion-${group}`).children) {
+      const link = item.children[0];
+      link.setAttribute("aria-current", String(link.getAttribute("data-product") === product));
+    }
+  }
+}
 function discussionArchiveUrl(date, product) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(isoDate(date).getTime()) ||
       isoDate(date).toISOString().slice(0,10) !== date ||
@@ -67,6 +95,7 @@ function discussionArchiveUrl(date, product) {
 }
 function renderDiscussions() {
   const date = selectedDate;
+  if (date !== discussionDate) {resetDiscussionReader(); discussionDate = date;}
   $("discussion-date").textContent = date ? ` · ${dayLabel(date)}` : "";
   $("discussion-content").hidden = !date;
   $("discussion-no-date").hidden = !!date;
@@ -79,7 +108,13 @@ function renderDiscussions() {
       const item = document.createElement("li"), link = document.createElement("a");
       link.href = href; link.target = "_blank"; link.rel = "noopener noreferrer";
       link.textContent = label;
-      link.setAttribute("aria-label", `${label}: ${product} archive search for ${date} UTC (opens in a new tab)`);
+      link.setAttribute("data-product", product);
+      link.setAttribute("aria-label", `${label}: ${product} archive search for ${date} UTC (opens in embedded reader)`);
+      if (discussionProduct === product) link.setAttribute("aria-current", "true");
+      link.addEventListener("click", event => {
+        if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        event.preventDefault(); openDiscussion(product, label);
+      });
       item.append(link); list.append(item);
     }
   }
@@ -245,6 +280,11 @@ async function initialize() {
     $("date").addEventListener("change", () => {if (inCachedDateRange($("date").value)) selectDate($("date").value); else $("date").value = selectedDate;});
     $("previous").addEventListener("click", () => selectDate(shift(selectedDate,-1)));
     $("next").addEventListener("click", () => selectDate(shift(selectedDate,1)));
+    $("discussion-close").addEventListener("click", closeDiscussionReader);
+    $("discussion-frame").addEventListener("error", () => {
+      if (!$("discussion-reader").hidden) $("discussion-reader-status").textContent =
+        "The embedded archive could not be opened. Use Open in new tab or try again later.";
+    });
     $("map").addEventListener("error", () => {$("map").hidden = true; $("open-map").hidden = true; $("unavailable").hidden = false; $("unavailable").textContent = "The map image could not be loaded. Rebuild the local explorer to restore missing assets.";});
   } catch (error) {
     $("error").hidden = false; $("error").textContent = `Could not load the local explorer: ${error.message} Open it through scripts/serve-daily-explorer.R, rather than directly from a file.`;

@@ -5,6 +5,30 @@ user's request to resume. No downloader, scheduled task, text index, production
 deployment or full-text archive is added. Pending user review and VM staging.
 The circulation-map project remains deferred and independent.
 
+### Embedded-reader follow-up (local, October 26)
+
+At the user's request after reviewing staging, primary selection now opens the
+same dated archive search in a fixed-height, internally scrollable iframe:
+520 pixels on desktop, 420 on narrow screens. The selected product is highlighted,
+the reader header repeats its date, and Close reader removes its source URL.
+Changing the selected map date also clears the reader; unrelated metric/view
+changes preserve it without reloading. Modified clicks and an explicit new-tab
+link retain external access.
+
+The frame has no source URL until selection, uses an empty sandbox (no scripts,
+forms or top navigation), and sends no Referer. Browser selection makes a direct
+request to IEM, not to a new server-side downloader. No climate payload, map
+cache or publishing request changes. A sample IEM response returned no
+X-Frame-Options or Content-Security-Policy framing restriction, and the live
+local browser displayed and scrolled the archived Phoenix text successfully.
+
+An iframe error event displays a fallback message when the browser emits it;
+that event cannot reliably detect all remote outages, empty results or framing
+blocks. The fallback link and explanation therefore remain visible at all times.
+No inspection of the cross-origin frame or claim of verified availability is
+made. Local unit tests cover lazy loading, modified clicks, product changes,
+state retention and clearing/closing. This follow-up still needs staging review.
+
 ## Implemented first-release decisions
 
 - Collapsed panel beneath the selected map/grid, before Notable days. Five core
@@ -14,16 +38,17 @@ The circulation-map project remains deferred and independent.
   UTC date 00:00 inclusive through next UTC date 00:00 exclusive, oldest first,
   explicit limit of 100. The product's own issue/valid times remain in the
   external original text; no metadata or availability is inferred locally.
-- All links update on date selection, arrows, timeline/notable selection or
+- All archive targets update on date selection, arrows, timeline/notable selection or
   thumbnail changes. Seven-/30-day grids do not change the discussion period
   to the whole grid. AZ/NM summary selection does not suppress office links;
   national products are explicitly not spatially filtered.
 - Searches are labeled as searches. Empty archives, non-issued event products,
   incomplete histories and product corrections are described. The panel
   distinguishes issue date, forecast validity and PRISM reporting periods.
-- No archive fetch, iframe, prefetch, AI summary or server query is triggered by
-  rendering or opening the panel. Links open in a new tab with
-  `rel="noopener noreferrer"`; external availability cannot block publication.
+- No archive request, prefetch, AI summary or server query is triggered by
+  rendering or opening the panel. Selecting a product loads the sandboxed
+  reader; its new-tab fallback uses `rel="noopener noreferrer"`.
+  External availability cannot block publication.
 - Only the existing HTML/JS/CSS assets change. No daily JSON schema, climate
   statistic, cache signature, image count, R downloader or map renderer changes.
 - Local browser review confirmed the panel layout, new-tab link behavior and

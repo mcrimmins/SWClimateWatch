@@ -65,7 +65,18 @@
           <p class="muted small">National coverage; not filtered to AZ/NM. Event discussions may not be issued every day.</p>
         </section>
       </div>
-      <p class="muted small">Archive searches open in a new tab at Iowa Environmental Mesonet (IEM), an external archive of NWS-issued text. Each search requests up to 100 issuances, oldest first, including updates/corrections when archived. Availability is not checked here; an empty result is not evidence that no discussion was issued.</p>
+      <section id="discussion-reader" class="discussion-reader" aria-labelledby="discussion-reader-title" hidden>
+        <div class="discussion-reader-heading">
+          <h3 id="discussion-reader-title">Selected archive</h3>
+          <div class="discussion-reader-actions">
+            <a id="discussion-original" target="_blank" rel="noopener noreferrer">Open in new tab ↗</a>
+            <button id="discussion-close" type="button">Close reader</button>
+          </div>
+        </div>
+        <p id="discussion-reader-status" class="muted small" role="status"></p>
+        <iframe id="discussion-frame" title="Archived forecast discussion" sandbox="" referrerpolicy="no-referrer"></iframe>
+      </section>
+      <p class="muted small">Select an office or product to load its archive search in the scrollable reader. Text comes directly from Iowa Environmental Mesonet (IEM), an external archive of NWS-issued text; nothing loads until selected. Open in new tab is available if embedding fails. Each search requests up to 100 issuances, oldest first, including updates/corrections when archived. Availability is not checked here; an empty result is not evidence that no discussion was issued.</p>
       <p class="muted small">Issue date is not forecast valid date. Text may describe earlier conditions or several future days, and PRISM reporting periods may differ from UTC days. These are nearby-date forecast context, not verified explanations of observed outcomes or evidence of causation. Office coverage crosses state boundaries; links remain available when the summary region changes.</p>
     </div>
   </details>

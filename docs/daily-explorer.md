@@ -328,10 +328,16 @@ forecast-valid periods or spatially filter national discussions. Read issue and
 valid times in the original text. Office links remain available for either
 summary region because service areas cross state lines.
 
-The panel is collapsed initially and opens external text in new tabs. It makes
-no archive requests itself, adds no daily downloads, embeds no full text, and
-does not invalidate climate-map caches. Only three existing static UI files
-change. Missing archive results cannot block the site's update. Archived text
+The panel is collapsed initially and loads the selected archive search into a
+fixed-height scrollable reader (520 pixels desktop; 420 on narrow screens).
+It makes no archive request until an office/product is selected. An empty
+sandbox blocks scripts/forms/top navigation; text is served directly by IEM,
+not stored in site assets. Open in new tab remains available if embedding fails.
+The reader clears when the selected date changes or Close reader is used;
+unrelated display changes do not reload it. Remote availability cannot be
+reliably detected across origins, so a fallback notice remains visible.
+There are no daily downloads or climate-cache changes. Only three existing
+static UI files change. Missing archive results cannot block the site's update. Archived text
 is forecast context, not a verified explanation of observed outcomes; PRISM
 reporting periods are not necessarily UTC calendar days. Cached metadata,
 SPC/report sources and automated summaries are not part of this release.
