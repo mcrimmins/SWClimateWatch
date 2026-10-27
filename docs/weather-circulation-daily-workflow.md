@@ -28,6 +28,48 @@ sea-level pressure and wind-field validation remains strict; corrupt or
 ambiguous GRIB records still fail the date. The September 28 regression trial
 built with seven usable hourly pressure samples and nine daily-screened centers.
 
+### Broken-index recovery (October 27 investigation)
+
+The September 28 09 UTC index ended after 152 records/11,630,800 bytes, while
+the GRIB object was 38,864,340 bytes. October 4 06 UTC and October 5 09 UTC had
+empty indexes but GRIB objects of 38,530,880 and 38,001,976 bytes. Cache-bypassed
+index checks reproduced these listings. Bounded GRIB reads recovered the missing
+surface-pressure record in all three cases; the data were present despite the
+bad indexes. The publisher's underlying index-generation problem is unknown.
+
+When a three-hourly pressure index/record is missing, try a **2 MB search window**
+around the GRIB object's midpoint, fetched as two separate 1 MB ranges plus a
+16-byte object-header request. This position is an empirical search heuristic,
+not a guarantee of field identity or future placement. Decode only a unique,
+complete GRIB2 template-4.0 surface-pressure candidate with zero forecast lead.
+Then run normal exact valid-time, units and Gaussian-grid checks. Pin range
+requests to the same object ETag; reject ignored ranges or changing objects.
+
+Recovery is limited to two hourly screening samples per date, within 32 request,
+7 MB and existing request-time guards. It adds no requests for dates whose
+indexes contain the required fields. Verified recovered records are cached;
+scheduled recent-date refreshes recheck them. No full-file downloads, inferred
+pressure values, alternate reanalyses or unbounded header scans are used. If the
+bounded search cannot recover a sample, keep the missing-overlay behavior.
+Recovery counts and errors appear in moisture summaries and archive batch notes.
+
+The three initial cold recovery tests each transferred 2,000,016 bytes in three
+requests, taking 4.85, 0.54 and 0.60 seconds respectively. Integrated map tests
+restored all eight terrain-screening samples and wind overlays for all three
+dates. These are laptop measurements, not a new VM timing benchmark.
+
+Reproduce the small recovery/cache audit from the project root:
+
+```r
+source("scripts/audit-weather-core-index-recovery.R")
+```
+
+It tests the three known cases, retains only selected pressure records, and
+writes `data/diagnostics/weather-core-index-recovery/recovery-test.csv`.
+It does not update site assets, render Quarto or sync S3. After releasing the
+fix to staging, the existing bounded backfill can regenerate affected maps
+using cached main inputs and recover missing screening samples as needed.
+
 ## Retention and bounded work
 
 - On first use, record a fixed start date 29 days before the latest completed
@@ -153,6 +195,7 @@ maps/caches are ignored. Keep the deferred IVT experiment out of this release.
 ```cmd
 git add -u
 git add R/daily-explorer-circulation.R R/weather-circulation-archive.R R/weather-moisture-pilot.R docs/weather-circulation-daily-workflow.md scripts/build-daily-explorer-circulation-preview.R scripts/load-weather-circulation-archive.R scripts/run-weather-moisture-pilot.R scripts/serve-daily-explorer-circulation.R scripts/update-weather-circulation.R tests/test-daily-explorer-circulation-ui.cjs tests/testthat/test-daily-explorer-circulation.R tests/testthat/test-weather-circulation-archive.R tests/testthat/test-weather-moisture-pilot.R
+git add R/weather-core-index-recovery.R scripts/audit-weather-core-index-recovery.R tests/testthat/test-weather-core-index-recovery.R
 git diff --cached --stat
 git commit -m "Stage daily weather maps with moisture and cached date archive"
 git push origin codex/daily-explorer

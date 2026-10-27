@@ -200,17 +200,24 @@ run_weather_moisture_pilot <- function(dates=as.Date(c("2023-03-01","2024-07-15"
     date<-dates[i]; started<-proc.time()[["elapsed"]]; bytes<-requests<-download_seconds<-0
     directory<-file.path(output_dir,as.character(date)); dir.create(directory,recursive=TRUE,showWarnings=FALSE)
     reference<-template<-NULL; metadata<-list()
-    get<-function(url,start=NULL,end=NULL,allow_missing=FALSE) {
-      if (proc.time()[["elapsed"]]-started>90 || requests>=24 || bytes>5e6) stop("Moisture pilot request/time budget exceeded.")
+    recoveries<-0L; recovered_hours<-character(); recovery_notes<-character()
+    get<-function(url,start=NULL,end=NULL,allow_missing=FALSE,record=TRUE,etag=NULL) {
+      if (proc.time()[["elapsed"]]-started>90 || requests>=32 || bytes>7e6 ||
+          (!is.null(start) && bytes+end-start+1>7e6)) stop("Moisture request/time budget exceeded.")
       begin<-proc.time()[["elapsed"]]; req<-weather_core_request(url)
       if(allow_missing) req<-httr2::req_error(req,is_error=function(resp) httr2::resp_status(resp)>=400 && httr2::resp_status(resp)!=404L)
       if(!is.null(start)) req<-httr2::req_headers(req,Range=sprintf("bytes=%.0f-%.0f",start,end),`Accept-Encoding`="identity")
+      if(!is.null(etag)) req<-httr2::req_headers(req,`If-Match`=etag)
       requests<<-requests+1L; response<-httr2::req_perform(req)
       if(allow_missing && (httr2::resp_status(response)==404L || identical(httr2::resp_header(response,"Content-Length"),"0"))) return(raw(0))
       raw<-httr2::resp_body_raw(response)
       bytes<<-bytes+length(raw); download_seconds<<-download_seconds+proc.time()[["elapsed"]]-begin
       if(is.null(start)) {if(httr2::resp_status(response)!=200L) stop("Missing moisture index.")}
-      else weather_core_check_response(raw,httr2::resp_status(response),httr2::resp_header(response,"Content-Range"),start,end)
+      else {
+        total<-weather_core_check_range(raw,httr2::resp_status(response),httr2::resp_header(response,"Content-Range"),start,end)
+        if(record) weather_core_check_response(raw,httr2::resp_status(response),httr2::resp_header(response,"Content-Range"),start,end)
+        attr(raw,"object_size")<-total; attr(raw,"etag")<-httr2::resp_header(response,"ETag")
+      }
       raw
     }
     index<-function(type,hour=NULL) {
@@ -236,7 +243,7 @@ run_weather_moisture_pilot <- function(dates=as.Date(c("2023-03-01","2024-07-15"
         level=vapply(parts,`[`,character(1),5L),timing=vapply(parts,`[`,character(1),6L),base=base,
         stamp=stamp,period=period,type=type)
     }
-    field<-function(idx,variable,level,unit,optional=FALSE) {
+    field<-function(idx,variable,level,unit,optional=FALSE,force_refresh=refresh) {
       row<-weather_moisture_select_field(idx,variable,level,optional)
       if(is.null(row)) {
         metadata[[length(metadata)+1L]]<<-data.frame(variable=variable,level=paste(level,"unavailable"),
@@ -246,7 +253,7 @@ run_weather_moisture_pilot <- function(dates=as.Date(c("2023-03-01","2024-07-15"
       path<-file.path(directory,paste0(row$period,"-",row$type,"-",row$stamp,"-",variable,"-",gsub("[^A-Za-z0-9]","_",level),".grb"))
       marker<-paste0(path,".rds")
       old<-if(file.exists(marker)) readRDS(marker) else NULL
-      if(refresh || !file.exists(path) || !is.list(old) || !identical(old$md5,unname(tools::md5sum(path)))) {
+      if(force_refresh || !file.exists(path) || !is.list(old) || !identical(old$md5,unname(tools::md5sum(path)))) {
         raw<-get(paste0(row$base,".grb"),row$start,row$end); writeBin(raw,path)
         saveRDS(list(md5=unname(tools::md5sum(path))),marker)
       }
@@ -274,6 +281,23 @@ run_weather_moisture_pilot <- function(dates=as.Date(c("2023-03-01","2024-07-15"
     v<-field(pgb,"VGRD",paste(wind_level,"mb"),"[m/s]")
     ps<-vapply(seq(0,21,3),function(hour) {
       idx<-index("pgb",hour)
+      missing<-is.null(idx) || is.null(weather_moisture_select_field(idx,"PRES","surface",TRUE))
+      if(missing && recoveries<2L) {
+        recoveries<<-recoveries+1L
+        stamp<-paste0(format(date,"%Y%m%d"),sprintf("%02d",hour))
+        base<-paste0("https://storage.googleapis.com/noaa-nws-ncep-core/grib/3hour/pgb/",format(date,"%Y/%m/"),"pgb.",stamp)
+        recovered<-tryCatch(weather_core_recover_surface_pressure(base,stamp,directory,
+          get_range=function(url,start,end,etag=NULL) get(url,start,end,record=FALSE,etag=etag),
+          refresh=refresh),error=function(e) {
+            recovery_notes<<-c(recovery_notes,paste(stamp,conditionMessage(e))); NULL
+          })
+        if(!is.null(recovered)) {
+          recovered_hours<<-c(recovered_hours,stamp)
+          # Run the ordinary units, exact valid-time and grid checks, even for
+          # a recovered/cached record. Never infer identity from byte position.
+          return(field(recovered,"PRES","surface","[Pa]",force_refresh=FALSE))
+        }
+      }
       if(is.null(idx)) rep(NA_real_,length(u)) else field(idx,"PRES","surface","[Pa]",optional=TRUE)
     },numeric(length(u)))
     mask<-weather_moisture_wind_mask(ps,wind_level)
@@ -301,6 +325,9 @@ run_weather_moisture_pilot <- function(dates=as.Date(c("2023-03-01","2024-07-15"
     result$map_reused<-reuse_plot
     result$terrain_samples_available<-sum(colSums(is.finite(ps))>0)
     result$center_screen_available<-any(is.finite(daily_surface_pressure))
+    result$pressure_recovery_attempts<-recoveries
+    result$pressure_recovered_samples<-length(recovered_hours)
+    result$pressure_recovery_notes<-paste(recovery_notes,collapse="; ")
     message("Moisture map ready: ",path); result
   })
   summary<-do.call(rbind,all_runs)

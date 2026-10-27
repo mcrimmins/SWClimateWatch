@@ -1,7 +1,8 @@
 # Circulation render cache shared by local preview and optional daily adapter.
 weather_renderer_signature <- function() {
   moisture <- c("weather_moisture_plot","weather_pressure_centers","weather_moisture_wind_mask",
-    "weather_moisture_grid","weather_moisture_select_field","run_weather_moisture_pilot")
+    "weather_moisture_grid","weather_moisture_select_field","run_weather_moisture_pilot",
+    "weather_core_check_range","weather_core_find_surface_pressure","weather_core_recover_surface_pressure")
   digest::digest(list(version=2L,R=R.version.string,
     moisture=lapply(moisture,function(name) if(exists(name,mode="function")) body(get(name)) else NULL),
     functions=lapply(list(weather_core_decode,weather_core_grid,weather_gaussian_latitudes,
@@ -71,6 +72,10 @@ build_weather_circulation_cached <- function(dates,output_dir,refresh=FALSE) {
           "Moisture wind overlay omitted: incomplete hourly terrain-screening inputs." else ""
         if(identical(moisture$center_screen_available,FALSE))
           note <- trimws(paste(note,"H/L omitted: incomplete daily surface-pressure screening."))
+        if(!is.null(moisture$pressure_recovered_samples) && moisture$pressure_recovered_samples>0)
+          note <- trimws(paste(note,moisture$pressure_recovered_samples,"hourly pressure sample(s) recovered from GRIB despite incomplete index."))
+        if(!is.null(moisture$pressure_recovery_notes) && nzchar(moisture$pressure_recovery_notes))
+          note <- trimws(paste(note,moisture$pressure_recovery_notes))
         saveRDS(list(signature=signature(),md5=unname(tools::md5sum(path)),note=note),marker)
         result$note[i] <- note
         if(!isTRUE(moisture$map_reused)) result$status[i] <- "BUILT"
