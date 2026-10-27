@@ -122,6 +122,101 @@ function renderDiscussions() {
     `Issued ${date} 00:00 UTC to ${shift(date, 1)} 00:00 UTC (end exclusive). Links follow this selected day, not the full 7-/30-day grid.`;
 }
 let days = [], byDate = new Map(), selectedDate = "", visibleDates = [];
+let circulationEnabled = false, circulationPromise = null, circulationEpoch = 0, circulationShownDate = "";
+let circulationActiveTab = "height500";
+const CIRCULATION_FIELDS = ["height500","jet250","moisture"];
+function selectCirculationTab(field) {
+  if (!CIRCULATION_FIELDS.includes(field)) return;
+  circulationActiveTab = field;
+  for (const key of CIRCULATION_FIELDS) {
+    const tab = $(`circulation-tab-${key}`);
+    tab.setAttribute("aria-selected",String(key === field)); tab.tabIndex = key === field ? 0 : -1;
+  }
+  for (const figure of $("circulation-maps").children) {
+    figure.hidden = figure.circulationField !== field;
+    const image = figure.children[0];
+    // Fetch only the selected map. Previously viewed maps remain browser-cached.
+    if (!figure.hidden && !image.getAttribute("src")) image.src = image.circulationSource;
+  }
+}
+function setupCirculationTabs() {
+  for (const field of CIRCULATION_FIELDS) {
+    const tab = $(`circulation-tab-${field}`);
+    tab.addEventListener("click",() => selectCirculationTab(field));
+    tab.addEventListener("keydown",event => {
+      if (!["ArrowLeft","ArrowRight","Home","End"].includes(event.key)) return;
+      event.preventDefault();
+      const next = event.key === "Home" ? CIRCULATION_FIELDS[0] : event.key === "End" ? CIRCULATION_FIELDS.at(-1) :
+        CIRCULATION_FIELDS[(CIRCULATION_FIELDS.indexOf(field)+(event.key === "ArrowRight" ? 1 : CIRCULATION_FIELDS.length-1))%CIRCULATION_FIELDS.length];
+      selectCirculationTab(next); $(`circulation-tab-${next}`).focus();
+    });
+  }
+}
+function validateCirculationManifest(payload) {
+  if (payload?.schema_version !== 1 || !Array.isArray(payload.days)) throw new Error("Invalid circulation manifest.");
+  const records = new Map();
+  for (const day of payload.days) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day.date) || !Number.isFinite(isoDate(day.date).getTime()) ||
+        isoDate(day.date).toISOString().slice(0,10) !== day.date || records.has(day.date)) throw new Error("Invalid circulation date.");
+    if (!["available","unavailable"].includes(day.status)) throw new Error("Invalid circulation status.");
+    if (day.status === "available") for (const field of CIRCULATION_FIELDS) {
+      if (day.images?.[field] !== `circulation/maps/${day.date}-${field}.png`) throw new Error("Invalid circulation image path.");
+    }
+    records.set(day.date,day);
+  }
+  return records;
+}
+async function renderCirculation() {
+  const panel = $("circulation-panel");
+  if (!circulationEnabled || !panel) return;
+  panel.hidden = false;
+  $("circulation-date").textContent = selectedDate ? ` · ${dayLabel(selectedDate)} UTC` : "";
+  if (panel.open && circulationShownDate === selectedDate) return;
+  const epoch = ++circulationEpoch, date = selectedDate;
+  circulationShownDate = "";
+  $("circulation-maps").replaceChildren();
+  $("circulation-tabs").hidden = true;
+  $("circulation-retry").hidden = true;
+  if (!panel.open) {$("circulation-status").textContent = ""; return;}
+  if (!date) {$("circulation-status").textContent = "Select a date to view circulation context."; return;}
+  $("circulation-status").textContent = "Loading circulation availability…";
+  try {
+    if (!circulationPromise) circulationPromise = fetch("circulation-manifest.json",{cache:"no-store"})
+      .then(response => {if (!response.ok) throw new Error(`HTTP ${response.status}`); return response.json();})
+      .then(validateCirculationManifest);
+    const records = await circulationPromise;
+    if (epoch !== circulationEpoch || !panel.open || date !== selectedDate) return;
+    const record = records.get(date);
+    if (!record || record.status !== "available") {
+      $("circulation-status").textContent = `Circulation maps unavailable for ${dayLabel(date)} UTC. No other date has been substituted.`;
+      circulationShownDate = date; return;
+    }
+    $("circulation-status").textContent = "";
+    for (const [field,title] of [["height500","500-mb heights"],["jet250","250-mb jet and flow"],["moisture","Precipitable water, sea-level pressure and 850-mb flow"]]) {
+      const figure = document.createElement("figure");
+      figure.id = `circulation-map-${field}`; figure.circulationField = field;
+      figure.setAttribute("role","tabpanel"); figure.setAttribute("aria-labelledby",`circulation-tab-${field}`);
+      figure.tabIndex = 0;
+      const img = document.createElement("img"); img.alt = `${title}, ${date} UTC daily mean`;
+      img.loading = "lazy"; img.width = 1920; img.height = 1088;
+      const link = document.createElement("a"); link.href = record.images[field]; link.target = "_blank"; link.rel = "noopener";
+      link.textContent = "Open full-resolution map ↗";
+      img.addEventListener("error",() => {
+        if (epoch !== circulationEpoch) return;
+        img.hidden = true; link.hidden = true;
+        $("circulation-status").textContent = `A circulation image could not be loaded for ${dayLabel(date)} UTC. PRISM maps remain available.`;
+        $("circulation-retry").hidden = false;
+      });
+      img.circulationSource = record.images[field]; figure.append(img,link); $("circulation-maps").append(figure);
+    }
+    $("circulation-tabs").hidden = false; selectCirculationTab(circulationActiveTab);
+    circulationShownDate = date;
+  } catch (error) {
+    if (epoch !== circulationEpoch || !panel.open) return;
+    $("circulation-status").textContent = "Circulation availability could not be loaded. PRISM maps remain available; try again.";
+    $("circulation-retry").hidden = false;
+  }
+}
 function regionValues(date) {return byDate.get(date)?.regions?.[$("region").value]?.[$("variable").value];}
 function metricValue(date, metric) {return regionValues(date)?.[metric] ?? null;}
 function inCachedDateRange(date) {
@@ -261,7 +356,7 @@ function renderNotable() {
 function render() {
   visibleDates = filterDates();
   if (!visibleDates.includes(selectedDate)) selectedDate = visibleDates.at(-1) || "";
-  renderTimeline(); renderMap(); renderComparison(); renderDiscussions(); renderNotable();
+  renderTimeline(); renderMap(); renderComparison(); renderDiscussions(); renderNotable(); renderCirculation();
 }
 async function initialize() {
   try {
@@ -270,6 +365,12 @@ async function initialize() {
     const payload = await response.json();
     if (payload.schema_version !== 1 || !Array.isArray(payload.days) || !payload.days.length) throw new Error("No usable daily data were built.");
     days = payload.days.sort((a,b) => a.date.localeCompare(b.date)); byDate = new Map(days.map(day => [day.date,day]));
+    // Explicit local opt-in: existing public payloads do not request weather assets.
+    circulationEnabled = payload.circulation_enabled === true ||
+      (payload.circulation_preview === true && payload.publication_mode !== true);
+    setupCirculationTabs();
+    $("circulation-panel").addEventListener("toggle",renderCirculation);
+    $("circulation-retry").addEventListener("click",() => {circulationPromise=null; circulationShownDate=""; renderCirculation();});
     $("mode-badge").textContent = payload.publication_mode ? "Daily PRISM maps" : "Local preview · Unpublished";
     const years = [...new Set(days.map(day => day.water_year))].sort((a,b) => b-a);
     setOptions($("year"), years.map(year => [String(year), `${year} · Oct ${year-1}–Sep ${year}`]), String(years[0]));

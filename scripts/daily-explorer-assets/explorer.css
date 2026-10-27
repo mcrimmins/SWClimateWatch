@@ -5,6 +5,12 @@
 @media(max-width:1100px){.comparison.month-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:760px){.comparison.month-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .discussions>summary{font-size:19px;font-weight:700;cursor:pointer}
+.circulation>summary{font-size:19px;font-weight:700;cursor:pointer}
+.circulation-tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-top:14px}
+.circulation-tabs [role=tab]{border:0;border-radius:5px 5px 0 0;border-bottom:3px solid transparent;background:transparent;padding:9px 16px}
+.circulation-tabs [aria-selected=true]{border-bottom-color:var(--accent);color:var(--accent);background:#fff4ed;font-weight:700}
+#circulation-maps figure{margin:18px 0}#circulation-maps figcaption{font-weight:650;margin-bottom:6px}
+#circulation-maps img{display:block;width:100%;height:auto}#circulation-maps a{display:inline-block;margin-top:6px;font-size:13px}
 .discussion-columns{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:12px 0}
 .discussion-columns h3{font-size:15px;margin:8px 0}
 .discussion-links{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:8px}

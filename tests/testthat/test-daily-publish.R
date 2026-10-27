@@ -1,5 +1,33 @@
 source(file.path(project_root, "R", "daily-publish.R"))
 
+testthat::test_that("optional weather update failure does not block publication", {
+  published <- FALSE
+  withr::local_envvar(c(SWC_WEATHER_MAPS="false"))
+  result <- run_swc_daily_publish(dry_run=TRUE,force_publish=TRUE,marker_path=tempfile(),log_path=NULL,
+    prism_update=function() list(summary=data.frame(data_changed=FALSE)),
+    explorer_update=function() list(status="STAGED"),
+    weather_update=function(today) stop("weather upstream unavailable"),
+    snow_update=function(today) list(maps=list(status="OUT_OF_SEASON")),
+    station_update=function(today) list(status="UPDATED"),
+    site_fingerprint=function() "fixture",publish=function(dry_run) {published <<- TRUE; list()})
+  testthat::expect_true(published)
+  testthat::expect_equal(result$status,"PREVIEW")
+  testthat::expect_equal(result$weather$status,"ERROR")
+  testthat::expect_true(any(grepl("core publishing continued",result$summary_lines,fixed=TRUE)))
+})
+
+testthat::test_that("weather rendered failures disable only the optional panel", {
+  root <- tempfile(); dir.create(file.path(root,"daily-explorer"),recursive=TRUE)
+  on.exit(unlink(root,recursive=TRUE),add=TRUE)
+  jsonlite::write_json(list(circulation_enabled=TRUE,days=list(list(date="2026-10-01"))),
+    file.path(root,"daily-explorer","daily-data.json"),auto_unbox=TRUE)
+  testthat::expect_warning(result <- swc_daily_publish_validate_weather(root,source_dir=file.path(root,"absent")),"panel disabled")
+  testthat::expect_false(result)
+  payload <- jsonlite::read_json(file.path(root,"daily-explorer","daily-data.json"))
+  testthat::expect_false(payload$circulation_enabled)
+  testthat::expect_equal(payload$days[[1]]$date,"2026-10-01")
+})
+
 daily_publish_explorer_fixture <- function() {
   list(status = "STAGED", days = 90L, maps = 630L, built = 1L, reused = 89L)
 }

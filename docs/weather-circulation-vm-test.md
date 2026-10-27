@@ -4,6 +4,11 @@ The approved local map design and three-date laptop test are ready for a VM
 benchmark. This is the next gate before Daily Explorer integration. No changes
 to production configuration, cron, public pages or S3 are included.
 
+**Result reported October 26, 2026:** VM PASS; six maps in 12.604 seconds,
+18.17 seconds for the whole script; cache check zero requests. These instructions
+remain for reproducing the benchmark. The next step is review of the isolated
+local Daily Explorer circulation preview described in the scope document.
+
 ## 1. Laptop: commit and push the pilot
 
 Run in the SWClimateWatch project terminal (current branch: `codex/daily-explorer`).

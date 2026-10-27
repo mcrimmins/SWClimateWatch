@@ -305,6 +305,9 @@ build_daily_explorer <- function(water_years = NULL, start_date = NULL, end_date
     error = function(e) NULL) else NULL
   current <- jsonlite::fromJSON(serialized, simplifyVector = FALSE)
   current$built_at <- previous$built_at <- NULL
+  # The optional weather adapter manages its own flag after PRISM staging.
+  # It must not force a fresh PRISM build timestamp on every unchanged run.
+  current$circulation_enabled <- previous$circulation_enabled <- NULL
   if (!identical(current, previous)) writeLines(serialized, json_path, useBytes = TRUE)
   message("Daily Explorer: ", built, " dates built; ", reused, " reused; no downloads or publication.")
   invisible(list(page = file.path(output_dir, "index.html"), built = built, reused = reused,

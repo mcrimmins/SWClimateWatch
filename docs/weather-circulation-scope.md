@@ -6,7 +6,60 @@ circulation panels. Source selection and operational integration remain pending.
 The public site and daily publisher are unchanged.
 
 Next gate: [isolated VM benchmark and transfer commands](weather-circulation-vm-test.md).
-The laptop tests are complete; VM execution and timing review are pending.
+The laptop and VM benchmarks passed. A date-linked local Daily Explorer
+preview and opt-in daily adapter are implemented; production remains disabled.
+See the [retained archive and daily workflow](weather-circulation-daily-workflow.md)
+for staging gates, bounded revision rechecks and resumable backfill. All built
+weather dates are retained; no moving 30-day deletion window is used.
+
+## Date-linked Daily Explorer preview
+
+The VM benchmark reported PASS: six maps in 12.604 s, test duration 13.716 s,
+whole script 18.17 s, and zero requests on the second download-cache pass.
+The latest complete date checked was October 25, one day behind the October 26
+test. These are single-run measurements, not an operational release guarantee.
+
+Run from the project root in the laptop RStudio console:
+
+```r
+source("scripts/build-daily-explorer-circulation-preview.R")
+source("scripts/serve-daily-explorer-circulation.R")
+```
+
+The separate preview opens at `http://127.0.0.1:8767/`. It copies the last seven
+dates from the existing local Daily Explorer, without rebuilding or downloading
+PRISM, and prepares circulation for the last three of those dates. On the
+current laptop snapshot these are October 3-5; older dates intentionally
+exercise the unavailable state. If no local explorer exists, first run
+`scripts/build-daily-explorer.R` against the available processed PRISM cache.
+The preview directory is `data/diagnostics/daily-explorer-circulation/`.
+
+- A collapsed **Weather maps** section follows the exact selected date.
+  **500-mb heights** and **250-mb jet** tabs show one map at a time. The selected
+  tab persists across dates; inactive maps are not fetched until selected.
+  Arrow keys and Home/End switch tabs, with standard tab/tabpanel labeling.
+  Its manifest is requested only when opened, and images use lazy loading.
+  Changing to an unavailable date clears previous images rather than substituting
+  a different date. Request races cannot replace the current selection with an
+  earlier selection's images. Image/manifest failures offer retry and leave
+  PRISM browsing intact.
+- Existing public payloads do not opt in. The panel requires both an explicit
+  local preview flag and non-publication mode, so the normal daily publisher
+  neither generates nor requests circulation assets. PRISM validation remains
+  intact, with separate circulation metadata and image paths.
+- A new render cache hashes selected source inputs, renderer functions and
+  relevant package versions, then verifies PNG hashes. Changed sources, changed
+  renderer code or corrupted maps trigger a rebuild. The three-date repeat test
+  reported REUSED for all dates, zero requests and 0.14 s of combined map-builder
+  time. Source rechecks are still explicit; upstream revision detection is not
+  automatic yet.
+- Local tests cover source/render cache invalidation, isolated build failures,
+  exact dates, lazy loading, unsafe manifests, failed assets and request races.
+  Browser review confirmed October 4/5 maps and the October 2 unavailable state.
+
+Next: user review of the local panel, followed by bounded upstream-revision and
+freshness policies, optional production-adapter failure handling, and VM staging
+review. Do not enable daily production or download a historical baseline yet.
 
 ## Local feasibility results: October 26, 2026
 
@@ -249,6 +302,174 @@ usable even when an anomaly baseline is unavailable.
   wind maps. Sampled daily maxima require subdaily data and completeness rules.
 
 ## Dataset comparison
+
+### Moisture/IVT inventory findings: October 26, 2026
+
+The user selected moisture amount **and transport** as the next local scope:
+prefer PWAT shading with IVT arrows, rather than interpreting a single-level
+wind as transport through the whole column. This is not yet a public map or
+part of the optional daily weather adapter.
+
+`scripts/inventory-weather-moisture.R` checks daily and 12 UTC three-hourly
+`pgb`/`flx` inventories for March 1, 2023 and July 15, 2024. Eight small index
+requests transferred 135,457 bytes in 2.27 seconds locally. No GRIB fields were
+downloaded. Results are saved in `data/diagnostics/weather-moisture-inventory/`.
+
+- **PWAT:** directly indexed in `flx` as `PWAT:atmos col`, with daily
+  eight-sample analysis means and individual three-hourly analyses. CPC's
+  documented units are kg/m², convertible to mm and inches of water.
+- **Direct IVT:** no integrated eastward/northward vapor-transport fields were
+  identified among the full variable lists in these eight sample inventories.
+  This is a sample finding, not proof about every possible CORe product/date.
+- **Do not confuse `UFLX`/`VFLX` with IVT:** CPC defines them as surface momentum
+  fluxes in N/m². They are not column water-vapor transport components.
+- **Calculation inputs:** specific humidity, U/V wind and surface pressure are
+  available at analysis times. A pressure-level IVT estimate would need an
+  explicitly documented vertical range, integration/terrain treatment,
+  completeness checks and validation. Do not use below-ground pressure levels.
+- **Daily averaging:** calculate humidity-times-wind fluxes at each subdaily
+  sample before averaging. Products of daily-mean humidity and wind do not
+  reproduce daily-mean transport. CORe cloud fields are ensemble means: their
+  humidity-times-wind product also omits ensemble covariance, so a derived IVT
+  estimate must not be labeled an exact ensemble-mean moisture flux.
+
+For a tentative 1000-300 hPa calculation at ten pressure levels plus surface
+pressure, the checked 12 UTC inventories select 31 fields and about 2.94 MB
+(winter) or 3.26 MB (summer). Multiplying those single-time sizes by eight gives
+an **unmeasured projection** of about 23.5-26.1 MB and 248 individual field
+requests per daily calculation, plus indexes/PWAT. Other times can differ in
+size. Request grouping and a reduced domain may improve this; do not present
+this estimate as a measured daily download benchmark or finalized method.
+
+Next gate: benchmark a bounded calculated-IVT pilot using all eight times for
+one winter and one monsoon day, or explicitly choose a fixed-time alternative.
+The latter would be a dated analysis snapshot, not a daily-mean product. Compare
+the derived column water with direct PWAT to assess vertical truncation and
+terrain effects; do not silently redefine full-column PWAT as a limited layer.
+Measure transfer **and request count** before deciding daily cadence. A
+separate source's precomputed IVT would need its own timing/consistency review.
+
+#### One-day IVT prototype result: retain as an experiment, defer daily use
+
+The user authorized a prototype with instructions to move on if overhead was
+too high. `scripts/run-weather-ivt-pilot.R` now implements one date only, with
+120-second, 40-MB and 270-request guards and an early-stop projection check.
+It is **not loaded by the daily publisher** and adds no public tab or archive
+backfill. The default example is March 1, 2023; do not run a seasonal download.
+
+The daily estimate integrates q*u and q*v at ten pressure levels from 300 to
+1000 hPa, clips the lower boundary to surface pressure, then averages the
+components across all eight analysis times. Below-ground level values are not
+used. Where surface pressure falls between levels, the lowest above-ground
+humidity/flux is extended to the boundary; levels below 1000 hPa and above
+300 hPa are omitted. These approximations, plus products of ensemble-mean
+inputs, prevent calling it exact full-column ensemble-mean IVT. Direct full-
+column PWAT supplies the shading; estimated transport supplies the arrows.
+
+Findings:
+
+- The first attempt stopped at the PWAT grid check: `pgb` and `flx` encode
+  identical N128 Gaussian definitions except a 0.000125-degree rounding
+  difference in the first/last latitude. The prototype accepts only that
+  narrowly verified endpoint discrepancy and uses exact Gaussian row centers.
+  It does not resample using GDAL's affine latitude approximation.
+- Initial attempt: **34 requests, 3,102,610 bytes, 12.51 s**. Resumed completed
+  run reused those fields: **226 further requests, 20,824,719 bytes, 56.64 s**.
+  Combined observed effort: **260 requests, 23,927,329 bytes and 69.15 s**.
+  This is cumulative across a repair/resume, not an uninterrupted cold-run
+  benchmark. `first-complete-summary.csv` preserves the completed-run metrics;
+  subsequent cached reruns overwrite `summary.csv` only.
+- The pressure-layer water estimate had a global median ratio of **0.957** to
+  direct daily PWAT where PWAT exceeded 5 mm. This is a consistency diagnostic,
+  not independent IVT validation. Transport magnitude had a global 99th
+  percentile near **602 kg m^-1 s^-1**, maximum near **1315**.
+- Outputs: `data/diagnostics/weather-ivt-pilot/2023-03-01/pwat-ivt-daily.png`
+  and `pwat-ivt-12utc.png`. The arrows include a 500 kg m^-1 s^-1 reference key.
+  Terrain-clipping and analytic constant-profile tests passed.
+
+**Recommendation:** defer operational calculated IVT. One date is feasible,
+but a three-date revision window could approach three minutes and roughly
+72 MB/780 requests before other weather maps; a historical backfill multiplies
+that cost. Those are extrapolations, not measured multi-date runs. This also
+introduces substantially more scientific/terrain assumptions than direct
+fields. Keep the prototype for event studies. Direct PWAT remains a lightweight
+candidate; any single-level wind overlay must be labeled as flow at that
+level, not column-integrated transport. No such alternative was enabled here.
+
+#### Lightweight alternative: PWAT, sea-level pressure and low-level winds
+
+At the user's request, a separate two-date prototype now matches the general
+PWAT/MSLP/850-mb-flow layout of the supplied example. It remains outside daily
+publishing and the public weather archive.
+
+```r
+source("scripts/run-weather-moisture-pilot.R")
+swc_moisture_pilot$summary
+```
+
+Outputs are `data/diagnostics/weather-moisture-pilot/DATE/pwat-mslp-wind850.png`
+for March 1, 2023 and July 15, 2024. Both use the same 0-3+ inch PWAT ramp,
+labeled 4-hPa sea-level-pressure contours, sparse wind arrows with a 20-knot
+reference key, broad Pacific domain and purple AZ/NM outlines. PWAT shading
+is full-column water, not rainfall or an anomaly. Arrows are daily-mean winds
+at 850 mb, not IVT, gusts or trajectories. Sea-level pressure is the CORe
+`MSLET` reduced-pressure field and requires caution over high terrain.
+
+Fields: daily PWAT (`flx`), daily MSLET and U/V winds (`pgb`), plus surface
+pressure at each of the eight analysis times. **A wind cell is withheld if
+surface pressure is missing or at/below 850 hPa at any time**, rather than
+screening against daily-mean pressure alone. PWAT and pressure contours remain
+visible where winds are masked. All selected daily fields must report eight
+samples with none missing; units, wind level, valid time and Gaussian geometry
+are checked. The known small `flx`/`pgb` endpoint-rounding discrepancy is handled
+using the exact Gaussian row centers without changing source files.
+
+Initial laptop measurements (individual runs, not VM benchmarks):
+
+| Date | Requests | Transfer | Download | Total including decoding/rendering |
+| --- | --- | --- | --- | --- |
+| 2023-03-01 | 22 | 1,710,104 bytes | 5.42 s | 16.09 s |
+| 2024-07-15 | 22 | 1,761,211 bytes | 4.78 s | 7.31 s |
+
+The summer case ran in a warm R process after the winter case. These timings
+include the stricter eight-time terrain mask and are substantially lighter
+than the IVT experiment. Historical pilot caches reuse locally verified source
+files but do not implement operational revision detection. Repeated calls
+still redraw maps. Terrain-mask unit tests cover below-ground, missing and
+exact-ground-level cases.
+
+For a later comparison, the same function supports `wind_level = 700L`, reusing
+PWAT, pressure and surface-pressure caches and downloading only the two new
+wind records per date. 850-mb winds are intentionally absent over much of the
+elevated Southwest; 700 mb would provide more inland context but represents a
+different layer. Review these examples before choosing a default or adding a
+third operational Weather maps tab.
+
+Automatic pressure-center labels are now included in this prototype: blue H,
+red L and original-grid central pressure rounded to whole hPa. Detection uses
+one native-cell weighted smoothing, a 400-km local-extremum check, at least
+2-hPa median contrast in a 500-800-km annulus with 90% directional support,
+900-km minimum label spacing and a cap of ten centers (at most five per type).
+The annulus uses context beyond the displayed northern/southern boundary to
+avoid inventing centers at clipped edges. Centers near map edges and those
+with MSLP minus mean surface pressure above 100 hPa are suppressed; the latter
+is a conservative elevation proxy using existing inputs, not a guarantee that
+all terrain-related artifacts are eliminated. These are prototype display
+choices, not universal meteorological standards or a storm-tracking algorithm.
+Contour-label placement avoids the H/L symbols. The two cases produced nine
+and seven centers, with detection taking about 0.4-0.5 seconds per map and no
+new requests. Fourteen unit checks cover wind masking and center detection,
+including weak, flat, sloping, edge and elevated-terrain cases.
+
+Primary inventory reference:
+[CPC CORe file types, field names and units](https://ftp.cpc.ncep.noaa.gov/CORe/get_core/get_core.txt).
+
+To repeat the inventory from RStudio:
+
+```r
+source("scripts/inventory-weather-moisture.R")
+swc_moisture_inventory$summary
+```
 
 ### NOAA CORe: first candidate to benchmark
 

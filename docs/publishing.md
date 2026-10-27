@@ -1,5 +1,10 @@
 # Updating and publishing the site
 
+Optional Weather maps now have an opt-in daily adapter and a retained,
+resumable archive. They remain disabled by default until their staging trial
+passes. See [weather daily workflow](weather-circulation-daily-workflow.md) for
+bounded local tests, backfill and the staging-only enable setting.
+
 Run these commands in the RStudio Console from the **SWClimateWatch project
 root**. For the normal daily update and deployment, use this one line:
 

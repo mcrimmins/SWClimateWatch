@@ -102,7 +102,7 @@ swc_daily_publish_summary_lines <- function(record, prism = NULL, snow = NULL,
                                             stations = NULL, validation = NULL,
                                             failed_stage = NULL,
                                             destination = swc_daily_publish_live_destination(),
-                                            explorer = NULL) {
+                                            explorer = NULL, weather = NULL) {
   status <- switch(record$status[[1L]],
                    PUBLISHED = "Published", PREVIEW = "Preview complete",
                    SKIPPED_UNCHANGED = "Update complete; upload skipped",
@@ -160,6 +160,12 @@ swc_daily_publish_summary_lines <- function(record, prism = NULL, snow = NULL,
   if (is.list(explorer) && all(c("days", "maps", "built", "reused") %in% names(explorer))) {
     lines <- c(lines, sprintf("Daily Explorer: %d days, %d maps; %d dates rebuilt, %d reused.",
       explorer$days, explorer$maps, explorer$built, explorer$reused))
+  }
+  if (is.list(weather) && !identical(weather$status,"DISABLED")) {
+    lines <- c(lines, if (identical(weather$status,"ERROR"))
+      "Weather maps: unavailable this run; core publishing continued." else
+      sprintf("Weather maps: %d dates retained; %d built, %d reused, %d failed; %d pending. Latest: %s.",
+        weather$days,weather$built,weather$reused,weather$failed,weather$pending,weather$latest))
   }
   if (is.list(validation) &&
       all(c("current_passed", "current_total", "archive_passed",
@@ -285,6 +291,50 @@ swc_daily_publish_update_explorer <- function() {
   stage_daily_explorer_site()
 }
 
+swc_daily_publish_update_weather <- function(today=Sys.Date()) {
+  if (!tolower(Sys.getenv("SWC_WEATHER_MAPS","false")) %in% c("true","1","yes")) {
+    path <- file.path("site","daily-explorer","daily-data.json")
+    if (file.exists(path)) {
+      payload <- jsonlite::read_json(path)
+      if (isTRUE(payload$circulation_enabled)) {
+        payload$circulation_enabled <- FALSE
+        jsonlite::write_json(payload,path,auto_unbox=TRUE,digits=NA)
+      }
+    }
+    return(list(status="DISABLED"))
+  }
+  source(file.path("scripts","load-weather-circulation-archive.R"))
+  update_weather_circulation_archive(today=today)
+}
+
+swc_daily_publish_validate_weather <- function(output_dir,source_dir=file.path("site","daily-explorer")) {
+  directory <- file.path(output_dir,"daily-explorer")
+  payload <- jsonlite::read_json(file.path(directory,"daily-data.json"))
+  if (!isTRUE(payload$circulation_enabled)) return(invisible(TRUE))
+  adapter <- file.path("R","weather-circulation-archive.R")
+  if (!file.exists(adapter) && file.exists(file.path("..","..",adapter))) adapter <- file.path("..","..",adapter)
+  if (!file.exists(adapter) && exists("project_root",inherits=TRUE)) adapter <- file.path(get("project_root",inherits=TRUE),adapter)
+  okay <- tryCatch({
+    source(adapter,local=TRUE)
+    validate_weather_circulation_assets(directory)
+    validate_weather_circulation_assets(source_dir)
+    manifest <- jsonlite::read_json(file.path(source_dir,"circulation-manifest.json"))
+    files <- c("circulation-manifest.json",unlist(lapply(manifest$days,function(day)
+      unlist(day$images,use.names=FALSE)),use.names=FALSE))
+    if (!identical(unname(tools::md5sum(file.path(source_dir,files))),
+      unname(tools::md5sum(file.path(directory,files))))) stop("Rendered weather assets differ.")
+    TRUE
+  },error=function(e) FALSE)
+  if (!okay) {
+    # Quarantine only the optional panel, not the successfully validated PRISM
+    # page. The source archive remains available for repair on the next run.
+    payload$circulation_enabled <- FALSE
+    jsonlite::write_json(payload,file.path(directory,"daily-data.json"),auto_unbox=TRUE,digits=NA)
+    warning("Rendered weather assets failed validation; weather panel disabled for this publication. Core maps remain available.",call.=FALSE)
+  }
+  invisible(okay)
+}
+
 swc_daily_publish_validate_explorer <- function(output_dir,
     source_dir = file.path("site", "daily-explorer")) {
   adapter <- file.path("R", "daily-explorer-site.R")
@@ -403,14 +453,18 @@ swc_daily_publish_validate_snow <- function(
 swc_daily_publish_sync <- function(
     dry_run = FALSE, destination = swc_daily_publish_destination()) {
   source(swc_daily_publish_deploy_script(), local = TRUE)
-  deploy_swc_site(
+  weather_valid <- TRUE
+  result <- deploy_swc_site(
     destination = swc_daily_publish_destination(destination),
     region = "us-west-2", dry_run = dry_run, delete = FALSE,
     render = TRUE, extra_validation = function(output_dir) {
       swc_daily_publish_validate_snow(output_dir)
       swc_daily_publish_validate_stations(output_dir)
       swc_daily_publish_validate_explorer(output_dir)
+      weather_valid <<- isTRUE(swc_daily_publish_validate_weather(output_dir))
     })
+  if (is.list(result)) result$weather_validation <- weather_valid
+  result
 }
 
 run_swc_daily_publish <- function(
@@ -425,7 +479,8 @@ run_swc_daily_publish <- function(
     site_fingerprint = swc_daily_publish_site_fingerprint,
     publish = NULL,
     notify = swc_ntfy_notify,
-    explorer_update = swc_daily_publish_update_explorer) {
+    explorer_update = swc_daily_publish_update_explorer,
+    weather_update = swc_daily_publish_update_weather) {
   if (!is.logical(dry_run) || length(dry_run) != 1L || is.na(dry_run) ||
       !is.logical(force_publish) || length(force_publish) != 1L ||
       is.na(force_publish)) {
@@ -457,14 +512,14 @@ run_swc_daily_publish <- function(
     if (!dry_run) swc_ntfy_send_safe(event, message, notify = notify)
     invisible(NULL)
   }
-  prism <- snow <- stations <- explorer <- publication <- NULL
+  prism <- snow <- stations <- explorer <- weather <- publication <- NULL
   finish <- function(event, failed_stage = NULL) {
     record$elapsed_seconds <<- round(as.numeric(difftime(
       Sys.time(), started, units = "secs")), 3)
     lines <- swc_daily_publish_summary_lines(
       record, prism, snow, stations,
       if (is.list(publication)) publication$validation else NULL,
-      failed_stage = failed_stage, destination = destination, explorer = explorer)
+      failed_stage = failed_stage, destination = destination, explorer = explorer, weather = weather)
     message(paste(lines, collapse = "\n"))
     if (!is.null(event)) send(event, paste(lines, collapse = "\n"))
     lines
@@ -489,6 +544,30 @@ run_swc_daily_publish <- function(
     explorer <- explorer_update()
     if (!is.list(explorer) || !identical(explorer$status, "STAGED"))
       stop("Daily Explorer did not return a staged result; publication stopped.")
+    stage <- "optional weather maps"
+    weather <- tryCatch(weather_update(today),error=function(error) {
+      if (exists("disable_weather_circulation",mode="function"))
+        try(disable_weather_circulation(),silent=TRUE)
+      list(status="ERROR",error=conditionMessage(error))
+    })
+    if (!is.list(weather) || length(weather$status)!=1L || is.na(weather$status) ||
+        !weather$status %in% c("DISABLED","READY","PARTIAL","ERROR"))
+      weather <- list(status="ERROR",error="Invalid weather update status.")
+    if (weather$status %in% c("READY","PARTIAL")) {
+      counts <- c("days","built","reused","failed","pending")
+      valid_counts <- all(vapply(counts,function(name) is.numeric(weather[[name]]) &&
+        length(weather[[name]])==1L && is.finite(weather[[name]]) && weather[[name]]>=0,logical(1)))
+      if (!valid_counts || length(weather$latest)!=1L)
+        weather <- list(status="ERROR",error="Invalid weather update summary.")
+    }
+    if (identical(weather$status,"ERROR") && exists("disable_weather_circulation",mode="function"))
+      try(disable_weather_circulation(),silent=TRUE)
+    if (weather$status %in% c("ERROR","PARTIAL"))
+      send("warning","Weather maps are incomplete or unavailable; core publishing will continue. See the weather archive report.")
+    if (weather$status %in% c("READY","PARTIAL") && !is.null(weather$lag_days) &&
+        length(weather$lag_days)==1L && !is.na(weather$lag_days) && weather$lag_days>3L)
+      send("warning",paste0("Latest retained weather maps are ",weather$lag_days,
+        " days old. Core publishing will continue; check source freshness and backfill status."))
     stage <- "SNODAS update"
     snow <- tryCatch(snow_update(today), error = function(error) {
       list(maps = list(status = "ERROR"), error = conditionMessage(error))
@@ -540,7 +619,7 @@ run_swc_daily_publish <- function(
       message("Site source is unchanged since the last successful sync; upload skipped.")
       lines <- finish("success")
       return(invisible(list(status = record$status, prism = prism,
-                            snow = snow, stations = stations, explorer = explorer,
+                            snow = snow, stations = stations, explorer = explorer, weather = weather,
                             destination = destination,
                             published = FALSE,
                             elapsed_seconds = record$elapsed_seconds,
@@ -548,6 +627,10 @@ run_swc_daily_publish <- function(
     }
     send("progress", "Rendering and validating the site, then syncing it to S3.")
     publication <- publish(dry_run = dry_run)
+    if (is.list(publication) && identical(publication$weather_validation,FALSE)) {
+      weather <- list(status="ERROR",error="Rendered weather assets were quarantined.")
+      send("warning","Weather assets failed rendered validation; the optional panel was disabled. Core publication continued.")
+    }
     if (dry_run) {
       record$status <- "PREVIEW"
     } else {
@@ -558,7 +641,7 @@ run_swc_daily_publish <- function(
     }
     lines <- finish(if (dry_run) NULL else "success")
     invisible(list(status = record$status, prism = prism, snow = snow,
-                   stations = stations, explorer = explorer,
+                   stations = stations, explorer = explorer, weather = weather,
                    destination = destination,
                    published = record$published,
                    validation = if (is.list(publication)) publication$validation

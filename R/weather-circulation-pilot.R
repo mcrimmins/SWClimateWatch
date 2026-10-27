@@ -297,7 +297,7 @@ weather_circulation_plot <- function(rasters, date, directory) {
       labels = c("120E", "150E", "180", "150W", "120W", "90W", "60W")) +
     ggplot2::labs(x = NULL, y = NULL,
       subtitle = paste(date, "UTC | CORe ensemble mean | eight-sample daily average"),
-      caption = paste("Local feasibility pilot | NOAA CPC CORe | No anomaly baseline",
+      caption = paste("Data source: NOAA CPC CORe",
         "Reanalysis, not direct observations | 00-21 UTC samples every three hours",
         "Climate Science Applications Program - University of Arizona", sep = "\n")) +
     ggplot2::theme_minimal(base_size = 11) +

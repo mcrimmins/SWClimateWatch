@@ -45,6 +45,20 @@
     <p id="comparison-caption" class="muted small" aria-live="polite" hidden></p>
     <div id="comparison" class="comparison" hidden></div>
   </section>
+  <details id="circulation-panel" class="card circulation" hidden>
+    <summary>Weather maps<span id="circulation-date"></span></summary>
+    <p class="muted small">NOAA CPC CORe reanalysis · UTC daily means · Pacific–North America context. The selected calendar date is used exactly; PRISM reporting periods may differ. These maps provide circulation context, not forecasts or evidence of causation.</p>
+    <p id="circulation-status" role="status" aria-live="polite"></p>
+    <button id="circulation-retry" type="button" hidden>Retry circulation maps</button>
+    <div id="circulation-tabs" class="circulation-tabs" role="tablist" aria-label="Circulation map" hidden>
+      <button id="circulation-tab-height500" type="button" role="tab" aria-selected="true" aria-controls="circulation-map-height500">500-mb heights</button>
+      <button id="circulation-tab-jet250" type="button" role="tab" aria-selected="false" aria-controls="circulation-map-jet250" tabindex="-1">250-mb jet</button>
+      <button id="circulation-tab-moisture" type="button" role="tab" aria-selected="false" aria-controls="circulation-map-moisture" tabindex="-1">Moisture &amp; low-level flow</button>
+    </div>
+    <div id="circulation-maps"></div>
+    <p class="muted small">500-mb contours show absolute heights in dam, with a shared 480–612 dam scale; blue/orange shading is not an anomaly. Purple outlines locate AZ/NM. Jet shading is the speed of daily-mean 250-mb wind components in knots, not a daily maximum or gust. Streamlines show mean flow, not storm tracks. No anomaly baseline is included.</p>
+    <p class="muted small">Moisture shading shows total precipitable water (0–3+ inches), with sea-level pressure contours every 4 hPa. Arrows show 850-mb flow, not surface winds or integrated vapor transport. Winds are omitted when hourly terrain-screening inputs are incomplete; the map notes this limitation. H/L labels use daily surface pressure for separate terrain screening and describe filtered daily-mean pressure centers, not tracked storms.</p>
+  </details>
   <details class="card discussions">
     <summary>Forecast discussions<span id="discussion-date"></span></summary>
     <p id="discussion-no-date" class="muted" hidden>Choose a cached map date to see discussion archive searches.</p>
