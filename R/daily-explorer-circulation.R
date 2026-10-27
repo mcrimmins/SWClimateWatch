@@ -1,7 +1,7 @@
 # Circulation render cache shared by local preview and optional daily adapter.
 weather_renderer_signature <- function() {
   moisture <- c("weather_moisture_plot","weather_pressure_centers","weather_moisture_wind_mask",
-    "weather_moisture_grid","run_weather_moisture_pilot")
+    "weather_moisture_grid","weather_moisture_select_field","run_weather_moisture_pilot")
   digest::digest(list(version=2L,R=R.version.string,
     moisture=lapply(moisture,function(name) if(exists(name,mode="function")) body(get(name)) else NULL),
     functions=lapply(list(weather_core_decode,weather_core_grid,weather_gaussian_latitudes,
@@ -68,7 +68,9 @@ build_weather_circulation_cached <- function(dates,output_dir,refresh=FALSE) {
         result$transferred_bytes[i] <- result$transferred_bytes[i]+moisture$transferred_bytes
         if(!file.copy(moisture$map,path,overwrite=TRUE)) stop("Could not stage moisture map.")
         note <- if(!is.null(moisture$terrain_samples_available) && moisture$terrain_samples_available<8L)
-          "Moisture wind overlay omitted: incomplete hourly terrain-screening inputs; H/L use daily surface pressure." else ""
+          "Moisture wind overlay omitted: incomplete hourly terrain-screening inputs." else ""
+        if(identical(moisture$center_screen_available,FALSE))
+          note <- trimws(paste(note,"H/L omitted: incomplete daily surface-pressure screening."))
         saveRDS(list(signature=signature(),md5=unname(tools::md5sum(path)),note=note),marker)
         result$note[i] <- note
         if(!isTRUE(moisture$map_reused)) result$status[i] <- "BUILT"

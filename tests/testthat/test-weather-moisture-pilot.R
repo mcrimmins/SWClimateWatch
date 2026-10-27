@@ -1,4 +1,23 @@
 source(file.path(project_root,"R","weather-moisture-pilot.R"))
+
+testthat::test_that("missing terrain fields degrade overlays without relaxing required fields", {
+  idx<-data.frame(variable="PRES",level="surface",period="day",
+    timing="8@3 hour ave(anl),missing=0",start=0,end=100)
+  testthat::expect_equal(nrow(weather_moisture_select_field(idx,"PRES","surface",TRUE)),1L)
+  missing<-idx; missing$variable<-"OTHER"
+  testthat::expect_null(weather_moisture_select_field(missing,"PRES","surface",TRUE))
+  incomplete<-idx; incomplete$timing<-"8@3 hour ave(anl),missing=1"
+  testthat::expect_null(weather_moisture_select_field(incomplete,"PRES","surface",TRUE))
+  testthat::expect_error(weather_moisture_select_field(incomplete,"PRES","surface"),"Required complete")
+  testthat::expect_error(weather_moisture_select_field(idx,"PWAT","atmos col",TRUE),"Only surface")
+  testthat::expect_error(weather_moisture_select_field(rbind(idx,idx),"PRES","surface",TRUE),"ambiguous")
+  malformed<-idx; malformed$end<-NA_real_
+  testthat::expect_error(weather_moisture_select_field(malformed,"PRES","surface",TRUE),"Invalid")
+  hourly<-idx; hourly$period<-"3hour"; hourly$timing<-"anl"
+  testthat::expect_equal(nrow(weather_moisture_select_field(hourly,"PRES","surface",TRUE)),1L)
+  hourly$timing<-"3 hour fcst"
+  testthat::expect_null(weather_moisture_select_field(hourly,"PRES","surface",TRUE))
+})
 testthat::test_that("low-level winds are withheld if below ground at any daily sample", {
   ps<-matrix(90000,nrow=4,ncol=8)
   ps[2,4]<-84000; ps[3,5]<-NA_real_; ps[4,1]<-85000

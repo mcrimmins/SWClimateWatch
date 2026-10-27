@@ -20,6 +20,13 @@ case retain PWAT, pressure contours and H/L labels screened using the complete
 daily surface-pressure field. Omit winds, and state the missing-overlay
 limitation on the map and in last-batch.csv.
 Do not fill missing screening samples or silently draw below-ground winds.
+An index may also exist but lack a complete `PRES:surface` record, as observed
+at 09 UTC on September 28, 2026. Treat that screening sample as unavailable,
+not as a failed PWAT map. If the daily surface-pressure record itself is
+missing/incomplete, omit H/L labels with a separate notice. Required PWAT,
+sea-level pressure and wind-field validation remains strict; corrupt or
+ambiguous GRIB records still fail the date. The September 28 regression trial
+built with seven usable hourly pressure samples and nine daily-screened centers.
 
 ## Retention and bounded work
 

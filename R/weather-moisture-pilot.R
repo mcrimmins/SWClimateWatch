@@ -24,6 +24,23 @@ weather_moisture_wind_mask <- function(surface_pressure,level_hpa) {
   rowSums(is.finite(surface_pressure) & surface_pressure>level_hpa*100)==8L
 }
 
+# Only terrain-screening pressure is optional. Missing/incomplete samples must
+# not be filled, and malformed fields or required map variables still fail.
+weather_moisture_select_field <- function(idx,variable,level,optional=FALSE) {
+  if(optional && !(identical(variable,"PRES") && identical(level,"surface")))
+    stop("Only surface-pressure screening fields may be optional.")
+  row<-idx[idx$variable==variable & idx$level==level,,drop=FALSE]
+  timing<-if(idx$period[1]=="day") "8@3 hour ave(anl),missing=0" else "anl"
+  if(nrow(row)==0L || (nrow(row)==1L && !is.na(row$timing) && row$timing!=timing)) {
+    if(optional) return(NULL)
+    stop("Required complete field not found: ",variable," ",level)
+  }
+  if(nrow(row)!=1L || is.na(row$timing) || row$timing!=timing ||
+      is.na(row$end) || row$end<row$start || row$end-row$start>1e6)
+    stop("Invalid or ambiguous field: ",variable," ",level)
+  row
+}
+
 weather_pressure_centers <- function(data,contrast_hpa=2,separation_km=900,max_centers=10L) {
   empty<-data.frame(x=numeric(),y=numeric(),pressure_hpa=numeric(),type=character(),contrast_hpa=numeric())
   x<-sort(unique(data$x)); y<-sort(unique(data$y))
@@ -164,7 +181,9 @@ weather_moisture_plot <- function(template,latitude,pwat,mslp,u,v,mask,date,leve
       subtitle=paste(date,"UTC | CORe ensemble mean | Eight-sample daily average | Pressure contours: 4 hPa"),x=NULL,y=NULL,
       caption=paste(if(!any(mask)) "NOAA CPC CORe | Wind overlay unavailable: incomplete terrain-screening inputs" else
         paste0("NOAA CPC CORe | ",level,"-mb winds omitted if below terrain at any of eight daily samples"),
-        "H/L: filtered daily-mean pressure centers, not tracked storms. Sea-level pressure over high terrain requires caution.",
+        if(!is.null(surface_pressure) && !any(is.finite(surface_pressure)))
+          "H/L unavailable: incomplete daily surface pressure. Sea-level pressure over high terrain requires caution." else
+          "H/L: filtered daily-mean pressure centers, not tracked storms. Sea-level pressure over high terrain requires caution.",
         "Winds at one level, not IVT | Climate Science Applications Program - University of Arizona",sep="\n"))+
     ggplot2::theme_minimal(base_size=10)+ggplot2::theme(plot.title=ggplot2::element_text(face="bold"),
       legend.position="bottom",legend.title.position="top")
@@ -217,10 +236,13 @@ run_weather_moisture_pilot <- function(dates=as.Date(c("2023-03-01","2024-07-15"
         level=vapply(parts,`[`,character(1),5L),timing=vapply(parts,`[`,character(1),6L),base=base,
         stamp=stamp,period=period,type=type)
     }
-    field<-function(idx,variable,level,unit) {
-      row<-idx[idx$variable==variable & idx$level==level,,drop=FALSE]
-      timing<-if(idx$period[1]=="day") "8@3 hour ave(anl),missing=0" else "anl"
-      if(nrow(row)!=1L || row$timing!=timing || is.na(row$end) || row$end-row$start>1e6) stop("Required complete field not found: ",variable," ",level)
+    field<-function(idx,variable,level,unit,optional=FALSE) {
+      row<-weather_moisture_select_field(idx,variable,level,optional)
+      if(is.null(row)) {
+        metadata[[length(metadata)+1L]]<<-data.frame(variable=variable,level=paste(level,"unavailable"),
+          source=paste0(idx$base[1],".idx"),start=NA_real_,end=NA_real_,md5=NA_character_)
+        return(rep(NA_real_,terra::ncell(template)))
+      }
       path<-file.path(directory,paste0(row$period,"-",row$type,"-",row$stamp,"-",variable,"-",gsub("[^A-Za-z0-9]","_",level),".grb"))
       marker<-paste0(path,".rds")
       old<-if(file.exists(marker)) readRDS(marker) else NULL
@@ -246,13 +268,13 @@ run_weather_moisture_pilot <- function(dates=as.Date(c("2023-03-01","2024-07-15"
     mslp<-field(pgb,"MSLET","mean sea level","[Pa]")
     # Pressure-center terrain screening uses the matching complete daily mean.
     # Wind screening independently requires every hourly sample above ground.
-    daily_surface_pressure<-field(pgb,"PRES","surface","[Pa]")
+    daily_surface_pressure<-field(pgb,"PRES","surface","[Pa]",optional=TRUE)
     pwat<-field(flx,"PWAT","atmos col","[kg/(m^2)]")
     u<-field(pgb,"UGRD",paste(wind_level,"mb"),"[m/s]")
     v<-field(pgb,"VGRD",paste(wind_level,"mb"),"[m/s]")
     ps<-vapply(seq(0,21,3),function(hour) {
       idx<-index("pgb",hour)
-      if(is.null(idx)) rep(NA_real_,length(u)) else field(idx,"PRES","surface","[Pa]")
+      if(is.null(idx)) rep(NA_real_,length(u)) else field(idx,"PRES","surface","[Pa]",optional=TRUE)
     },numeric(length(u)))
     mask<-weather_moisture_wind_mask(ps,wind_level)
     if(any(!is.finite(mslp)) || any(!is.finite(pwat)) || any(pwat<0 | pwat>150)) stop("Invalid pressure/PWAT values.")
@@ -278,6 +300,7 @@ run_weather_moisture_pilot <- function(dates=as.Date(c("2023-03-01","2024-07-15"
     result$pressure_centers<-plot_result$centers; result$center_detection_seconds<-plot_result$detection_seconds
     result$map_reused<-reuse_plot
     result$terrain_samples_available<-sum(colSums(is.finite(ps))>0)
+    result$center_screen_available<-any(is.finite(daily_surface_pressure))
     message("Moisture map ready: ",path); result
   })
   summary<-do.call(rbind,all_runs)
