@@ -41,9 +41,10 @@ must still be tested, committed, staged on the VM, and explicitly promoted.
 ## New exploration: daily weather and circulation
 
 See [daily weather and circulation scope](weather-circulation-scope.md).
-**Deferred October 25, 2026:** resume only when the user selects this project
-again. The scope document contains separate scoping and implementation
-checklists; no automatic follow-up or development is scheduled.
+**Resumed October 26, 2026:** an isolated local CORe pilot now produces 500-mb
+height and 250-mb flow samples for two dates, transferring about 224-229 KB per
+date. See the scope document for timings, commands and remaining decision gates.
+No production integration or baseline backfill is enabled.
 Requested uses include precipitation occurrence/patterns/extremes, temperature
 patterns/extremes, wind events, at least a 500-mb map, subtropical jet extension
 and summer monsoon-high position. Reuse the existing precipitation/temperature
@@ -52,8 +53,9 @@ products instead of creating another competing observation stream by default.
 First evaluate a handful of winter storms, summer monsoon regimes, heat events
 and wind episodes locally. NOAA CORe is the first candidate to benchmark, not a
 settled selection. ERA5 is a comparison/historical-analysis candidate. No new
-downloader, climatology backfill, public Atmosphere section or scheduled job is
-authorized by this planning entry.
+operational downloader, climatology backfill, public Atmosphere section or
+scheduled job is authorized by this planning entry. The bounded local pilot
+was explicitly resumed by the user.
 
 ## New exploration: archived forecast discussions
 
