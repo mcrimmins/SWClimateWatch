@@ -166,6 +166,12 @@ swc_daily_publish_summary_lines <- function(record, prism = NULL, snow = NULL,
       "Weather maps: unavailable this run; core publishing continued." else
       sprintf("Weather maps: %d dates retained; %d built, %d reused, %d failed; %d pending. Latest: %s.",
         weather$days,weather$built,weather$reused,weather$failed,weather$pending,weather$latest))
+    if(is.data.frame(weather$coverage) && nrow(weather$coverage)==1L) {
+      coverage<-weather$coverage
+      lines<-c(lines,sprintf("Weather coverage: %d/%d recent dates, %d/%d Explorer dates; %d wind overlays withheld, %d overlay statuses unknown.",
+        coverage$recent_available,coverage$recent_expected,coverage$available_dates,
+        coverage$explorer_dates,coverage$wind_withheld_dates,coverage$unknown_overlay_dates))
+    }
   }
   if (is.list(validation) &&
       all(c("current_passed", "current_total", "archive_passed",
@@ -307,31 +313,42 @@ swc_daily_publish_update_weather <- function(today=Sys.Date()) {
   update_weather_circulation_archive(today=today)
 }
 
-swc_daily_publish_validate_weather <- function(output_dir,source_dir=file.path("site","daily-explorer")) {
+swc_daily_publish_weather_expected <- function(source_dir=file.path("site","daily-explorer")) {
+  payload<-tryCatch(jsonlite::read_json(file.path(source_dir,"daily-data.json")),error=function(e) NULL)
+  isTRUE(payload$circulation_enabled) || tolower(Sys.getenv("SWC_WEATHER_MAPS","false")) %in% c("true","1","yes")
+}
+
+swc_daily_publish_validate_weather <- function(output_dir,source_dir=file.path("site","daily-explorer"),
+    expected_enabled=NULL,report_dir=NULL) {
   directory <- file.path(output_dir,"daily-explorer")
   payload <- jsonlite::read_json(file.path(directory,"daily-data.json"))
-  if (!isTRUE(payload$circulation_enabled)) return(invisible(TRUE))
+  if(is.null(expected_enabled)) expected_enabled<-swc_daily_publish_weather_expected(source_dir) ||
+    isTRUE(payload$circulation_enabled)
+  if (!expected_enabled && !isTRUE(payload$circulation_enabled)) return(invisible(TRUE))
   adapter <- file.path("R","weather-circulation-archive.R")
   if (!file.exists(adapter) && file.exists(file.path("..","..",adapter))) adapter <- file.path("..","..",adapter)
   if (!file.exists(adapter) && exists("project_root",inherits=TRUE)) adapter <- file.path(get("project_root",inherits=TRUE),adapter)
+  report<-NULL
   okay <- tryCatch({
-    source(adapter,local=TRUE)
-    validate_weather_circulation_assets(directory)
-    validate_weather_circulation_assets(source_dir)
-    manifest <- jsonlite::read_json(file.path(source_dir,"circulation-manifest.json"))
-    files <- c("circulation-manifest.json",unlist(lapply(manifest$days,function(day)
-      unlist(day$images,use.names=FALSE)),use.names=FALSE))
-    if (!identical(unname(tools::md5sum(file.path(source_dir,files))),
-      unname(tools::md5sum(file.path(directory,files))))) stop("Rendered weather assets differ.")
-    TRUE
+    source(file.path(dirname(adapter),"weather-publication-audit.R"),local=TRUE)
+    report<-audit_weather_publication(source_dir=source_dir,rendered_dir=directory,
+      require_enabled=expected_enabled,report_dir=report_dir)
+    !identical(report$summary$status,"FAIL")
   },error=function(e) FALSE)
   if (!okay) {
     # Quarantine only the optional panel, not the successfully validated PRISM
     # page. The source archive remains available for repair on the next run.
     payload$circulation_enabled <- FALSE
     jsonlite::write_json(payload,file.path(directory,"daily-data.json"),auto_unbox=TRUE,digits=NA)
+    if(is.list(report)) {
+      report$summary$quarantined<-TRUE
+      report$summary$rendered_enabled<-FALSE
+      if(!is.null(report_dir)) utils::write.csv(report$summary,
+        file.path(report_dir,"summary.csv"),row.names=FALSE)
+    }
     warning("Rendered weather assets failed validation; weather panel disabled for this publication. Core maps remain available.",call.=FALSE)
   }
+  attr(okay,"weather_report")<-if(is.list(report)) report$summary else NULL
   invisible(okay)
 }
 
@@ -454,6 +471,8 @@ swc_daily_publish_sync <- function(
     dry_run = FALSE, destination = swc_daily_publish_destination()) {
   source(swc_daily_publish_deploy_script(), local = TRUE)
   weather_valid <- TRUE
+  weather_report <- NULL
+  weather_expected <- swc_daily_publish_weather_expected()
   result <- deploy_swc_site(
     destination = swc_daily_publish_destination(destination),
     region = "us-west-2", dry_run = dry_run, delete = FALSE,
@@ -461,9 +480,13 @@ swc_daily_publish_sync <- function(
       swc_daily_publish_validate_snow(output_dir)
       swc_daily_publish_validate_stations(output_dir)
       swc_daily_publish_validate_explorer(output_dir)
-      weather_valid <<- isTRUE(swc_daily_publish_validate_weather(output_dir))
+      assessment <- swc_daily_publish_validate_weather(output_dir,expected_enabled=weather_expected,
+        report_dir=file.path("data","diagnostics","weather-publication-status"))
+      weather_valid <<- isTRUE(assessment)
+      weather_report <<- attr(assessment,"weather_report")
     })
   if (is.list(result)) result$weather_validation <- weather_valid
+  if (is.list(result)) result$weather_report <- weather_report
   result
 }
 
@@ -627,6 +650,9 @@ run_swc_daily_publish <- function(
     }
     send("progress", "Rendering and validating the site, then syncing it to S3.")
     publication <- publish(dry_run = dry_run)
+    if(is.list(publication) && is.data.frame(publication$weather_report) &&
+        is.list(weather) && weather$status %in% c("READY","PARTIAL"))
+      weather$coverage <- publication$weather_report
     if (is.list(publication) && identical(publication$weather_validation,FALSE)) {
       weather <- list(status="ERROR",error="Rendered weather assets were quarantined.")
       send("warning","Weather assets failed rendered validation; the optional panel was disabled. Core publication continued.")

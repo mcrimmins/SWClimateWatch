@@ -5,6 +5,13 @@ resumable archive. They remain disabled by default until their staging trial
 passes. See [weather daily workflow](weather-circulation-daily-workflow.md) for
 bounded local tests, backfill and the staging-only enable setting.
 
+After publishing the weather-enabled staging release, run
+`Rscript scripts/check-weather-publication.R` on the VM (or source that script
+in RStudio). It checks local staged/rendered activation, files and coverage
+without downloading data or publishing. Daily and site-only publishers also
+save the report automatically during rendered-weather validation; see the
+weather workflow document for report fields and PASS/WARN/FAIL meanings.
+
 Run these commands in the RStudio Console from the **SWClimateWatch project
 root**. For the normal daily update and deployment, use this one line:
 

@@ -164,6 +164,47 @@ archive directory when resuming. Do not delete the archive or manifests.
 
 ## Failure handling and reporting
 
+### Publication coverage check
+
+After a staging publication, run the read-only check:
+
+```bash
+TZ=America/Phoenix Rscript scripts/check-weather-publication.R
+```
+
+Or in RStudio: `source("scripts/check-weather-publication.R")`. It downloads
+nothing, builds no maps, and does not sync S3. It compares the local staged and
+rendered weather flags, manifests and image checksums. This checks the files
+that will be uploaded, not the website/CDN response; still spot-check the web
+page after publishing.
+
+Reports are `data/diagnostics/weather-publication-status/summary.csv` and
+`dates.csv`. They show the latest 30 calendar dates within Explorer coverage,
+the complete Explorer date range, retained dates, missing dates, source lag,
+recovered-pressure dates and withheld wind/H/L overlays. An overlay status is
+known only when its cached note matches the staged moisture-image checksum;
+otherwise it is explicitly unknown. A recovery can coexist with a withheld
+overlay if a different hourly sample could not be recovered.
+
+`PASS` means activation and files match with no coverage/freshness warnings.
+`WARN` means files/activation are valid but dates are missing or weather is over
+three days old. `FAIL` means a missing activation flag, invalid metadata,
+missing images or a staged/rendered mismatch; the standalone script exits with
+an error. Coverage counts do not establish that every overlay is available.
+An intentional disabled configuration is reported as `DISABLED` when calling
+the audit with `require_enabled=FALSE`; the staging check explicitly expects
+weather to be enabled.
+
+Normal daily and site-only publication capture weather activation **before**
+rendering and run this audit afterward. Thus a second staging step cannot erase
+both flags and silently bypass weather validation. On failure, console/ntfy
+reports the problem and the rendered optional panel is disabled; the existing
+core-map gates still control core publication. Daily summaries include recent
+and full Explorer weather coverage, withheld winds and unknown overlay counts.
+The normal report is refreshed during rendering; when an unchanged daily run
+skips rendering, use the standalone check for a new report. No extra climate
+requests, weather renderer changes or map rebuilds are introduced by the audit.
+
 The optional weather stage runs after successful PRISM Explorer staging. A
 weather exception disables the optional panel for that run and core processing
 continues. Per-date failures retain only checksum-verified older map pairs, with
@@ -196,6 +237,7 @@ maps/caches are ignored. Keep the deferred IVT experiment out of this release.
 git add -u
 git add R/daily-explorer-circulation.R R/weather-circulation-archive.R R/weather-moisture-pilot.R docs/weather-circulation-daily-workflow.md scripts/build-daily-explorer-circulation-preview.R scripts/load-weather-circulation-archive.R scripts/run-weather-moisture-pilot.R scripts/serve-daily-explorer-circulation.R scripts/update-weather-circulation.R tests/test-daily-explorer-circulation-ui.cjs tests/testthat/test-daily-explorer-circulation.R tests/testthat/test-weather-circulation-archive.R tests/testthat/test-weather-moisture-pilot.R
 git add R/weather-core-index-recovery.R scripts/audit-weather-core-index-recovery.R tests/testthat/test-weather-core-index-recovery.R
+git add R/weather-publication-audit.R scripts/check-weather-publication.R tests/testthat/test-weather-publication-audit.R
 git diff --cached --stat
 git commit -m "Stage daily weather maps with moisture and cached date archive"
 git push origin codex/daily-explorer
