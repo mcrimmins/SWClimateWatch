@@ -82,6 +82,22 @@ testthat::test_that("staging excludes private caches and preserves unchanged ass
   testthat::expect_identical(file.info(json)$mtime, mtime)
   testthat::expect_false(file.exists(obsolete))
   testthat::expect_true(file.exists(keep))
+  # The publisher renders through a fresh staging subprocess after weather
+  # activation. Its private PRISM payload has no optional-weather flag.
+  for (flag in c(TRUE, FALSE)) {
+    payload <- jsonlite::read_json(json)
+    payload$circulation_enabled <- flag
+    jsonlite::write_json(payload, json, auto_unbox = TRUE, digits = NA)
+    stage_daily_explorer_site(output_dir = output, work_dir = work,
+      manifest = manifest, builder = builder)
+    testthat::expect_identical(jsonlite::read_json(json)$circulation_enabled, flag)
+    testthat::expect_null(jsonlite::read_json(file.path(work, "daily-data.json"))$circulation_enabled)
+    before <- tools::md5sum(json); mtime <- file.info(json)$mtime
+    stage_daily_explorer_site(output_dir = output, work_dir = work,
+      manifest = manifest, builder = builder)
+    testthat::expect_identical(tools::md5sum(json), before)
+    testthat::expect_identical(file.info(json)$mtime, mtime)
+  }
 })
 
 testthat::test_that("rendered explorer must link the frame and match the staged payload", {

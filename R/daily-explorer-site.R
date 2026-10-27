@@ -53,6 +53,22 @@ stage_daily_explorer_site <- function(window_days = NULL,
   files <- c("index.html", "explorer.js", "explorer.css", "daily-data.json", checked$images)
   for (relative in files) {
     from <- file.path(work_dir, relative); to <- file.path(output_dir, relative)
+    # Rendering stages PRISM again after the weather adapter has enabled its
+    # panel in the public payload. Preserve that independently managed flag;
+    # the private PRISM work payload intentionally does not contain it.
+    if (identical(relative, "daily-data.json") && file.exists(to)) {
+      previous <- tryCatch(jsonlite::read_json(to), error = function(e) NULL)
+      flag <- previous$circulation_enabled
+      if (is.logical(flag) && length(flag) == 1L && !is.na(flag)) {
+        payload <- jsonlite::read_json(from)
+        payload$circulation_enabled <- flag
+        serialized <- as.character(jsonlite::toJSON(payload, auto_unbox = TRUE,
+          na = "null", null = "null", digits = NA, pretty = FALSE))
+        if (!identical(paste(readLines(to, warn = FALSE), collapse = "\n"), serialized))
+          writeLines(serialized, to, useBytes = TRUE)
+        next
+      }
+    }
     # Unchanged bytes keep their mtime and avoid needless S3 transfers.
     if (file.exists(to) && identical(unname(tools::md5sum(from)), unname(tools::md5sum(to)))) next
     if (!file.copy(from, to, overwrite = TRUE)) stop("Could not stage Daily Explorer: ", relative)
