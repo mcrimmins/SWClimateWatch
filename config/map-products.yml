@@ -11,12 +11,17 @@ defaults:
 # Keep four to six unique, enabled product IDs here.
 dashboard:
   products:
-    - tmean_percentile_07day
-    - tmean_percentile_30day
+    - pcpn_total_07day
     - pcpn_percentile_30day
     - pcpn_percentile_90day
-    - pcpn_current_dry_spell_percentile
     - pcpn_water_year_percentile
+    - tmean_departure_30day
+    - pcpn_current_dry_spell_percentile
+  seasonal_snow:
+    enabled: true
+    replace: pcpn_current_dry_spell_percentile
+    minimum_reference_cells: 1000
+    maximum_age_days: 3
 
 products:
   maxt_value:

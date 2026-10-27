@@ -122,6 +122,16 @@ read_map_dashboard_config <- function(
     )
   }
   dashboard$dashboard_order <- seq_len(nrow(dashboard))
+  snow <- config$dashboard$seasonal_snow %||% list(enabled = FALSE)
+  if(isTRUE(snow$enabled) && (!identical(snow$replace,"pcpn_current_dry_spell_percentile") ||
+      !snow$replace %in% dashboard$id || length(snow$minimum_reference_cells)!=1L ||
+      !is.numeric(snow$minimum_reference_cells) || !is.finite(snow$minimum_reference_cells) ||
+      snow$minimum_reference_cells<1 || snow$minimum_reference_cells!=floor(snow$minimum_reference_cells) ||
+      length(snow$maximum_age_days)!=1L || !is.numeric(snow$maximum_age_days) ||
+      !is.finite(snow$maximum_age_days) || snow$maximum_age_days<0 || snow$maximum_age_days>7 ||
+      snow$maximum_age_days!=floor(snow$maximum_age_days)))
+    stop("Invalid seasonal snow dashboard settings.",call.=FALSE)
+  attr(dashboard,"seasonal_snow") <- snow
   rownames(dashboard) <- NULL
   dashboard
 }
@@ -145,7 +155,53 @@ map_dashboard_date_line <- function(expected_data_dates = NULL) {
   )
 }
 
-map_dashboard_page_text <- function(dashboard, expected_data_dates = NULL) {
+map_dashboard_snow_selection <- function(site_dir="site",today=Sys.Date(),
+    minimum_reference_cells=1000L,maximum_age_days=3L) {
+  unavailable<-function(reason) list(available=FALSE,reason=reason)
+  if(!as.integer(format(today,"%m")) %in% c(10:12,1:5))
+    return(unavailable("Outside the October-May snow display season."))
+  tryCatch({
+    root<-dirname(site_dir)
+    publication_path<-file.path(root,"data","diagnostics","snodas-current-site","publication.csv")
+    if(!file.exists(publication_path)) return(unavailable("No verified snow publication."))
+    publication<-utils::read.csv(publication_path)
+    if(nrow(publication)!=1L || !all(c("date","water_year","percent_md5","page_md5") %in% names(publication)))
+      return(unavailable("No verified snow publication."))
+    date<-as.Date(publication$date)
+    wy<-function(d) as.integer(format(d,"%Y"))+as.integer(format(d,"%m")>="10")
+    if(is.na(date) || date>today || today-date>maximum_age_days || wy(date)!=wy(today) || publication$water_year!=wy(today))
+      return(unavailable("Snow publication is stale or belongs to another season."))
+    image<-file.path(site_dir,"maps","generated","snodas","current","swe-percent-median.png")
+    page<-file.path(site_dir,"pages","current-snow.qmd")
+    if(!file.exists(image) || file.info(image)$size<10000 || !file.exists(page) ||
+        !identical(unname(tools::md5sum(image)),publication$percent_md5) ||
+        !identical(unname(tools::md5sum(page)),publication$page_md5) ||
+        !identical(readBin(image,"raw",n=8),as.raw(c(137,80,78,71,13,10,26,10))))
+      return(unavailable("Snow image/page checksums could not be verified."))
+    reference<-file.path(root,"data","processed","snodas","az-nm-pad050","climatology",
+      "wy2005-wy2025","daily","centered-05day",format(date,"%m-%d"))
+    if(!file.exists(file.path(reference,"complete.csv"))) return(unavailable("Snow reference support is unavailable."))
+    marker<-utils::read.csv(file.path(reference,"complete.csv"))
+    paths<-file.path(reference,c("median_swe.tif","sample_years.tif"))
+    if(nrow(marker)!=1L || !all(c("month_day","reference_years","median_swe_md5","sample_years_md5") %in% names(marker)) ||
+        marker$month_day!=format(date,"%m-%d") || !all(file.exists(paths)) ||
+        marker$reference_years!=paste(2005:2025,collapse=",") ||
+        !identical(unname(tools::md5sum(paths)),c(marker$median_swe_md5,marker$sample_years_md5)))
+      return(unavailable("Snow reference checksums could not be verified."))
+    median<-terra::rast(paths[1]); years<-terra::rast(paths[2])
+    if(!terra::compareGeom(median,years,stopOnError=FALSE)) return(unavailable("Snow reference grids differ."))
+    m<-terra::values(median,mat=FALSE); n<-terra::values(years,mat=FALSE)
+    supported<-sum(is.finite(m) & is.finite(n) & m>=1 & n>=18)
+    if(supported<minimum_reference_cells) return(unavailable("Too few cells have a supported typical snowpack."))
+    list(available=TRUE,date=as.character(date),reference_cells=supported,
+      image="maps/generated/snodas/current/swe-percent-median.png",page="pages/current-snow.qmd")
+  },error=function(e) unavailable("Snow comparison/reference unavailable; showing dry-spell rank."))
+}
+
+map_dashboard_page_text <- function(dashboard, expected_data_dates = NULL, snow=NULL,archive_years=integer()) {
+  grouped<-identical(as.character(dashboard$id),c("pcpn_total_07day","pcpn_percentile_30day",
+    "pcpn_percentile_90day","pcpn_water_year_percentile","tmean_departure_30day",
+    "pcpn_current_dry_spell_percentile"))
   lines <- c(
     "---",
     'title: "Current Conditions"',
@@ -153,14 +209,31 @@ map_dashboard_page_text <- function(dashboard, expected_data_dates = NULL) {
     "page-layout: full",
     "toc: false",
     "body-classes: dashboard-page",
+    "filters: [filters/dashboard-status.lua]",
     "---",
     "",
-    "::: {.dashboard-intro}",
-    "Key temperature and precipitation indicators for Arizona and New Mexico.",
+    "::: {.dashboard-heading}",
+    "::: {.dashboard-heading-title}",
+    "# Current Conditions",
     "",
-    paste0("**", map_dashboard_date_line(expected_data_dates), "** · Reference period: 1991–2020"),
+    "Southwest Climate Watch",
+    ":::",
     "",
-    "Explore all maps from Current Maps in the navigation menu.",
+    "::: {.dashboard-status}",
+    "**Site updated:** [Recorded at render time]{.dashboard-rendered-at}",
+    "",
+    paste0("**PRISM through:** ",gsub(" through ",": ",sub("^Data through ","",map_dashboard_date_line(expected_data_dates)),fixed=TRUE)),
+    ":::",
+    ":::",
+    "",
+    "::: {.dashboard-tool-links}",
+    "[Daily Explorer \u2014 investigate individual days](pages/daily-explorer.qmd){.dashboard-tool-link}",
+    "",
+    "[Station Conditions \u2014 local observations and records](pages/station-conditions.qmd){.dashboard-tool-link}",
+    "",
+    "[Current Snow \u2014 snow storage and recent changes](pages/current-snow.qmd){.dashboard-tool-link}",
+    "",
+    "[Historic Seasons \u2014 compare completed years](#historic-seasons){.dashboard-tool-link}",
     ":::",
     "",
     "::: {.dashboard-map-grid}"
@@ -171,11 +244,19 @@ map_dashboard_page_text <- function(dashboard, expected_data_dates = NULL) {
     page <- paste0("pages/products/", product$id, ".qmd")
     alt <- paste0("Map showing ", tolower(product$label), " across Arizona and New Mexico")
     loading <- if (index <= 2L) "" else ' loading="lazy"'
+    snow_card<-identical(product$id,"pcpn_current_dry_spell_percentile") && isTRUE(snow$available)
+    if(snow_card) {image<-snow$image; page<-snow$page; alt<-"Snow water equivalent as percent of the date-specific median"}
+    if(grouped && index %in% c(1L,3L,5L)) {
+      heading<-c("Recent rainfall","Seasonal context",if(isTRUE(snow$available)) "Temperature and snow" else "Temperature and dry spells")[(index+1L)%/%2L]
+      lines<-c(lines,"::: {.dashboard-row-heading}",paste0("## ",heading),":::","")
+    }
     lines <- c(
       lines,
       "::: {.dashboard-map-card}",
       paste0("[![](", image, '){fig-alt="', alt, '"', loading, "}](", page, ")"),
       "",
+      if(snow_card) paste0("::: {.dashboard-source-note}\nSNODAS \u00b7 ",snow$date,
+        " \u00b7 Daily median reference: WY2005\u20132025\n:::\n") else character(),
       "::: {.dashboard-card-actions}",
       paste0("[View details](", page, "){.btn .btn-sm .btn-outline-primary}"),
       paste0("[Full-resolution PNG](", image, "){.dashboard-full-resolution}"),
@@ -189,7 +270,19 @@ map_dashboard_page_text <- function(dashboard, expected_data_dates = NULL) {
     ":::",
     "",
     "::: {.dashboard-note}",
-    "Percentile rank compares current conditions with the same time of year in 1991–2020. Low precipitation ranks indicate drier conditions; high temperature ranks indicate warmer conditions. A high dry-spell rank means the ongoing dry spell is unusually long.",
+    "PRISM percentile ranks compare matching periods in 1991\u20132020. Low precipitation ranks indicate drier conditions. Temperature departure is in \u00b0F; positive values mean warmer conditions. A high dry-spell rank means an unusually long ongoing dry spell. These indicators describe conditions, not a combined drought classification.",
+    "",
+    "Water-year precipitation starts October 1. Early-season ranks describe a short period; use the 90-day map for broader context.",
+    if(isTRUE(snow$available)) "\nSnow percentages are not percentile ranks. Ratios use typical SWE of at least 1 inch and at least 18 reference years; the snow date and reference differ from PRISM." else character(),
+    ":::",
+    "",
+    "::: {#historic-seasons .dashboard-history-links}",
+    "## Compare historic seasons",
+    "Browse completed water years:",
+    paste0(vapply(head(sort(unique(archive_years),decreasing=TRUE),5L),function(year) paste0("[WY",year,
+      "](pages/archive/wy",year,".qmd)"),character(1)),collapse=" \u00b7 "),
+    "",
+    "Additional completed years are listed under Historic Years in the navigation menu.",
     ":::",
     "",
     "::: {.institutional-branding .dashboard-branding}",
@@ -568,12 +661,17 @@ build_map_product_site <- function(
     expected_data_dates = NULL,
     expected_dimensions = c(width = 1998L, height = 1533L),
     minimum_image_bytes = 10000,
-    status_path = file.path("data", "diagnostics", "map-product-status.csv")) {
+    status_path = file.path("data", "diagnostics", "map-product-status.csv"),
+    today=Sys.Date(),dashboard_snow_selector=map_dashboard_snow_selection) {
   products <- read_map_product_config(config_path)
   temporarily_unavailable <- map_product_early_water_year_three_day(
     products, expected_data_dates)
   enabled <- products[products$enabled, , drop = FALSE]
   dashboard <- read_map_dashboard_config(config_path, products)
+  snow_config<-attr(dashboard,"seasonal_snow")
+  snow<-if(isTRUE(snow_config$enabled)) dashboard_snow_selector(site_dir=site_dir,today=today,
+    minimum_reference_cells=snow_config$minimum_reference_cells,
+    maximum_age_days=snow_config$maximum_age_days) else NULL
   if (isTRUE(require_images)) {
     image_paths <- file.path(site_dir, "maps", "generated",
                              products$image[products$enabled &
@@ -601,7 +699,9 @@ build_map_product_site <- function(
     )
   }
   writeLines(
-    map_dashboard_page_text(dashboard, expected_data_dates),
+    map_dashboard_page_text(dashboard, expected_data_dates,snow=snow,
+      archive_years=as.integer(sub("^wy([0-9]{4})\\.qmd$","\\1",
+        list.files(file.path(site_dir,"pages","archive"),pattern="^wy[0-9]{4}\\.qmd$")))),
     file.path(site_dir, "index.qmd"),
     useBytes = TRUE
   )

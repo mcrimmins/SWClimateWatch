@@ -25,12 +25,12 @@ testthat::test_that("complete map catalog covers every published current map", {
   testthat::expect_equal(
     dashboard$id,
     c(
-      "tmean_percentile_07day",
-      "tmean_percentile_30day",
+      "pcpn_total_07day",
       "pcpn_percentile_30day",
       "pcpn_percentile_90day",
-      "pcpn_current_dry_spell_percentile",
-      "pcpn_water_year_percentile"
+      "pcpn_water_year_percentile",
+      "tmean_departure_30day",
+      "pcpn_current_dry_spell_percentile"
     )
   )
   testthat::expect_true(all(dashboard$enabled))
@@ -56,7 +56,7 @@ testthat::test_that("redundant map landing pages are absent", {
   testthat::expect_true(any(grepl("logo: assets/branding/southwest-climate-watch-mark-transparent.png", navigation, fixed = TRUE)))
   testthat::expect_true(file.exists(file.path(site_dir, "assets", "branding", "southwest-climate-watch-mark-transparent.png")))
   testthat::expect_false(any(grepl("current-conditions.qmd|map-browser.qmd", c(navigation, homepage))))
-  testthat::expect_true(any(grepl("Explore all maps from Current Maps", homepage, fixed = TRUE)))
+  testthat::expect_true(any(grepl("Site updated:", homepage, fixed = TRUE)))
   testthat::expect_true(any(grepl("- section: Current Maps", navigation, fixed = TRUE)))
   testthat::expect_equal(sum(grepl("- href: pages/current-snow.qmd", navigation, fixed = TRUE)), 1L)
   testthat::expect_true(any(grepl("text: Snow", navigation, fixed = TRUE)))
@@ -148,7 +148,7 @@ testthat::test_that("map site generation honors enabled products", {
   testthat::expect_true(any(grepl("dashboard-map-grid", homepage, fixed = TRUE)))
   testthat::expect_equal(sum(grepl("dashboard-map-card", homepage, fixed = TRUE)), 4L)
   testthat::expect_true(any(grepl("enabled_map.qmd", homepage, fixed = TRUE)))
-  testthat::expect_true(any(grepl("Explore all maps from Current Maps", homepage, fixed = TRUE)))
+  testthat::expect_true(any(grepl("Site updated:", homepage, fixed = TRUE)))
   testthat::expect_true(any(grepl("- section: Current Maps", navigation, fixed = TRUE)))
   testthat::expect_equal(sum(grepl("- href: pages/current-snow.qmd", navigation, fixed = TRUE)), 1L)
   testthat::expect_true(any(grepl("text: Snow", navigation, fixed = TRUE)))
@@ -302,5 +302,5 @@ testthat::test_that("Methods page documents data timing and every map family", {
   testthat::expect_true(grepl("preliminary data", page, fixed = TRUE))
   testthat::expect_true(grepl("1991", page, fixed = TRUE))
   testthat::expect_true(grepl("1982", page, fixed = TRUE))
-  testthat::expect_false(grepl("terra|ggplot2|lubridate|S3 deployment", page))
+  testthat::expect_false(grepl("\\b(terra|ggplot2|lubridate)\\b|S3 deployment", page))
 })

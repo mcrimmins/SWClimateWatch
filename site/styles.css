@@ -312,6 +312,32 @@ body.product-page #title-block-header {
   margin: 0;
 }
 
+body.dashboard-page #title-block-header { display: none; }
+.dashboard-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: 1rem;
+  align-items: center;
+  margin: 0 0 1.25rem;
+}
+.dashboard-heading-title h1 { margin: 0 0 0.2rem; }
+.dashboard-heading-title p { margin: 0; font-size: 1.15rem; color: #596b73; }
+.dashboard-status {
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--sw-sidebar-guide);
+  border-radius: 0.4rem;
+  background: #f8f5ef;
+  font-size: 0.88rem;
+  max-width: 28rem;
+}
+.dashboard-status p { margin: 0.15rem 0; }
+body.quarto-dark .dashboard-status { background: #26343b; }
+body.quarto-dark .dashboard-heading-title p { color: #c1d0d8; }
+@media (max-width: 700px) {
+  .dashboard-heading { grid-template-columns: 1fr; }
+  .dashboard-status { justify-self: start; }
+}
+
 .dashboard-card-actions {
   display: flex;
   flex-wrap: wrap;
@@ -324,6 +350,56 @@ body.product-page #title-block-header {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: clamp(1rem, 2.2vw, 1.6rem);
   align-items: start;
+}
+
+.dashboard-tool-links {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 0 0 1.2rem;
+}
+
+.dashboard-tool-link {
+  display: block;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--sw-sidebar-guide);
+  border-radius: 0.4rem;
+  color: var(--sw-sky);
+  text-decoration: none;
+  height: 100%;
+}
+
+.dashboard-tool-links > p { margin: 0; }
+
+.dashboard-tool-link:hover, .dashboard-tool-link:focus-visible {
+  background: var(--sw-sidebar-active);
+  text-decoration: underline;
+}
+
+.dashboard-row-heading {
+  grid-column: 1 / -1;
+  margin-top: 0.25rem;
+}
+
+.dashboard-row-heading h2 {
+  margin: 0;
+  padding-bottom: 0.35rem;
+  font-size: 1.35rem;
+}
+
+.dashboard-source-note {
+  padding: 0.45rem 0.8rem 0;
+  color: #53666e;
+  font-size: 0.85rem;
+}
+
+.dashboard-source-note p { margin: 0; }
+.dashboard-history-links { margin-top: 1.25rem; }
+body.quarto-dark .dashboard-source-note { color: #c1d0d8; }
+body.quarto-dark .dashboard-tool-link { color: #a3d6e6; }
+
+@media (max-width: 600px) {
+  .dashboard-tool-links { grid-template-columns: 1fr; }
 }
 
 .dashboard-map-card {

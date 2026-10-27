@@ -23,8 +23,10 @@ must still be tested, committed, staged on the VM, and explicitly promoted.
 55 retained dates/165 maps, zero failures and zero pending. Broken NOAA indexes
 were confirmed in three cases; bounded same-source pressure recovery passed on
 the VM with zero-request cache checks. No weather production promotion has been
-recorded. The current laptop follow-up adds a publication coverage report and
-pre-render activation expectations; stage it before the next new-date trial.
+recorded. The publication coverage/activation audit has now passed on staging:
+30/30 recent dates, 55/55 Explorer dates, 18 dates with recovered pressure inputs,
+and no withheld or unknown overlays. The next new-date daily trial and explicit
+production promotion remain pending.
 
 ## Agreed additions and enhancements
 
@@ -45,6 +47,11 @@ pre-render activation expectations; stage it before the next new-date trial.
 | Validated SPI module | Separately validate fitting, zero precipitation, reference period and SPI-1/3/6/12 behavior; do not substitute raw standardized precipitation anomalies. | Large |
 | Daily weather and circulation diagnostics | Three-map CORe integration and retained backfill are in staging. Next: publication audit and next-day/cache trial, then explicit production promotion. Anomaly baselines, IVT and added weather variables remain separate. | Staging verification next |
 | Archived forecast discussions in Daily Explorer | Date-bound AFD/WPC links and the fixed-size embedded reader have been implemented and user-tested. Metadata indexing and optional SPC/report sources remain future work. | Indexing effort pending |
+| Long-term monthly PRISM maps | Scope selected monthly/seasonal climate products using the proposed 1895-present monthly record, with a once-monthly update cycle. Verify coverage, reference periods and source revisions before choosing maps. | Longer-term; scope first |
+| Local storm reports and watch/warning polygons | Scope archived reports and NWS hazard polygons alongside Daily Explorer and/or seasonal summaries, including event-time matching, deduplication, data availability and efficient caching. | Longer-term; scope first |
+| Historic-season station and Daily Explorer content | Decide which station summaries, extreme-event views and daily-map navigation belong in historic seasons; define retention, completeness and storage limits. | Longer-term; scope first |
+| Hydrological observations and gauge-condition maps | Assess gauge data access, station coverage and useful streamflow/stage condition metrics, with historical context and bounded update costs. | Longer-term; scope first |
+| Hydroclimate home dashboard | Local six-map refresh and tool links implemented for review; conditionally substitute supported fresh SWE for dry-spell rank. Stage after visual approval. Separately prototype cumulative precipitation versus normal, with cached regional calculations and a runtime benchmark. | Layout small; evolution chart moderate |
 
 ## New exploration: daily weather and circulation
 
@@ -81,6 +88,73 @@ A bounded recent-date selector is feasible in principle without new climate
 downloads, but arbitrary-period ranks/anomalies are not available from the
 currently published preset results. Preserve the fast default preset view;
 do not publish full station histories or precompute every possible date range.
+
+## Longer-term scope additions: October 27, 2026
+
+These four ideas are recorded for future scoping, not authorized implementation
+or additions to the current daily production workload. Estimate source access,
+runtime, local/public storage and browser costs before selecting a pilot.
+
+### Monthly PRISM: long-term climate record
+
+Explore the monthly PRISM record proposed for **1895-present**, verifying the
+actual available variables, resolution, geographic coverage and latest complete
+month before adopting that period as a product label. Decide which maps benefit
+from the longer record: candidates include monthly or seasonal precipitation
+totals, mean temperatures, departures, rankings and percentiles. Monthly data
+cannot supply daily extremes, freeze-night counts or daily spell metrics.
+
+Plan a **once-monthly update**, separate from daily PRISM processing. Define the
+release/completeness cutoff, preliminary-versus-final handling and a bounded
+revision check; cache completed months and rebuild only affected products.
+Choose reference periods and explain the difference between a fixed normal and
+a full-period ranking. Pilot a small map set before attempting long-term
+historical backfill.
+
+### Local storm reports and NWS watch/warning polygons
+
+Scope querying and displaying archived **local storm reports** and **NWS watch
+and warning polygons** in Daily Explorer, seasonal summaries, or both. Identify
+sources, archive depth, supported hazard types and spatial coverage first.
+Decide whether to use map overlays, event lists, or linked detail views.
+
+Distinguish reported impacts from issued hazards; a warning polygon is not an
+observed impact footprint. Define report occurrence versus submission time and
+polygon issuance, valid and expiration times, including updates/cancellations,
+UTC/local-day boundaries, duplicates and multi-day events. For seasonal counts,
+choose event/report/polygon counting rules and document reporting limitations.
+Use incremental cached metadata and lazy-loaded regional geometry; preserve
+explicit unavailable states and avoid downloading every archive on daily runs.
+
+### Historic seasons: station observations and Daily Explorer maps
+
+Decide what additional station and daily-map content should appear on each
+historic-season page. Candidates include station seasonal totals/temperatures,
+rankings and extremes with record/coverage context; selected notable-day maps;
+and links to the corresponding station or Daily Explorer view.
+
+Coordinate this with completed-year Explorer retention and navigation. Set
+season/water-year definitions, station eligibility and completeness rules,
+cross-year links, archive manifests and end-of-season completion checks.
+Compare retaining existing daily maps, building selected events, and producing
+complete daily collections before choosing storage and backfill policies.
+Keep old seasons accessible without publishing full station histories or
+automatically regenerating every historic day in the normal daily workflow.
+
+### Hydrological data and gauge conditions
+
+Explore a regional map of gauging-station conditions with station details,
+time series and links to source records. First identify suitable providers,
+regional station coverage, archive access, update latency and usage constraints.
+Decide whether the first version shows discharge, stage, or both, and whether
+historical support permits seasonal percentiles or other condition categories.
+
+Define instantaneous versus daily-mean timing, units, reference/sample support,
+provisional/revised observations, missing or stale gauges, and interpretation
+at regulated or otherwise affected sites. Show explicit limitations rather than
+treating unsupported comparisons as normal conditions. Benchmark a small
+station network, incremental refreshes and cached/lazy-loaded browser payloads
+before integrating it into the daily publisher or historic-season pages.
 
 ## Suggested sequence
 

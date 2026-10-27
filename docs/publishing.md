@@ -12,6 +12,51 @@ without downloading data or publishing. Daily and site-only publishers also
 save the report automatically during rendered-weather validation; see the
 weather workflow document for report fields and PASS/WARN/FAIL meanings.
 
+## Home dashboard refresh (local review)
+
+The hydroclimate-oriented home layout reuses six existing maps: seven-day rain
+total, 30- and 90-day precipitation percentiles, water-year precipitation
+percentile, 30-day mean-temperature departure and current dry-spell percentile.
+Tool links lead to Daily Explorer, Station Conditions, Current Snow and recent
+historic years. The generator in `R/map-product-site.R` owns the page; changing
+only `site/index.qmd` would be overwritten by the next catalog build.
+The title has a compact status card with the rendered snapshot time in Phoenix
+time (MST) and the PRISM data-through date. `site/filters/dashboard-status.lua`
+stamps the time during Quarto rendering, not in the visitor's browser or the
+generated source. This avoids forcing a publication merely because a source
+build ran at a different wall-clock time. A failed publication leaves the
+previous public snapshot and its timestamp intact.
+
+`config/map-products.yml` controls the products and conditional snow setting.
+During October-May, SWE percent of median can replace dry-spell rank only if
+the snow image/page match their publication hashes, the date is in the current
+water year and no more than three days old, and the verified daily reference
+contains at least 1,000 cells with median SWE >=1 inch and >=18 reference years.
+This configurable cell-count threshold is a home-page presentation rule, not
+a new snow quality-control criterion. Sparse-reference, stale, missing or
+unverified snow keeps the dry-spell map. The snow card carries its own data
+date and WY2005-WY2025 reference; the page does not apply PRISM's baseline to it.
+
+Build a local layout preview without downloads or map regeneration:
+
+```r
+source("scripts/preview-home-dashboard.R")
+```
+
+Render `data/diagnostics/home-dashboard-preview` with Quarto and serve its
+`_site/` directory. The main preview uses current cached laptop maps; a separate,
+clearly labeled historical snow-card example is available when the existing
+winter pilot PNG is present. Preview detail links lead to existing public
+pages. Production source keeps relative Quarto links. This script updates the
+generated local `site/index.qmd` but never publishes or changes the snow files.
+
+After visual approval, this can use the normal laptop commit/push and pinned
+VM staging checkout, followed by site-only publication. No new climate maps,
+download cadence or weather-renderer signatures are introduced. Check the
+staging home page, tool links, historic-year links and conditional panel before
+the next daily staging trial. The proposed cumulative-precipitation evolution
+chart remains a separate implementation/benchmarking step.
+
 Run these commands in the RStudio Console from the **SWClimateWatch project
 root**. For the normal daily update and deployment, use this one line:
 
