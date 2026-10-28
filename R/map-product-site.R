@@ -1,5 +1,265 @@
 # Generate the map-product pages and Quarto navigation from one configuration.
 
+# Supported metrics and cached grid paths are coupled to the map product.
+map_dashboard_summary_spec <- function(id) {
+  if (grepl("^pcpn_total_[0-9]+day$",id)) {
+    days <- as.integer(sub("^pcpn_total_([0-9]+)day$","\\1",id))
+    return(list(path=file.path("accumulation","pcpn",sprintf("%02dday",days)),
+      metrics=c("regional_mean","area_above_threshold"),type="precipitation",period=paste0(days," days")))
+  }
+  if (grepl("^pcpn_percentile_[0-9]+day$",id)) {
+    days <- as.integer(sub("^pcpn_percentile_([0-9]+)day$","\\1",id))
+    return(list(path=file.path("percentile-rank","pcpn",sprintf("%02dday",days)),
+      metrics=c("area_below_percentile","area_above_percentile"),type="percentile",period=paste0(days," days")))
+  }
+  if (id=="pcpn_water_year_percentile") return(list(path=file.path("water-year","pcpn","percentile-rank"),
+    metrics=c("area_below_percentile","area_above_percentile"),type="percentile",period="Water year to date"))
+  if (grepl("^(tmean|maxt|mint)_departure_[0-9]+day$",id)) {
+    variable <- sub("_.*$","",id); days <- as.integer(sub("^.*_([0-9]+)day$","\\1",id))
+    return(list(path=file.path("rolling-departure",variable,sprintf("%03dday",days)),
+      metrics="regional_mean",type="temperature",period=paste0(days," days")))
+  }
+  if (id=="pcpn_current_dry_spell_percentile") return(list(path=file.path("dry-spell","pcpn","percentile-rank"),
+    metrics="area_above_percentile",type="dry_spell",period="Ongoing dry spell"))
+  NULL
+}
+
+map_dashboard_validate_summaries <- function(config, products, ids) {
+  layout <- config$summary_layout %||% "per_map"
+  if(length(layout)!=1L || !layout %in% c("per_map","none"))
+    stop("dashboard.summary_layout must be per_map or none.")
+  summaries <- config$summaries %||% list()
+  if(length(summaries) && (is.null(names(summaries)) || anyDuplicated(names(summaries)) ||
+      any(!names(summaries) %in% products$id))) stop("Unknown or duplicate dashboard summary product.")
+  for(id in names(summaries)) {
+    settings <- summaries[[id]]
+    if(!is.list(settings)) stop("Dashboard summary settings must be a mapping: ",id)
+    settings$enabled <- settings$enabled %||% TRUE
+    if(!is.logical(settings$enabled) || length(settings$enabled)!=1L || is.na(settings$enabled))
+      stop("Dashboard summary enabled must be true or false: ",id)
+    if(!settings$enabled) {summaries[[id]]<-settings; next}
+    spec <- map_dashboard_summary_spec(id)
+    metrics <- unlist(settings$metrics,use.names=FALSE)
+    if(is.null(spec) || !length(metrics) || anyDuplicated(metrics) || any(!metrics %in% spec$metrics))
+      stop("Incompatible or unsupported dashboard summary metric: ",id)
+    settings$metrics <- as.character(metrics)
+    for(field in intersect(names(settings),c("threshold_inches","lower_percentile","upper_percentile",
+        "highlight_area_percent","strong_area_percent","mixed_area_percent"))) {
+      x <- settings[[field]]
+      if(!is.numeric(x) || length(x)!=1L || !is.finite(x) || x<0 ||
+          (field!="threshold_inches" && x>100)) stop("Invalid dashboard summary threshold: ",field)
+    }
+    settings$threshold_inches <- settings$threshold_inches %||% .1
+    settings$lower_percentile <- settings$lower_percentile %||% 10
+    settings$upper_percentile <- settings$upper_percentile %||% 90
+    settings$highlight_area_percent <- settings$highlight_area_percent %||% 10
+    settings$strong_area_percent <- settings$strong_area_percent %||% 25
+    if(settings$highlight_area_percent>=settings$strong_area_percent) stop("Summary color thresholds must be ordered.")
+    if(settings$lower_percentile>=settings$upper_percentile) stop("Summary percentile thresholds must be ordered.")
+    settings$label <- settings$label %||% spec$period
+    if(!is.character(settings$label) || length(settings$label)!=1L || is.na(settings$label) ||
+        !nzchar(settings$label) || grepl("[<>\\[\\]{}\r\n]",settings$label,perl=TRUE)) stop("Invalid summary label.")
+    summaries[[id]] <- settings
+  }
+  groups <- config$groups %||% list()
+  if(length(groups)) {
+    group_ids <- unlist(lapply(groups,function(g) g$products),use.names=FALSE)
+    if(!identical(as.character(group_ids),ids)) stop("Dashboard groups must list the selected products once, in display order.")
+    if(any(!vapply(groups,function(g) is.character(g$title) && length(g$title)==1L &&
+        !is.na(g$title) && nzchar(g$title) && !grepl("[\r\n]",g$title),logical(1)))) stop("Invalid dashboard group title.")
+  }
+  list(layout=layout,summaries=summaries,groups=groups,
+    headlines=map_dashboard_validate_headlines(config$headlines,products))
+}
+
+map_dashboard_validate_headlines <- function(config,products) {
+  if(is.null(config)) return(list(enabled=FALSE,cards=list()))
+  if(!is.list(config) || !is.logical(config$enabled) || length(config$enabled)!=1L || is.na(config$enabled))
+    stop("dashboard.headlines.enabled must be true or false.")
+  if(!config$enabled) return(list(enabled=FALSE,cards=list()))
+  cards <- config$cards
+  if(!is.list(cards) || length(cards)<1L || length(cards)>3L) stop("Choose one to three headline cards.")
+  ids <- vapply(cards,function(card) {
+    id <- card$product
+    if(!is.character(id) || length(id)!=1L || !id %in% products$id || !products$enabled[match(id,products$id)])
+      stop("Headline cards must link to an enabled map product.")
+    spec <- map_dashboard_summary_spec(id)
+    if(is.null(spec) || !spec$type %in% c("percentile","temperature")) stop("Unsupported headline map type.")
+    if(is.null(card$title) || !is.character(card$title) || length(card$title)!=1L || is.na(card$title) ||
+        !nzchar(card$title) || grepl("[<>\\[\\]{}\r\n]",card$title,perl=TRUE)) stop("Invalid headline title.")
+    id
+  },character(1))
+  if(anyDuplicated(ids)) stop("Headline map products must be unique.")
+  normalized <- lapply(seq_along(cards),function(i) {
+    card <- cards[[i]]; id <- ids[[i]]
+    card$metrics <- if(map_dashboard_summary_spec(id)$type=="temperature") "regional_mean" else
+      c("area_below_percentile","area_above_percentile")
+    card$lower_percentile <- card$lower_percentile %||% 33
+    card$upper_percentile <- card$upper_percentile %||% 67
+    card$highlight_area_percent <- card$highlight_area_percent %||% 50
+    card$strong_area_percent <- card$strong_area_percent %||% 67
+    card$mixed_area_percent <- card$mixed_area_percent %||% 25
+    card$show_period <- card$show_period %||% TRUE
+    if(!is.logical(card$show_period) || length(card$show_period)!=1L || is.na(card$show_period))
+      stop("Headline show_period must be true or false.")
+    map_dashboard_validate_summaries(list(summaries=setNames(list(card),id)),products,id)$summaries[[id]]
+  })
+  names(normalized) <- ids
+  list(enabled=TRUE,cards=normalized)
+}
+
+map_dashboard_regional_value <- function(values, weights, metric, settings=list(),min_coverage=.98) {
+  inside <- is.finite(weights) & weights>0
+  good <- inside & is.finite(values)
+  area <- sum(weights[inside])
+  if(area<=0 || sum(weights[good])/area<min_coverage) return(NA_real_)
+  if(metric=="regional_mean") return(stats::weighted.mean(values[good],weights[good]))
+  test <- switch(metric,
+    area_above_threshold=values >= settings$threshold_inches-1e-7,
+    area_below_percentile=values < settings$lower_percentile,
+    area_above_percentile=values > settings$upper_percentile)
+  100*sum(weights[good & test])/sum(weights[good])
+}
+
+map_dashboard_summary_text <- function(summary) {
+  if(is.null(summary)) return(character())
+  escape <- function(x) {
+    for(pair in list(c("&","&amp;"),c("<","&lt;"),c(">","&gt;"),c('"',"&quot;")))
+      x <- gsub(pair[1],pair[2],x,fixed=TRUE)
+    x
+  }
+  if(any(!is.finite(summary$values))) return('<span class="dashboard-summary-chip summary-neutral">Summary unavailable</span>')
+  settings <- summary$settings
+  chips <- vapply(names(summary$values),function(metric) {
+    value <- summary$values[[metric]]
+    text <- switch(metric,
+      regional_mean=if(summary$type=="temperature") sprintf("%+.1f\u00b0F from normal",value)
+        else sprintf("%.2f\u2033 avg",value),
+      area_above_threshold=sprintf("\u2265%.2f\u2033: %.0f%%",settings$threshold_inches,value),
+      area_below_percentile=sprintf("Very dry: %.0f%%",value),
+      area_above_percentile=if(summary$type=="dry_spell") sprintf("Long dry spells: %.0f%%",value) else sprintf("Very wet: %.0f%%",value))
+    tone <- "neutral"; strong <- FALSE
+    if(metric=="regional_mean" && summary$type=="temperature") {
+      tone <- if(value < -.5) "cool" else if(value>.5) "warm" else "neutral"
+      strong <- abs(value)>=3
+    }
+    if(metric %in% c("area_below_percentile","area_above_percentile")) {
+      if(value >= (settings$highlight_area_percent %||% 10))
+        tone <- if(metric=="area_below_percentile" || summary$type=="dry_spell") "dry" else "wet"
+      strong <- value >= (settings$strong_area_percent %||% 25)
+    }
+    detail <- switch(metric,
+      regional_mean=if(summary$type=="temperature") "Area-weighted temperature departure" else "Area-weighted precipitation total",
+      area_above_threshold=sprintf("Area with accumulated precipitation at least %.2f inches",settings$threshold_inches),
+      area_below_percentile=sprintf("Area below percentile %g",settings$lower_percentile),
+      area_above_percentile=sprintf("Area above percentile %g",settings$upper_percentile))
+    paste0('<span class="dashboard-summary-chip summary-',tone,if(strong && tone!="neutral") ' summary-strong' else '',
+      '" title="',escape(paste0("AZ + NM; ",detail,"; through ",summary$date)),
+      '">',escape(text),'</span>')
+  },character(1))
+  paste0('<span class="dashboard-summary-period">',escape(summary$label),'</span> ',paste(chips,collapse=" "))
+}
+
+# Cache only the configured visible metrics; no new data/reference calculations.
+map_dashboard_summaries <- function(dates, root=".",weights_function=NULL,dashboard=read_map_dashboard_config(),
+    cache_name="regional-summaries.rds") {
+  configured <- attr(dashboard,"summary_config")
+  if(!identical(configured$layout,"per_map")) return(list())
+  settings <- configured$summaries[intersect(dashboard$id,names(configured$summaries))]
+  settings <- Filter(function(x) isTRUE(x$enabled),settings)
+  if(!length(settings)) return(list())
+  date_for <- function(id) {
+    key <- if(map_dashboard_summary_spec(id)$type=="temperature") "Temperature" else "Precipitation"
+    if(!is.null(dates) && key %in% names(dates)) as.character(dates[[key]]) else NA_character_
+  }
+  files <- vapply(names(settings),function(id) file.path(root,"data","processed","prism","az-nm-pad050","daily",
+    map_dashboard_summary_spec(id)$path,paste0(date_for(id),".tif")),character(1))
+  signature <- digest::digest(list(version=3L,settings=settings,files=files,
+    md5=unname(tools::md5sum(files)),terra=as.character(utils::packageVersion("terra")),
+    maps=as.character(utils::packageVersion("maps"))))
+  cache_path <- file.path(root,"data","processed","dashboard",cache_name)
+  cache <- if(file.exists(cache_path)) tryCatch(readRDS(cache_path),error=function(e) NULL) else NULL
+  if(is.null(weights_function) && identical(cache$signature,signature)) return(cache$summaries)
+  masks <- new.env(parent=emptyenv())
+  if(is.null(weights_function)) weights_function <- function(raster) {
+    key <- digest::digest(c(terra::nrow(raster),terra::ncol(raster),as.vector(terra::ext(raster)),terra::crs(raster)))
+    if(exists(key,masks,inherits=FALSE)) return(get(key,masks))
+    states <- sf::st_as_sf(maps::map("state",regions=c("arizona","new mexico"),fill=TRUE,plot=FALSE))
+    mask <- terra::rasterize(terra::project(terra::vect(states),terra::crs(raster)),raster,field=1,background=NA)
+    weights <- terra::values(terra::cellSize(raster,unit="km"),mat=FALSE)
+    weights[!is.finite(terra::values(mask,mat=FALSE))] <- 0
+    assign(key,weights,masks); weights
+  }
+  summaries <- lapply(names(settings),function(id) {
+    spec <- map_dashboard_summary_spec(id); setting <- settings[[id]]; note <- ""
+    values <- tryCatch({
+      if(!file.exists(files[[id]])) stop("Derived grid unavailable")
+      raster <- terra::rast(files[[id]])
+      if(terra::nlyr(raster)!=1L) stop("Expected a single derived layer")
+      data <- terra::values(raster,mat=FALSE)
+      if(spec$type %in% c("percentile","dry_spell") && any(data[is.finite(data)]<0 | data[is.finite(data)]>100))
+        stop("Invalid percentile grid")
+      weights <- weights_function(raster)
+      setNames(vapply(setting$metrics,function(metric) map_dashboard_regional_value(data,weights,metric,setting),numeric(1)),setting$metrics)
+    },error=function(e) {note <<- conditionMessage(e); setNames(rep(NA_real_,length(setting$metrics)),setting$metrics)})
+    list(id=id,type=spec$type,values=values,date=date_for(id),label=setting$label,settings=setting,note=note)
+  })
+  names(summaries) <- names(settings)
+  dir.create(dirname(cache_path),recursive=TRUE,showWarnings=FALSE)
+  saveRDS(list(signature=signature,summaries=summaries),cache_path)
+  summaries
+}
+
+map_dashboard_headlines <- function(dates,root=".",dashboard=read_map_dashboard_config(),weights_function=NULL) {
+  cards <- attr(dashboard,"summary_config")$headlines
+  if(!isTRUE(cards$enabled)) return(list())
+  # Headline maps need not appear in the six-map grid.
+  dashboard <- data.frame(id=names(cards$cards),stringsAsFactors=FALSE)
+  attr(dashboard,"summary_config") <- list(layout="per_map",summaries=cards$cards)
+  map_dashboard_summaries(dates,root,weights_function,dashboard,cache_name="headline-summaries.rds")
+}
+
+map_dashboard_headline_tone <- function(summary) {
+  if(any(!is.finite(summary$values))) return("neutral")
+  if(summary$type=="temperature") {
+    value <- summary$values[["regional_mean"]]
+    tone <- if(value < -.5) "cool" else if(value>.5) "warm" else "neutral"
+    return(paste0(tone,if(abs(value)>=3) " headline-strong" else ""))
+  }
+  low <- summary$values[["area_below_percentile"]]; high <- summary$values[["area_above_percentile"]]
+  settings <- summary$settings
+  if(low>=settings$mixed_area_percent && high>=settings$mixed_area_percent) return("mixed")
+  if(max(low,high)<settings$highlight_area_percent) return("neutral")
+  paste0(if(low>high) "dry" else "wet",if(max(low,high)>=settings$strong_area_percent) " headline-strong" else "")
+}
+
+map_dashboard_headline_text <- function(headlines) {
+  if(!length(headlines)) return(character())
+  lines <- c("::: {.dashboard-headlines}")
+  for(summary in headlines) {
+    settings <- summary$settings
+    tone <- map_dashboard_headline_tone(summary)
+    missing <- any(!is.finite(summary$values))
+    values <- if(missing) "Summary unavailable" else if(summary$type=="temperature")
+      paste0('<div class="headline-metrics headline-temperature"><span><strong>',
+        sprintf("%+.1f\u00b0F",summary$values[["regional_mean"]]),
+        '</strong><small>from normal</small></span></div>') else
+      paste0('<div class="headline-metrics"><span><strong>',
+        sprintf("%.0f%%",summary$values[["area_below_percentile"]]),
+        '</strong><small>below normal</small></span><span><strong>',
+        sprintf("%.0f%%",summary$values[["area_above_percentile"]]),
+        '</strong><small>above normal</small></span></div>')
+    date <- as.Date(summary$date)
+    through <- if(is.na(date)) "Date unavailable" else paste0("Through ",format(date,"%b %d, %Y"))
+    lines <- c(lines,paste0("::: {.dashboard-headline .headline-",gsub(" "," .",tone,fixed=TRUE),"}"),
+      paste0("### [",settings$title,"](pages/products/",summary$id,".qmd){.headline-link}"),"",
+      if(!identical(settings$show_period,FALSE)) paste0("[",summary$label,"]{.headline-period}") else character(),"",values,"",
+      paste0("[AZ + NM \u00b7 ",through,"]{.headline-date}"),":::","")
+  }
+  c(lines,":::","")
+}
+
+
 read_map_product_config <- function(path = file.path("config", "map-products.yml")) {
   if (!file.exists(path)) stop("Map-product configuration does not exist: ", path, call. = FALSE)
   config <- yaml::read_yaml(path)
@@ -132,6 +392,7 @@ read_map_dashboard_config <- function(
       snow$maximum_age_days!=floor(snow$maximum_age_days)))
     stop("Invalid seasonal snow dashboard settings.",call.=FALSE)
   attr(dashboard,"seasonal_snow") <- snow
+  attr(dashboard,"summary_config") <- map_dashboard_validate_summaries(config$dashboard,products,ids)
   rownames(dashboard) <- NULL
   dashboard
 }
@@ -198,14 +459,13 @@ map_dashboard_snow_selection <- function(site_dir="site",today=Sys.Date(),
   },error=function(e) unavailable("Snow comparison/reference unavailable; showing dry-spell rank."))
 }
 
-map_dashboard_page_text <- function(dashboard, expected_data_dates = NULL, snow=NULL,archive_years=integer()) {
-  grouped<-identical(as.character(dashboard$id),c("pcpn_total_07day","pcpn_percentile_30day",
-    "pcpn_percentile_90day","pcpn_water_year_percentile","tmean_departure_30day",
-    "pcpn_current_dry_spell_percentile"))
+map_dashboard_page_text <- function(dashboard, expected_data_dates = NULL, snow=NULL,archive_years=integer(),
+    roni=swc_read_dashboard_roni(), summaries=NULL,headlines=NULL) {
+  summary_config <- attr(dashboard,"summary_config")
+  groups <- summary_config$groups
   lines <- c(
     "---",
     'title: "Current Conditions"',
-    'subtitle: "Southwest Climate Watch"',
     "page-layout: full",
     "toc: false",
     "body-classes: dashboard-page",
@@ -216,7 +476,6 @@ map_dashboard_page_text <- function(dashboard, expected_data_dates = NULL, snow=
     "::: {.dashboard-heading-title}",
     "# Current Conditions",
     "",
-    "Southwest Climate Watch",
     ":::",
     "",
     "::: {.dashboard-status}",
@@ -226,16 +485,8 @@ map_dashboard_page_text <- function(dashboard, expected_data_dates = NULL, snow=
     ":::",
     ":::",
     "",
-    "::: {.dashboard-tool-links}",
-    "[Daily Explorer \u2014 investigate individual days](pages/daily-explorer.qmd){.dashboard-tool-link}",
-    "",
-    "[Station Conditions \u2014 local observations and records](pages/station-conditions.qmd){.dashboard-tool-link}",
-    "",
-    "[Current Snow \u2014 snow storage and recent changes](pages/current-snow.qmd){.dashboard-tool-link}",
-    "",
-    "[Historic Seasons \u2014 compare completed years](#historic-seasons){.dashboard-tool-link}",
-    ":::",
-    "",
+    swc_dashboard_roni_text(roni),
+    map_dashboard_headline_text(headlines),
     "::: {.dashboard-map-grid}"
   )
   for (index in seq_len(nrow(dashboard))) {
@@ -246,13 +497,15 @@ map_dashboard_page_text <- function(dashboard, expected_data_dates = NULL, snow=
     loading <- if (index <= 2L) "" else ' loading="lazy"'
     snow_card<-identical(product$id,"pcpn_current_dry_spell_percentile") && isTRUE(snow$available)
     if(snow_card) {image<-snow$image; page<-snow$page; alt<-"Snow water equivalent as percent of the date-specific median"}
-    if(grouped && index %in% c(1L,3L,5L)) {
-      heading<-c("Recent rainfall","Seasonal context",if(isTRUE(snow$available)) "Temperature and snow" else "Temperature and dry spells")[(index+1L)%/%2L]
+    for(group in groups) if(identical(product$id,as.character(group$products[[1L]]))) {
+      heading <- if(isTRUE(snow$available) && !is.null(group$snow_title)) group$snow_title else group$title
       lines<-c(lines,"::: {.dashboard-row-heading}",paste0("## ",heading),":::","")
     }
     lines <- c(
       lines,
       "::: {.dashboard-map-card}",
+      if(!snow_card && identical(summary_config$layout,"per_map"))
+        c("::: {.dashboard-map-summary}",map_dashboard_summary_text(summaries[[product$id]]),":::","") else character(),
       paste0("[![](", image, '){fig-alt="', alt, '"', loading, "}](", page, ")"),
       "",
       if(snow_card) paste0("::: {.dashboard-source-note}\nSNODAS \u00b7 ",snow$date,
@@ -273,6 +526,12 @@ map_dashboard_page_text <- function(dashboard, expected_data_dates = NULL, snow=
     "PRISM percentile ranks compare matching periods in 1991\u20132020. Low precipitation ranks indicate drier conditions. Temperature departure is in \u00b0F; positive values mean warmer conditions. A high dry-spell rank means an unusually long ongoing dry spell. These indicators describe conditions, not a combined drought classification.",
     "",
     "Water-year precipitation starts October 1. Early-season ranks describe a short period; use the 90-day map for broader context.",
+    "",
+    "Map summaries describe combined Arizona and New Mexico, weighted by grid-cell area within state boundaries. At least 98% valid area is required. Percentile summaries show area below or above the stated thresholds; they do not average pixel percentiles. Rainfall coverage uses the stated accumulation threshold. Each summary follows its map's period and data date.",
+    "",
+    "Very dry/wet: percentage of AZ/NM area below the 10th/above the 90th precipitation percentile by default. Long dry spells uses the high tail. Stronger chip colors indicate a larger affected area, not greater severity; gray indicates a smaller footprint. Temperature colors indicate cooler/warmer departures, not a significance test. Hover over a value for its configured threshold and date. Rainfall amounts remain neutral because amount alone does not establish rarity.",
+    "",
+    if(length(headlines)) "Headline precipitation cards show area below the 33rd/above the 67th percentile by default. Brown/teal indicates widespread below-/above-normal conditions; mixed shading retains both signals. These display cues are not regional percentile ranks or drought classifications. Headline temperature is an area-weighted departure from 1991\u20132020 normal.",
     if(isTRUE(snow$available)) "\nSnow percentages are not percentile ranks. Ratios use typical SWE of at least 1 inch and at least 18 reference years; the snow date and reference differ from PRISM." else character(),
     ":::",
     "",
@@ -283,6 +542,10 @@ map_dashboard_page_text <- function(dashboard, expected_data_dates = NULL, snow=
       "](pages/archive/wy",year,".qmd)"),character(1)),collapse=" \u00b7 "),
     "",
     "Additional completed years are listed under Historic Years in the navigation menu.",
+    ":::",
+    "",
+    "::: {.dashboard-explore-more}",
+    "**Explore more:** [Daily Explorer](pages/daily-explorer.qmd) \u00b7 [Station Conditions](pages/station-conditions.qmd) \u00b7 [Current Snow](pages/current-snow.qmd) \u00b7 [Historic Seasons](#historic-seasons)",
     ":::",
     "",
     "::: {.institutional-branding .dashboard-branding}",
@@ -700,6 +963,10 @@ build_map_product_site <- function(
   }
   writeLines(
     map_dashboard_page_text(dashboard, expected_data_dates,snow=snow,
+      headlines=map_dashboard_headlines(expected_data_dates,
+        root=dirname(normalizePath(site_dir,winslash="/",mustWork=TRUE)),dashboard=dashboard),
+      summaries=map_dashboard_summaries(expected_data_dates,
+        root=dirname(normalizePath(site_dir,winslash="/",mustWork=TRUE)),dashboard=dashboard),
       archive_years=as.integer(sub("^wy([0-9]{4})\\.qmd$","\\1",
         list.files(file.path(site_dir,"pages","archive"),pattern="^wy[0-9]{4}\\.qmd$")))),
     file.path(site_dir, "index.qmd"),
@@ -720,4 +987,142 @@ build_map_product_site <- function(
     )
   }
   invisible(products)
+}
+
+# Latest published CPC three-month RONI; never average three seasonal values.
+swc_roni_url <- "https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso/roni/"
+swc_enso_status_url <- "https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml"
+
+swc_roni_strength_label <- function(value) {
+  if(!is.numeric(value) || length(value)!=1L || !is.finite(value)) stop("Expected a finite RONI value.")
+  magnitude <- abs(value)
+  if(magnitude < .5) return("Neutral-range conditions")
+  strength <- if(magnitude>=2) "Very strong" else if(magnitude>=1.5) "Strong" else
+    if(magnitude>=1) "Moderate" else "Weak"
+  paste0(strength,if(value>0) " El Ni\u00f1o" else " La Ni\u00f1a","-range conditions")
+}
+
+swc_parse_enso_status <- function(html,today=Sys.Date()) {
+  doc <- xml2::read_html(html)
+  text <- gsub("[[:space:]\u00a0]+"," ",xml2::xml_text(xml2::xml_find_first(doc,"//body")),perl=TRUE)
+  if(!grepl("ENSO Alert System Status:.*Synopsis:",text)) stop("CPC advisory status not recognized.")
+  status <- trimws(sub("^.*ENSO Alert System Status:(.*?)Synopsis:.*$","\\1",text,perl=TRUE))
+  status <- gsub("\u00f1","n",status,fixed=TRUE)
+  allowed <- c("El Nino Advisory"="El Ni\u00f1o Advisory","La Nina Advisory"="La Ni\u00f1a Advisory",
+    "El Nino Watch"="El Ni\u00f1o Watch","La Nina Watch"="La Ni\u00f1a Watch",
+    "Final El Nino Advisory"="Final El Ni\u00f1o Advisory","Final La Nina Advisory"="Final La Ni\u00f1a Advisory",
+    "Not Active"="Not Active")
+  parts <- trimws(strsplit(status,"/",fixed=TRUE)[[1]])
+  if(!length(parts) || any(!parts %in% names(allowed))) stop("Unrecognized CPC advisory category.")
+  header <- sub("ENSO Alert System Status:.*$","",text)
+  date_text <- regmatches(header,regexpr("[0-9]{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) [0-9]{4}",header,perl=TRUE))
+  if(length(date_text)!=1L || !nzchar(date_text)) stop("CPC issue date missing.")
+  bits <- strsplit(date_text," ",fixed=TRUE)[[1]]
+  month <- match(bits[2],c("January","February","March","April","May","June","July","August","September","October","November","December"))
+  issued <- as.Date(sprintf("%04d-%02d-%02d",as.integer(bits[3]),month,as.integer(bits[1])))
+  if(is.na(issued) || issued>as.Date(today)) stop("Invalid or future CPC issue date.")
+  list(status=paste(unname(allowed[parts]),collapse=" / "),issued=issued)
+}
+
+swc_read_enso_status <- function(path=file.path("data","processed","roni","enso-status.rds"),
+    today=Sys.Date(),refresh=FALSE,fetch=function() {
+      httr2::resp_body_string(httr2::req_perform(httr2::req_timeout(httr2::request(swc_enso_status_url),15)))
+    }) {
+  cache <- if(file.exists(path)) tryCatch(suppressWarnings(readRDS(path)),error=function(e) NULL) else NULL
+  valid <- function(x) is.list(x) && is.character(x$status) && length(x$status)==1L &&
+    !is.na(x$status) && inherits(x$issued,"Date") && length(x$issued)==1L &&
+    !is.na(x$issued) && x$issued<=as.Date(today) && is.character(x$checked) && length(x$checked)==1L
+  if(!valid(cache)) cache <- NULL
+  if(refresh && (is.null(cache) || !identical(cache$checked,as.character(today)))) cache <- tryCatch({
+    next_status <- swc_parse_enso_status(fetch(),today)
+    if(!is.null(cache) && next_status$issued<cache$issued) stop("CPC response predates the cached advisory.")
+    next_status$checked <- as.character(today)
+    dir.create(dirname(path),recursive=TRUE,showWarnings=FALSE)
+    saveRDS(next_status,path); next_status
+  },error=function(e) {
+    message("ENSO status refresh unavailable; retaining dated cache if available: ",conditionMessage(e)); cache
+  })
+  if(is.null(cache)) return(NULL)
+  c(cache,list(cached=!identical(cache$checked,as.character(today)),
+    stale=as.integer(as.Date(today)-cache$issued)>45L))
+}
+
+swc_dashboard_enso_status_text <- function(status=NULL) {
+  link <- paste0("[CPC discussion](",swc_enso_status_url,")")
+  if(is.null(status)) return(paste0("**NOAA status:** unavailable. ",link))
+  paste0(if(isTRUE(status$stale)) "**Last reported NOAA status:** " else "**NOAA status:** ",status$status,
+    " \u00b7 issued ",format(status$issued,"%b %d, %Y"),". ",link,
+    if(isTRUE(status$cached) || isTRUE(status$stale)) paste0(" \u00b7 Source last checked ",status$checked,
+      if(isTRUE(status$stale)) "; advisory is over 45 days old." else " (cached).") else "")
+}
+
+swc_parse_roni <- function(html, today = Sys.Date()) {
+  document <- xml2::read_html(html)
+  rows <- xml2::xml_find_all(document, ".//tr")
+  records <- lapply(rows, function(row) {
+    cells <- trimws(xml2::xml_text(xml2::xml_find_all(row, "./td|./th")))
+    if (length(cells) < 2L || length(cells) > 13L || !grepl("^[12][0-9]{3}$", cells[1L])) return(NULL)
+    year <- as.integer(cells[1L])
+    values <- suppressWarnings(as.numeric(cells[-1L]))
+    length(values) <- 12L
+    # Table year is the middle month: DJF ends February, NDJ ends next January.
+    ends <- as.Date(sprintf("%04d-%02d-01", year + (2:13 > 12), (2:13 - 1L) %% 12L + 1L))
+    data.frame(period = c("DJF", "JFM", "FMA", "MAM", "AMJ", "MJJ",
+      "JJA", "JAS", "ASO", "SON", "OND", "NDJ"), end_month = ends, value = values)
+  })
+  values <- do.call(rbind, records)
+  if (is.null(values)) stop("CPC RONI table not recognized.")
+  current_month <- as.Date(format(as.Date(today), "%Y-%m-01"))
+  values <- values[is.finite(values$value) & abs(values$value) < 10 &
+    values$end_month < current_month, , drop = FALSE]
+  if (!nrow(values) || anyDuplicated(values$end_month)) stop("No unique completed RONI periods.")
+  values[which.max(values$end_month), , drop = FALSE]
+}
+
+swc_read_dashboard_roni <- function(path = file.path("data", "processed", "roni", "latest.rds"),
+    today = Sys.Date(), refresh = FALSE, fetch = function() {
+      response <- httr2::req_perform(httr2::req_timeout(httr2::request(swc_roni_url), 15))
+      httr2::resp_body_string(response)
+    }) {
+  cached <- if (file.exists(path)) tryCatch(suppressWarnings(readRDS(path)), error = function(e) NULL) else NULL
+  valid <- function(x) is.list(x) && is.data.frame(x$data) && nrow(x$data) == 1L &&
+    all(c("period", "end_month", "value") %in% names(x$data)) &&
+    is.finite(x$data$value) && inherits(x$data$end_month, "Date") &&
+    !is.na(x$data$end_month) && x$data$end_month < as.Date(format(today, "%Y-%m-01"))
+  if (!valid(cached)) cached <- NULL
+  if (refresh && (is.null(cached) || !identical(cached$checked, as.character(today)))) {
+    cached <- tryCatch({
+      result <- list(data = swc_parse_roni(fetch(), today), checked = as.character(today))
+      if (!is.null(cached) && result$data$end_month < cached$data$end_month)
+        stop("CPC response is older than the cached period.")
+      dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+      saveRDS(result, path)
+      result
+    }, error = function(e) {
+      message("RONI refresh unavailable; retaining dated cache if available: ", conditionMessage(e))
+      cached
+    })
+  }
+  if (is.null(cached)) return(NULL)
+  c(as.list(cached$data[1L, ]), list(checked = cached$checked,
+    cached = !identical(cached$checked, as.character(today))))
+}
+
+swc_dashboard_roni_text <- function(roni = NULL,status=swc_read_enso_status()) {
+  if (is.null(roni)) return(c("::: {.archive-year-intro .dashboard-roni}",
+    "**Latest three-month RONI:** unavailable.", "",
+    paste0("[NOAA CPC source](", swc_roni_url, ")"),"",swc_dashboard_enso_status_text(status), ":::", ""))
+  value <- roni$value
+  category <- if (value >= .5) "el-nino" else if (value <= -.5) "la-nina" else "neutral"
+  label <- swc_roni_strength_label(value)
+  end <- as.Date(roni$end_month)
+  start <- seq(end, by = "-1 month", length.out = 3L)[3L]
+  period <- paste0(format(start, "%b %Y"), "\u2013", format(end, "%b %Y"))
+  c(paste0("::: {.archive-year-intro .dashboard-roni .archive-roni-", category, "}"),
+    paste0("[", label, " \u00b7 RONI ", sprintf("%+.1f", value), " \u00b0C]{.archive-roni-badge}"),
+    "", paste0("**", roni$period, " \u00b7 ", period, "** \u2014 latest published three-month period."),
+    "",swc_dashboard_enso_status_text(status),
+    "", paste0("Recent values are provisional; one period does not establish an ENSO episode. ",
+      "[NOAA CPC](", swc_roni_url, ")", if (isTRUE(roni$cached))
+      paste0(" \u00b7 Cached source last checked ", roni$checked, ".") else ""), ":::", "")
 }

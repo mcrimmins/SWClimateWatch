@@ -11,7 +11,9 @@ dates<-map_product_expected_data_dates()
 snow<-map_dashboard_snow_selection()
 years<-as.integer(sub("^wy([0-9]{4})\\.qmd$","\\1",
   list.files(file.path("site","pages","archive"),pattern="^wy[0-9]{4}\\.qmd$")))
-page<-map_dashboard_page_text(dashboard,dates,snow=snow,archive_years=years)
+summaries<-map_dashboard_summaries(dates,dashboard=dashboard)
+headlines<-map_dashboard_headlines(dates,dashboard=dashboard)
+page<-map_dashboard_page_text(dashboard,dates,snow=snow,archive_years=years,summaries=summaries,headlines=headlines)
 writeLines(page,file.path("site","index.qmd"),useBytes=TRUE)
 copy<-function(from,to) {
   dir.create(dirname(to),recursive=TRUE,showWarnings=FALSE)
@@ -35,7 +37,7 @@ preview_page(page,"index.qmd")
 if(has_example) {
   image<-"maps/generated/snodas/current/swe-percent-median.png"
   demo<-map_dashboard_page_text(dashboard,dates,
-    snow=list(available=TRUE,date="2023-03-01",image=image,page="pages/current-snow.qmd"),archive_years=years)
+    snow=list(available=TRUE,date="2023-03-01",image=image,page="pages/current-snow.qmd"),archive_years=years,summaries=summaries,headlines=headlines)
   # Copy this historical sample only into the separate preview; never site/.
   dir.create(dirname(file.path(directory,image)),recursive=TRUE,showWarnings=FALSE)
   copy(example,file.path(directory,image))

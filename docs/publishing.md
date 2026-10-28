@@ -281,3 +281,128 @@ For low-level deployment settings such as a different destination or an
 explicit deletion preview, use `deploy_swc_site()` in
 [`scripts/deploy-site-s3.R`](../scripts/deploy-site-s3.R). Keep `delete = FALSE`
 for routine publishing.
+## Home RONI and station guidance (October 28, 2026)
+
+The home card uses NOAA CPC's published ERSSTv6 three-month running RONI,
+not an average of three seasonal RONI values. The daily update entry point and
+`scripts/build-map-product-site.R` check the small source table at most once
+per successful check per day and
+caches the latest completed period in `data/processed/roni/latest.rds`.
+Recent source values can be revised. The card labels warm/neutral/cold index
+ranges rather than declaring an ENSO episode from one period. A failed refresh
+retains the dated cache with a visible cached-source notice; without a cache,
+the card explicitly says unavailable. No maps or historic RONI snapshots change.
+
+For a site-only staging trial after checking out the tested code, refresh the
+station HTML from existing summaries before staging it (staging alone copies
+the previous HTML):
+
+```bash
+Rscript scripts/refresh-acis-station-explorer-preview.R
+Rscript scripts/stage-station-beta.R
+set -a
+source /home/crimmins/.config/swclimatewatch/staging.env
+set +a
+TZ=America/Phoenix Rscript scripts/publish-site-s3.R
+```
+
+The station page's "Reading this preview" disclosure starts closed and opens
+using the native keyboard-accessible summary control. A normal full daily run
+also rebuilds that HTML from the updated station summaries.
+
+### Per-map home summaries (local Option A trial)
+
+Top quick-link cards are replaced by an Explore more link row near the bottom.
+Each map has its own combined AZ/NM summary above the image. Values are
+area-weighted using state-boundary cell-center masks, require 98% valid regional
+area, and carry the matching input date. Precipitation-total maps can show mean
+regional accumulation and the area at/above a configured threshold. Percentile
+maps show area strictly below/above configured percentile thresholds, never an
+average of pixel percentiles. Temperature-departure maps show regional mean
+departure. Dry-spell rank maps show area above a selected rank threshold.
+
+Only existing date-matched accumulation, percentile-rank and temperature
+departure grids are read. Their checksums, dates and summary version invalidate
+`data/processed/dashboard/regional-summaries.rds`; unchanged inputs reuse it.
+Missing inputs display unavailable rather than older values. No downloads or
+climatology builds are triggered. Summary colors are visual cues, not drought
+classifications or statistical significance tests. Refresh the local trial with
+`source("scripts/preview-home-dashboard.R")` or rebuild the full site normally.
+
+Customize `config/map-products.yml` under `dashboard`:
+
+- `products`: selected enabled map IDs, in display order (existing four-to-six limit).
+- `groups`: titles and product lists; these must cover the selected maps exactly
+  once in the same order. Omit groups for an ungrouped map grid. `snow_title`
+  optionally supplies the title when the seasonal snow card is selected.
+- `summary_layout`: `per_map` or `none`. Section banners/top summary cards are
+  design alternatives, not currently implemented layout modes.
+- `summaries`: settings keyed by map ID; `enabled: false` hides one summary.
+  Omit an entry to show a map without a summary. `label` changes its period label.
+- `metrics`: `regional_mean`, `area_above_threshold`, `area_below_percentile`,
+  `area_above_percentile`, as supported by the matching map type. Configure
+  `threshold_inches`, `lower_percentile`, and `upper_percentile` where relevant.
+
+The generator rejects unknown/incompatible metrics and invalid thresholds.
+Changing map order does not change summary ownership. Supporting a new map type
+or calculation requires an R adapter; YAML cannot define arbitrary formulas.
+Seasonal snow substitution suppresses the dry-spell summary; the snow card keeps
+its own explicit source/date/reference note instead.
+
+Summary text uses short individual chips. Very dry/Very wet mean regional area
+below the 10th/above the 90th precipitation percentile by default; hovering exposes the precise configured threshold and
+source date. Each tail is colored independently: defaults highlight at 10% area
+and use a stronger shade at 25%. Override `highlight_area_percent` and
+`strong_area_percent` in a summary's YAML settings (ordered values from 0 to
+100). Stronger colors indicate a larger affected area, not greater severity.
+These are display thresholds, not tests of regional statistical rarity.
+Temperature chips use cool/warm hues beyond +/-0.5 F departure, with stronger
+shades at absolute departure >=3 F; no significance claim is made. Raw rainfall
+amount/coverage chips remain neutral. Map dates and the shared regional/method
+note replace repeated dates and long explanations in every visible chip.
+
+### Headline condition cards (local trial)
+
+`dashboard.headlines` independently controls one to three linked cards, with an
+overall `enabled` switch. Each `cards` entry selects an enabled `product`,
+`title`, period `label`, and percentile/color thresholds where relevant. Current
+defaults are 7-day and 90-day precipitation percentile maps (below P33 / above
+P67 area fractions), plus 30-day mean-temperature departure. A headline map
+does not have to appear in the six-map grid. Entire cards link to their map's
+detail page, with keyboard focus on the title link.
+
+For precipitation, the default color is neutral unless at least 50% of the
+region is in one tail; 67% receives stronger shading. If both tails cover at
+least 25%, mixed shading takes precedence. Both fractions remain visible in
+every available precipitation card. Configure these via `highlight_area_percent`,
+`strong_area_percent`, and `mixed_area_percent`. These are presentation rules,
+not significance tests. Temperature colors follow the departure cues described
+above. Precise P33/P67 cutoffs and color rules are independent of the per-map
+P10/P90 Very dry/Very wet chips.
+
+Headline calculations read only cached derived grids and use the same regional
+area weighting/98% coverage guard. `headline-summaries.rds` keeps their cache
+separate from per-map summaries. Missing data produce a neutral unavailable
+card; no date substitution or downloads occur.
+
+### ENSO card magnitude versus official status
+
+The home RONI badge now labels neutral range (absolute index <0.5 C), weak
+(0.5 to <1), moderate (1 to <1.5), strong (1.5 to <2), and very strong (>=2),
+using El Nino-range wording for positive and La Nina-range for negative values.
+These bands describe the latest published three-month index, not an automatic
+operational ENSO declaration. Recent RONI estimates remain provisional.
+
+A separate line reports the exact recognized alert category and issue date
+from [CPC's ENSO Diagnostic Discussion](https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml).
+The daily update and site-only catalog entry points check this small source
+once per successful daily check, caching it in
+`data/processed/roni/enso-status.rds`. Failed/unrecognized/future-dated or older
+responses cannot replace the last good status. Cached fallback is labeled;
+an issue over 45 days old becomes "Last reported NOAA status" with an age
+caution. Missing status remains explicitly unavailable even if RONI is known.
+
+Historic pages retain their existing badges for now. Their next refresh should
+apply consistent strength bands to the documented DJF value, with period/source
+context and without applying the current operational advisory retrospectively.
+This follow-up is recorded in the development roadmap.

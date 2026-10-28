@@ -30,6 +30,17 @@ production promotion remain pending.
 
 ## Agreed additions and enhancements
 
+**Historic ENSO labels at next archive refresh (October 28 request):** apply the
+home card's neutral/weak/moderate/strong/very-strong RONI magnitude bands to each
+historic page's documented DJF value, preserving its period, source version and
+snapshot provenance. Use index-range wording rather than declaring an episode
+from one value. Any historical official-status statement must use a source
+applicable to that season; never copy today's CPC advisory onto historic years.
+The current home card now separates latest three-month RONI magnitude from the
+dated CPC operational status. Historic pages have not been regenerated for this
+labeling change; include source checks, label tests and rendered review when
+those pages are next refreshed.
+
 | Workstream | Next bounded step | Relative effort |
 | --- | --- | --- |
 | Historical snow anomaly companions | Validate seasonal peak-SWE departure and percent-of-median pilots, then stage all eligible WY2005-WY2025 years. Retain coverage and support guards and existing archive cautions. | Moderate |
@@ -155,6 +166,66 @@ at regulated or otherwise affected sites. Show explicit limitations rather than
 treating unsupported comparisons as normal conditions. Benchmark a small
 station network, incremental refreshes and cached/lazy-loaded browser payloads
 before integrating it into the daily publisher or historic-season pages.
+
+### Event summaries connecting weather, precipitation and impacts
+
+**Status: deferred by user request, October 27, 2026.** Preserve these ideas for
+a later scoping session; no prototype or daily-publisher integration is planned
+in the current work.
+
+Scoping reference: [CW3E event summary, October 21-23, 2026](https://cw3e.ucsd.edu/cw3e-event-summary-21-23-october-2026/),
+reviewed October 27. Its embedded figures connect 500-hPa evolution and moisture
+transport with Stage IV event precipitation, precipitation as a fraction of
+normal water-year precipitation, WPC rainfall reports, archived WPC/SPC outlooks,
+NWS hazards and local storm reports, gauge flood categories/hydrographs, and
+documented impacts. These are complementary sources with different reporting
+and accumulation windows, not interchangeable observations.
+
+Candidate bounded first prototype: select one completed Southwest event and
+assemble a linked event view from existing caches, outside the daily publisher.
+
+Preferred eventual placement is an optional **Event summary** view within Daily
+Explorer, preserving existing single-day and 7-/30-day navigation. Begin with
+prebuilt named events whose dates are explicitly configured, with shareable
+links from historic-season pages. The browser selects among existing products;
+the static site cannot run R to calculate a new map for arbitrary selected dates.
+Cache completed-event outputs and invalidate them when relevant inputs or
+calculation/rendering settings change, rather than rebuilding all events daily.
+
+Keep unrestricted start/end-date summaries as a separate feasibility question:
+browser calculation would require publishing compact numeric daily grids
+(existing PNGs cannot be summed), with payload and responsiveness benchmarks.
+An on-demand calculation service is another option but adds server operations
+beyond the current static-site design. Neither option is selected for development.
+
+1. Event-total PRISM precipitation, daily progression, station totals, and
+   contribution to water-year-to-date precipitation. Separately consider event
+   precipitation divided by the full normal water-year total; label this
+   denominator explicitly, since it is not percent of normal for the event.
+2. Link the same dates to existing 500-mb, jet and PWAT/low-level-flow maps and
+   archived discussions. Daily means explain broad evolution; selected subdaily
+   analyses could be a later event-only option. PWAT and 850-mb winds do not
+   constitute IVT or establish an atmospheric-river classification.
+3. Add event station rankings only with matched-duration/calendar definitions,
+   completeness and reference/sample support. Keep rainfall rarity separate
+   from fraction of annual normal and from hydrologic impact.
+4. Scope a small gauge network with observed hydrographs, event peaks and
+   supported flood categories, reusing the hydrology workstream. Preserve
+   missing/provisional/beyond-measurement-range cautions; avoid automatic
+   record claims without verified historical support.
+5. Coordinate event overlays for local storm reports and issued hazard polygons
+   with their existing scope. Archived WPC excessive-rainfall and SPC convective
+   outlooks are optional forecast-context links, clearly separated from what
+   actually occurred. Curated impact/source links can supplement automated maps.
+
+First decisions: event dates and reporting-day conventions; fixed versus
+user-selected windows; AZ/NM versus a broader Four Corners context; station and
+basin summaries; ranking/reference definitions; and persistent event URLs linked
+from Daily Explorer and historic seasons. Benchmark cached event sums and
+payloads before integration. Stage IV/MRMS, IVT/AR diagnostics, subdaily radar
+and storm animations require separate source/cost assessment; they are not
+added to the routine daily downloads by this scoping entry. Existing IVT
+deferral remains in effect. No new operational product is enabled here.
 
 ## Suggested sequence
 

@@ -17,6 +17,74 @@ dashboard:
     - pcpn_water_year_percentile
     - tmean_departure_30day
     - pcpn_current_dry_spell_percentile
+  # Supported layouts: per_map or none. Summaries follow product IDs when reordered.
+  summary_layout: per_map
+  # Independent of the six maps below. Links open the corresponding full map.
+  headlines:
+    enabled: true
+    cards:
+      - product: pcpn_percentile_07day
+        title: Recent precipitation
+        label: Past 7 days
+        lower_percentile: 33
+        upper_percentile: 67
+        highlight_area_percent: 50
+        strong_area_percent: 67
+        mixed_area_percent: 25
+      - product: pcpn_percentile_90day
+        title: Seasonal Precipitation
+        label: Past 90 days
+        show_period: true
+        lower_percentile: 33
+        upper_percentile: 67
+        highlight_area_percent: 50
+        strong_area_percent: 67
+        mixed_area_percent: 25
+      - product: tmean_departure_30day
+        title: Recent temperature
+        label: Past 30 days
+  groups:
+    - title: Recent rainfall
+      products: [pcpn_total_07day, pcpn_percentile_30day]
+    - title: Seasonal context
+      products: [pcpn_percentile_90day, pcpn_water_year_percentile]
+    - title: Temperature and dry spells
+      snow_title: Temperature and snow
+      products: [tmean_departure_30day, pcpn_current_dry_spell_percentile]
+  # Each summary must use metrics supported by its map. Set enabled: false to hide.
+  summaries:
+    pcpn_total_07day:
+      enabled: true
+      label: Past 7 days
+      metrics: [regional_mean, area_above_threshold]
+      threshold_inches: 0.10
+    pcpn_percentile_30day:
+      enabled: true
+      label: Past 30 days
+      metrics: [area_below_percentile, area_above_percentile]
+      lower_percentile: 10
+      upper_percentile: 90
+    pcpn_percentile_90day:
+      enabled: true
+      label: Past 90 days
+      metrics: [area_below_percentile, area_above_percentile]
+      lower_percentile: 10
+      upper_percentile: 90
+    pcpn_water_year_percentile:
+      enabled: true
+      label: Water year to date
+      metrics: [area_below_percentile, area_above_percentile]
+      lower_percentile: 10
+      upper_percentile: 90
+    tmean_departure_30day:
+      enabled: true
+      label: Past 30 days
+      metrics: [regional_mean]
+    pcpn_current_dry_spell_percentile:
+      enabled: true
+      label: Ongoing dry spell
+      metrics: [area_above_percentile]
+      upper_percentile: 90
   seasonal_snow:
     enabled: true
     replace: pcpn_current_dry_spell_percentile
