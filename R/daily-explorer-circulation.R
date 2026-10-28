@@ -4,7 +4,16 @@ weather_renderer_signature <- function() {
     "weather_moisture_grid","weather_moisture_select_field","run_weather_moisture_pilot",
     "weather_core_check_range","weather_core_find_surface_pressure","weather_core_recover_surface_pressure")
   digest::digest(list(version=2L,R=R.version.string,
-    moisture=lapply(moisture,function(name) if(exists(name,mode="function")) body(get(name)) else NULL),
+    moisture=lapply(moisture,function(name) {
+      if(!exists(name,mode="function")) return(NULL)
+      code <- body(get(name))
+      # Canonicalize the transport-only attributed-raw writer repair to its
+      # previous call. It changes saved bytes' attributes, not bytes or pixels,
+      # and must not invalidate all retained map dates.
+      if(name=="run_weather_moisture_pilot") code <- do.call(substitute,
+        list(code,list(weather_moisture_write_bin=quote(writeBin))))
+      code
+    }),
     functions=lapply(list(weather_core_decode,weather_core_grid,weather_gaussian_latitudes,
       weather_circulation_plot,weather_contour_labels,weather_streamlines),body),
     packages=vapply(c("terra","ggplot2","maps","scales"),function(p)

@@ -290,3 +290,31 @@ explicit unavailable dates. A repeat with no new/revised inputs should reuse
 maps. Check the weather summary for failures before filling older dates with
 the bounded backfill commands above. Leave production configuration and cron
 unchanged until this staging trial passes.
+
+## October 28 staging refresh diagnosis
+
+The October 26 daily pgb/flx indexes both returned HTTP 404 when checked on
+October 28; keep that date unavailable and retry after upstream publication.
+Do not substitute another date or remove the last verified weather maps.
+
+The October 25 recheck exposed `can only write vector objects`: moisture range
+responses now carry object-size/ETag attributes for recovery validation, but
+base R `writeBin` rejects attributed raw vectors. `weather_moisture_write_bin`
+removes attributes from its local copy at the persistence boundary. Bytes and
+the caller's transport metadata are unchanged. A regression test covers repeated
+writes, and the renderer signature canonicalizes this transport-only helper to
+its previous write call, preserving existing retained map fingerprints. Actual
+plotting changes still invalidate the render cache.
+
+After checking out this fix in staging, retry recent existing dates without
+attempting unavailable new ones:
+
+```bash
+TZ=America/Phoenix Rscript -e 'source("scripts/load-weather-circulation-archive.R"); print(update_weather_circulation_archive(max_new_dates=0L, recheck_days=3L))'
+```
+
+On October 28 this retries the failed October 25 recheck. One pending October 26
+date and a coverage WARN can remain until NOAA posts it. To attempt missing
+dates later, use `Rscript scripts/update-weather-circulation.R`, then publish
+the refreshed assets with the staging configuration and rerun the publication
+audit. No complete climate-data rerun or cache deletion is needed for this fix.

@@ -1,5 +1,21 @@
 source(file.path(project_root,"R","weather-moisture-pilot.R"))
 
+testthat::test_that("refreshed moisture bytes can be saved without losing caller metadata", {
+  bytes <- charToRaw("GRIB refreshed field bytes 7777")
+  original <- bytes
+  attr(bytes,"object_size") <- 4000000
+  attr(bytes,"etag") <- '"source-version"'
+  path <- tempfile(); on.exit(unlink(path),add=TRUE)
+  weather_moisture_write_bin(bytes,path)
+  testthat::expect_identical(readBin(path,"raw",n=file.info(path)$size),original)
+  testthat::expect_identical(attr(bytes,"object_size"),4000000)
+  testthat::expect_identical(attr(bytes,"etag"),'"source-version"')
+  # Repeat the refresh against an existing cache file.
+  weather_moisture_write_bin(bytes,path)
+  testthat::expect_identical(readBin(path,"raw",n=file.info(path)$size),original)
+  testthat::expect_error(weather_moisture_write_bin(list(bytes),path),"raw weather")
+})
+
 testthat::test_that("missing terrain fields degrade overlays without relaxing required fields", {
   idx<-data.frame(variable="PRES",level="surface",period="day",
     timing="8@3 hour ave(anl),missing=0",start=0,end=100)

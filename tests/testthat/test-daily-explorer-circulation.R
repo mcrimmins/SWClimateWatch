@@ -1,3 +1,17 @@
+testthat::test_that("transport-only writer fix preserves retained render fingerprints", {
+  for(file in c("weather-circulation-pilot.R","weather-core-index-recovery.R","weather-moisture-pilot.R"))
+    source(file.path(project_root,"R",file))
+  env <- new.env(parent=globalenv())
+  sys.source(file.path(project_root,"R","daily-explorer-circulation.R"),envir=env)
+  current <- env$weather_renderer_signature()
+  old <- run_weather_moisture_pilot
+  body(old) <- do.call(substitute,list(body(old),list(weather_moisture_write_bin=quote(writeBin))))
+  env$run_weather_moisture_pilot <- old
+  testthat::expect_identical(env$weather_renderer_signature(),current)
+  env$weather_moisture_plot <- function() "changed actual rendering"
+  testthat::expect_false(identical(env$weather_renderer_signature(),current))
+})
+
 testthat::test_that("circulation render cache verifies inputs, renderer and PNG hashes", {
   env <- new.env(parent=globalenv())
   sys.source(file.path(project_root,"R","daily-explorer-circulation.R"),envir=env)

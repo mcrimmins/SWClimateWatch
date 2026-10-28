@@ -1,4 +1,12 @@
 # Bounded PWAT/MSLP/low-level-wind renderer, used by the opt-in weather adapter.
+weather_moisture_write_bin <- function(bytes,path) {
+  if(!is.raw(bytes)) stop("Expected raw weather response bytes.")
+  # Range-response attributes carry ETag/object size for recovery checks, but
+  # writeBin requires an unadorned vector. Keep the caller's metadata intact.
+  attributes(bytes) <- NULL
+  writeBin(bytes,path)
+}
+
 weather_moisture_grid <- function(path,reference=NULL) {
   if (is.null(reference)) return(weather_core_grid(path))
   tryCatch(weather_core_grid(path),error=function(error) {
@@ -254,7 +262,7 @@ run_weather_moisture_pilot <- function(dates=as.Date(c("2023-03-01","2024-07-15"
       marker<-paste0(path,".rds")
       old<-if(file.exists(marker)) readRDS(marker) else NULL
       if(force_refresh || !file.exists(path) || !is.list(old) || !identical(old$md5,unname(tools::md5sum(path)))) {
-        raw<-get(paste0(row$base,".grb"),row$start,row$end); writeBin(raw,path)
+        raw<-get(paste0(row$base,".grb"),row$start,row$end); weather_moisture_write_bin(raw,path)
         saveRDS(list(md5=unname(tools::md5sum(path))),marker)
       }
       info<-terra::describe(path,print=FALSE)
