@@ -96,7 +96,13 @@ network requests.
 
 Update mode intentionally revisits nine PRISM revision ages for each of the
 three downloaded variables, so an ordinary run may show as many as 27 small
-requests even when no new date is available. Each refreshed GeoTIFF is compared
+revision requests even when no new date is available. It then tries up to three
+additional requests for yesterday, admitting that date only when all three
+fields pass validation. Unavailable or incomplete optional data leave the last
+verified complete set in use. The request cap covers both steps. Set
+`SWC_PRISM_TRY_YESTERDAY=false` to use only the original two-day/revision queue.
+See [availability and fallback methods](docs/prism-data-methods.md#opportunistic-one-day-operational-lag).
+Each refreshed GeoTIFF is compared
 with its previous checksum. If all downloads are byte-identical, the workflow
 skips the archive-wide checksum scan, processing, all 51 product maps, and the
 overview map. A sub-second manifest comparison still checks for any raw file

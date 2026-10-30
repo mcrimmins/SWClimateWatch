@@ -297,7 +297,8 @@ testthat::test_that("final notices report elapsed time and fresh run statistics"
   notices <- list()
   prism <- function() list(summary = data.frame(
     data_changed = TRUE, downloaded = 27L, downloaded_changed = 3L,
-    processed = 3L, maps_rebuilt = TRUE))
+    processed = 3L, maps_rebuilt = TRUE), availability = data.frame(
+      status = "FALLBACK", selected_date = "2026-09-30"))
   publish <- function(dry_run) list(validation = list(
     current_passed = 51L, current_total = 51L,
     archive_passed = 352L, archive_total = 352L,
@@ -319,6 +320,7 @@ testthat::test_that("final notices report elapsed time and fresh run statistics"
   success <- tail(notices, 1L)[[1L]]$message
   testthat::expect_match(success, "Published in [0-9]+[smh]")
   testthat::expect_match(success, "PRISM: 27 checked, 3 changed, 3 processed; maps rebuilt")
+  testthat::expect_match(success, "PRISM date: 2026-09-30 (fallback; latest complete set retained).", fixed = TRUE)
   testthat::expect_match(success, "Stations: updated; 62 records \\(51 mapped\\)")
   testthat::expect_match(success, "51/51 current, 352/352 historic passed")
   testthat::expect_false(grepl("legacy", success, fixed = TRUE))

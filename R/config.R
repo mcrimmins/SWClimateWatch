@@ -76,6 +76,10 @@ swc_prism <- list(
   # monthly through six months. The 215-day check follows the approximate
   # six-month window so a late final batch is not missed by the 184-day check.
   revision_ages = c(2L, 6L, 31L, 61L, 92L, 123L, 153L, 184L, 215L),
+  # Yesterday is optional: admit all three fields together after validation.
+  try_yesterday = tolower(trimws(Sys.getenv("SWC_PRISM_TRY_YESTERDAY", "true"))) %in%
+    c("true", "1", "yes", "on"),
+  availability_timeout_seconds = 45L,
   bootstrap_chunk = "month",
   request_timeout_seconds = 180L,
   max_requests_per_run = 100L,

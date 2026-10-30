@@ -30,6 +30,94 @@ calendar-month request therefore contains one variable, and each daily value is
 stored as a separate GeoTIFF band. Band dates are read from GDAL `Date`
 metadata rather than inferred from layer order alone.
 
+## Opportunistic one-day operational lag
+
+The normal revision/gap planner targets today minus two days. After that queue
+completes, `sync_prism()` also tries yesterday as an optional complete set.
+[PRISM's update calendar](https://prism.oregonstate.edu/calendar/) states that
+the first model run occurs about 24 hours after the PRISM day ends at 12 UTC
+(05:00 Arizona time). RCC-ACIS ingestion may add further delay; availability
+must be checked at the time of the scheduled update.
+
+Run this isolated audit from the project root, preferably around 08:00 Arizona
+time on several days:
+
+```r
+source("scripts/audit-prism-availability.R")
+prism_availability_audit$dates
+```
+
+On the VM the equivalent command is:
+
+```bash
+TZ=America/Phoenix Rscript scripts/audit-prism-availability.R
+```
+
+The audit makes nine bounded requests (three days, three variables), validates
+GeoTIFF dates and geometry, checks finite values against configured plausible
+ranges, and requires at least 99.9% coverage of the same variable's valid cells
+in the three-day-old control. This is an availability screen, not a scientific
+quality certification. Dry precipitation grids containing valid zeros qualify;
+all-missing grids, partial coverage, invalid values, and request errors do not.
+If the control cannot be read or contains no valid cells, the candidate cannot
+qualify. Temporary grids are removed; operational grids, manifests, maps and
+S3 are untouched. Each request has a 45-second timeout and no automatic retries.
+
+Reports are written under `data/diagnostics/prism-availability/`: timestamped
+`*-fields.csv` retain each run, and `latest-fields.csv` / `latest-dates.csv`
+summarize the latest check. Request failures are recorded separately from
+missing data so connectivity problems are not interpreted as source latency.
+
+Initial live check on October 30, 2026 at 10:14 MST: October 27, 28 and 29
+all qualified for precipitation, maximum temperature and minimum temperature.
+Nine requests completed in 16.9 seconds. This establishes one-day availability
+at that time, but does not yet establish reliable availability at 08:00.
+
+### Operational acceptance and fallback
+
+Yesterday is accepted only when maximum temperature, minimum temperature and
+precipitation all pass dated-band, geometry, plausible-range and coverage
+validation. Coverage must include at least 99.9% of each variable's valid
+two-day-old control footprint. All three downloads stay in a temporary staging
+directory until validation succeeds; only then are they installed and registered
+in one manifest update. A local installation error rolls back the set and remains
+fatal, rather than being mislabeled as upstream unavailability.
+
+An HTTP error, timeout, malformed/misdated response, all-missing grid, invalid
+range or insufficient coverage rejects the optional set. Normal processing and
+publication continue using the completed two-day-old set. A prior verified
+yesterday set from an earlier same-day run is retained when a refresh fails;
+its checksums and validity are rechecked before retaining it. Optional fields
+are never admitted individually. The existing revision ages and gap recovery
+remain unchanged; their errors retain the existing failure policy.
+
+This adds at most three requests, each with a 45-second timeout and no retries,
+after the normal queue. The same request cap covers both queues; fewer than
+three slots remaining defers the whole optional set. A custom subset-variable
+update or missing control set skips this optional step. The two-day-old control
+is a validation reference, not a delay imposed on maps when yesterday qualifies.
+
+Console output and `data/diagnostics/prism-availability/update-status.csv` report
+`ACCEPTED`, `FALLBACK`, `RETAINED`, `DEFERRED`, or `SKIPPED`, with candidate and
+selected dates, optional request count, and reason. The daily update result
+exposes the report as `$availability`; the final console/ntfy summary includes
+the selected date and availability outcome. Existing verified data are kept if
+the optional check is skipped. Set `SWC_PRISM_TRY_YESTERDAY=false` before sourcing
+configuration (or in the VM environment file) to restore two-day-only behavior.
+
+Run the small isolated integration test without rendering or uploading:
+
+```r
+source("scripts/test-prism-latest-fallback.R")
+```
+
+It downloads three two-day-old control fields into temporary storage, simulates
+an unavailable yesterday to verify fallback, then tries yesterday against the
+live service. The live outcome may legitimately be `FALLBACK` early in the day.
+Temporary grids are removed and a small `live-smoke.csv` report is retained.
+On October 30, 2026 this test verified both simulated fallback to October 28
+and live acceptance of all three October 29 fields.
+
 ## Periods of record
 
 The archive period and statistical baselines serve different purposes and must

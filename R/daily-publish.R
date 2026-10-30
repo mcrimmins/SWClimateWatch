@@ -122,6 +122,13 @@ swc_daily_publish_summary_lines <- function(record, prism = NULL, snow = NULL,
         row$downloaded, row$downloaded_changed, row$processed,
         if (isTRUE(row$maps_rebuilt[[1L]])) "rebuilt" else "skipped"))
     } else lines <- c(lines, paste0("PRISM: data ", changed, "."))
+    availability <- prism$availability
+    if (is.data.frame(availability) && nrow(availability) &&
+        !is.na(availability$selected_date[1L])) {
+      lines <- c(lines, paste0("PRISM date: ", availability$selected_date[1L],
+        if (availability$status[1L] == "ACCEPTED") " (yesterday available)." else
+          paste0(" (", tolower(availability$status[1L]), "; latest complete set retained).")))
+    }
   }
   if (is.list(snow) && is.list(snow$maps) && length(snow$maps$status) == 1L) {
     snow_line <- paste0("Snow: ", gsub("_", " ", tolower(snow$maps$status)),

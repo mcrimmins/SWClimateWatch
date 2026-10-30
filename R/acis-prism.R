@@ -251,6 +251,8 @@ plan_prism_download <- function(
     paste0(date_label, ".tif")
   )
   rownames(plan) <- NULL
+  attr(plan, "manifest_path") <- prism_manifest_path(raw_dir)
+  if (mode == "update") attr(plan, "candidate_date") <- today - 1L
   plan
 }
 
@@ -510,15 +512,190 @@ sync_prism <- function(
     max_requests = swc_prism$max_requests_per_run,
     delay_seconds = swc_prism$request_delay_seconds,
     jitter_seconds = swc_prism$request_jitter_seconds,
-    quiet = FALSE) {
+    quiet = FALSE,
+    try_yesterday = swc_prism$try_yesterday,
+    availability_path = file.path("data", "diagnostics", "prism-availability", "update-status.csv"),
+    manifest_path = NULL,
+    download_function = download_prism_plan,
+    candidate_function = download_prism_latest_set) {
   mode <- match.arg(mode)
   plan <- plan_prism_download(mode = mode, ...)
-  download_prism_plan(
+  manifest_path <- manifest_path %||% attr(plan, "manifest_path") %||% prism_manifest_path()
+  records <- download_function(
     plan,
+    manifest_path = manifest_path,
     force = force,
     max_requests = max_requests,
     delay_seconds = delay_seconds,
     jitter_seconds = jitter_seconds,
     quiet = quiet
   )
+  if (mode != "update" || !isTRUE(try_yesterday) || nrow(plan) == 0L) {
+    return(invisible(records))
+  }
+  # The normal revision/gap queue retains priority and its original failure policy.
+  # Optional traffic must also fit inside the caller's request cap.
+  used <- prepare_prism_request_queue(plan, force, max_requests)$summary[["will_run"]]
+  result <- candidate_function(plan, request_budget = max_requests - used,
+    delay_seconds = delay_seconds, quiet = quiet, manifest_path = manifest_path)
+  if (nrow(result$records)) records <- rbind(records, result$records)
+  if (!is.null(availability_path)) {
+    dir.create(dirname(availability_path), recursive = TRUE, showWarnings = FALSE)
+    utils::write.csv(result$status, availability_path, row.names = FALSE)
+  }
+  attr(records, "availability") <- result$status
+  if (!quiet) message("PRISM latest-date check: ", result$status$status,
+    "; selected ", result$status$selected_date, ". ", result$status$note)
+  invisible(records)
+}
+
+prism_availability_metrics <- function(values, control_values, plausible_range,
+                                       minimum_control_coverage = 0.999) {
+  if (length(values) != length(control_values)) stop("Audit grid lengths differ.")
+  valid <- is.finite(values)
+  control_valid <- is.finite(control_values)
+  coverage <- if (any(control_valid)) {
+    sum(valid & control_valid) / sum(control_valid)
+  } else NA_real_
+  invalid <- sum(!is.na(values) & !is.finite(values)) +
+    sum(valid & (values < plausible_range[1L] | values > plausible_range[2L]))
+  status <- if (!any(valid)) "ALL_MISSING" else if (invalid > 0L) {
+    "INVALID_RANGE"
+  } else if (is.na(coverage)) "NO_CONTROL" else if (
+    coverage < minimum_control_coverage
+  ) "PARTIAL" else "AVAILABLE"
+  list(status = status, valid_cells = sum(valid), total_cells = length(values),
+       control_coverage = coverage, invalid_cells = invalid,
+       minimum = if (any(valid)) min(values[valid]) else NA_real_,
+       maximum = if (any(valid)) max(values[valid]) else NA_real_)
+}
+
+validate_prism_latest_field <- function(path, item, control_path) {
+  raster <- validate_prism_geotiff(path, item)
+  control <- terra::rast(control_path)
+  if (!terra::compareGeom(raster, control, stopOnError = FALSE)) {
+    stop("Latest PRISM field has a different grid geometry.", call. = FALSE)
+  }
+  metrics <- prism_availability_metrics(terra::values(raster, mat = FALSE),
+    terra::values(control, mat = FALSE), swc_prism$plausible_ranges[[item$variable]])
+  if (metrics$status != "AVAILABLE") stop(item$variable, ": ", metrics$status, call. = FALSE)
+  invisible(TRUE)
+}
+
+fetch_prism_latest_field <- function(item, path) {
+  # No retries for an optional date; an unavailable field must not stall publication.
+  httr2::request(item$endpoint) |>
+    httr2::req_body_json(prism_daily_payload(item), auto_unbox = TRUE) |>
+    httr2::req_timeout(swc_prism$availability_timeout_seconds) |>
+    httr2::req_perform(path = path)
+  invisible(path)
+}
+
+install_prism_latest_set <- function(plan, staged_paths, manifest_path) {
+  # Files and manifest are rolled back together on a local installation error.
+  # Such errors remain fatal; only upstream unavailability triggers fallback.
+  backup_dir <- tempfile("latest-backup-", tmpdir = dirname(manifest_path))
+  dir.create(backup_dir)
+  on.exit(unlink(backup_dir, recursive = TRUE), add = TRUE)
+  paths <- c(plan$path, manifest_path)
+  existed <- file.exists(paths)
+  backups <- file.path(backup_dir, seq_along(paths))
+  for (i in which(existed)) {
+    if (!file.copy(paths[i], backups[i])) stop("Cannot back up latest PRISM set.")
+  }
+  previous <- vapply(plan$path, function(path) {
+    if (file.exists(path)) unname(tools::md5sum(path)) else NA_character_
+  }, character(1))
+  committed <- FALSE
+  on.exit({
+    if (!committed) for (i in seq_along(paths)) {
+      if (existed[i]) {
+        if (!file.copy(backups[i], paths[i], overwrite = TRUE)) {
+          warning("Could not restore PRISM file: ", paths[i])
+        }
+      } else if (file.exists(paths[i])) unlink(paths[i])
+    }
+  }, add = TRUE, after = FALSE)
+  for (i in seq_len(nrow(plan))) {
+    dir.create(dirname(plan$path[i]), recursive = TRUE, showWarnings = FALSE)
+    temporary <- tempfile("latest-install-", tmpdir = dirname(plan$path[i]))
+    on.exit(unlink(temporary), add = TRUE)
+    if (!file.copy(staged_paths[i], temporary)) stop("Cannot stage latest PRISM field.")
+    replace_file_atomically(temporary, plan$path[i])
+  }
+  records <- plan[, c("product", "aoi_id", "grid", "variable", "native_units", "bbox",
+                      "start_date", "end_date"), drop = FALSE]
+  records$downloaded_at <- format(Sys.time(), tz = "UTC", usetz = TRUE)
+  records$bytes <- file.info(plan$path)$size
+  records$md5 <- unname(tools::md5sum(plan$path))
+  records$previous_md5 <- unname(previous)
+  records$changed <- is.na(previous) | previous != records$md5
+  records$path <- plan$path
+  write_prism_manifest(records, manifest_path)
+  committed <- TRUE
+  records
+}
+
+download_prism_latest_set <- function(plan, request_budget = Inf,
+    delay_seconds = swc_prism$request_delay_seconds, quiet = FALSE,
+    manifest_path = NULL,
+    fetch_function = fetch_prism_latest_field,
+    validate_function = validate_prism_latest_field) {
+  # Base-plan dates come from the caller's `today`, including deterministic tests.
+  candidate_date <- attr(plan, "candidate_date") %||% (max(plan$end_date) + 1L)
+  control_date <- candidate_date - 1L
+  status <- data.frame(checked_utc = format(Sys.time(), tz = "UTC", usetz = TRUE),
+    candidate_date = as.character(candidate_date), selected_date = as.character(control_date),
+    status = "FALLBACK", requests = 0L, note = "", stringsAsFactors = FALSE)
+  finish <- function(note, state = "FALLBACK", records = data.frame()) {
+    status$note <- note
+    status$status <- state
+    list(records = records, status = status)
+  }
+  control <- plan[plan$start_date == control_date & plan$end_date == control_date, , drop = FALSE]
+  if (nrow(control) != length(swc_prism$variables) ||
+      !setequal(control$variable, swc_prism$variables) || !all(file.exists(control$path))) {
+    status$selected_date <- NA_character_
+    return(finish("Complete control set unavailable; retained existing verified data.", "SKIPPED"))
+  }
+  candidate <- control
+  candidate$start_date <- candidate$end_date <- candidate_date
+  candidate$path <- file.path(dirname(control$path), paste0(candidate_date, ".tif"))
+  manifest_path <- manifest_path %||% attr(plan, "manifest_path") %||% prism_manifest_path()
+  # An earlier successful run remains usable if a later refresh is unavailable.
+  existing_manifest <- read_prism_manifest(manifest_path)
+  registered <- nrow(existing_manifest) > 0L &&
+    all(c("path", "md5") %in% names(existing_manifest)) &&
+    all(candidate$path %in% existing_manifest$path)
+  existing_valid <- registered && all(file.exists(candidate$path)) && tryCatch({
+    checksums <- existing_manifest$md5[match(candidate$path, existing_manifest$path)]
+    if (anyNA(checksums) || !all(checksums == unname(tools::md5sum(candidate$path)))) {
+      stop("Previously registered latest fields have changed on disk.")
+    }
+    for (i in seq_len(nrow(candidate))) validate_function(candidate$path[i], candidate[i, ], control$path[i])
+    TRUE
+  }, error = function(e) FALSE)
+  if (existing_valid) status$selected_date <- as.character(candidate_date)
+  if (request_budget < nrow(candidate)) {
+    return(finish("Request cap leaves no room for a complete optional set.", "DEFERRED"))
+  }
+  dir.create(dirname(manifest_path), recursive = TRUE, showWarnings = FALSE)
+  stage <- tempfile("latest-prism-", tmpdir = dirname(manifest_path))
+  dir.create(stage)
+  on.exit(unlink(stage, recursive = TRUE), add = TRUE)
+  staged_paths <- file.path(stage, paste0(candidate$variable, ".tif"))
+  failure <- tryCatch({
+    for (i in seq_len(nrow(candidate))) {
+      status$requests <- status$requests + 1L
+      fetch_function(candidate[i, ], staged_paths[i])
+      validate_function(staged_paths[i], candidate[i, ], control$path[i])
+      if (i < nrow(candidate) && delay_seconds > 0) Sys.sleep(delay_seconds)
+    }
+    NULL
+  }, error = function(e) conditionMessage(e))
+  if (!is.null(failure)) return(finish(paste("Optional date not accepted:", failure),
+    if (existing_valid) "RETAINED" else "FALLBACK"))
+  records <- install_prism_latest_set(candidate, staged_paths, manifest_path)
+  status$selected_date <- as.character(candidate_date)
+  finish("All three fields validated and installed together.", "ACCEPTED", records)
 }

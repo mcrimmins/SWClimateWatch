@@ -219,6 +219,7 @@ run_swc_daily_update <- function(
     summary = summary,
     timings = timings,
     downloads = downloads,
-    processed = processed
+    processed = processed,
+    availability = attr(downloads, "availability")
   ))
 }

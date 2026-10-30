@@ -1,5 +1,29 @@
 # Updating and publishing the site
 
+## PRISM freshness and automatic fallback
+
+Normal daily publication now tries yesterday after completing the usual PRISM
+revision/gap queue. All three fields must validate together; otherwise it keeps
+the completed two-day-old set (or an already verified yesterday set). This is
+automatic and does not require a new daily command. Console and ntfy completion
+messages include the selected PRISM date and availability outcome. Detailed
+reasons are in `data/diagnostics/prism-availability/update-status.csv`.
+
+For a small staging test that does not render or sync the site:
+
+```bash
+TZ=America/Phoenix Rscript scripts/test-prism-latest-fallback.R
+```
+
+This tests simulated fallback and live availability using temporary grids. A
+live `FALLBACK` is expected if yesterday has not yet arrived; it is not itself a
+test failure. See [PRISM methods](prism-data-methods.md#opportunistic-one-day-operational-lag).
+To disable optional yesterday requests, set `SWC_PRISM_TRY_YESTERDAY=false` in
+the applicable VM environment file. Revision/gap requests retain their existing
+failure policy; this fallback applies to the optional newest date.
+
+## Optional weather maps
+
 Optional Weather maps now have an opt-in daily adapter and a retained,
 resumable archive. They remain disabled by default until their staging trial
 passes. See [weather daily workflow](weather-circulation-daily-workflow.md) for
