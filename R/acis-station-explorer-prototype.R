@@ -845,6 +845,7 @@ build_acis_station_explorer_prototype <- function(
   rows <- acis_station_explorer_rows(stations, as_of, cache_dir, cached)
   details <- write_acis_station_explorer_details(
     stations, cached, as_of, output_dir)
+  write_acis_station_cumulative_site(stations, cached, as_of, output_dir)
   page <- write_acis_station_explorer_prototype(rows, output_dir)
   list(page = page, detail_paths = details, rows = rows, as_of = as.Date(as_of))
 }

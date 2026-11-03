@@ -124,6 +124,7 @@ function renderDiscussions() {
 let days = [], byDate = new Map(), selectedDate = "", visibleDates = [];
 let circulationEnabled = false, circulationPromise = null, circulationEpoch = 0, circulationShownDate = "";
 let circulationActiveTab = "height500";
+let circulationRecords = null;
 const CIRCULATION_FIELDS = ["height500","jet250","moisture"];
 function selectCirculationTab(field) {
   if (!CIRCULATION_FIELDS.includes(field)) return;
@@ -136,7 +137,51 @@ function selectCirculationTab(field) {
     figure.hidden = figure.circulationField !== field;
     const image = figure.children[0];
     // Fetch only the selected map. Previously viewed maps remain browser-cached.
-    if (!figure.hidden && !image.getAttribute("src")) image.src = image.circulationSource;
+    if (!figure.hidden && image.circulationSource && !image.getAttribute("src")) image.src = image.circulationSource;
+    if (!figure.hidden && circulationRecords) {
+      figure.circulationActions.append($("circulation-view-control"));
+      $("circulation-view-fallback").hidden = true;
+      renderCirculationComparison(figure);
+    }
+  }
+}
+function renderCirculationComparison(figure) {
+  const mode = $("compare").value, caption = figure.circulationCaption, grid = figure.circulationGrid;
+  const key = `${selectedDate}|${mode}`;
+  if (figure.circulationGridKey === key) return;
+  figure.circulationGridKey = key;
+  const show = mode !== "single";
+  caption.hidden = grid.hidden = !show;
+  grid.classList.toggle("month-grid", mode === "30");
+  grid.replaceChildren();
+  if (!show) return;
+  const dates = comparisonDates();
+  caption.textContent = `${mode === "30" ? "30 days ending" : "7 days centered on"} ${dayLabel(selectedDate)} · ${shortLabel(dates[0])}–${shortLabel(dates.at(-1))} · UTC daily means.`;
+  for (const date of dates) {
+    const record = circulationRecords.get(date);
+    const source = record?.status === "available" ? record.images[figure.circulationField] : null;
+    const button = document.createElement("button"); button.type = "button";
+    button.className = `mini${date === selectedDate ? " selected" : ""}`;
+    button.setAttribute("aria-label", `${dayLabel(date)} UTC, ${figure.circulationTitle}${source ? "" : ", unavailable"}`);
+    const title = document.createElement("strong"); title.textContent = shortLabel(date); button.append(title);
+    if (source) {
+      const image = document.createElement("img"); image.loading = "lazy"; image.src = source;
+      image.width = 1920; image.height = 1088;
+      image.alt = `${figure.circulationTitle}, ${date} UTC daily mean`;
+      image.addEventListener("error", () => {
+        if (figure.circulationEpoch !== circulationEpoch) return;
+        image.hidden = true;
+        const missing = document.createElement("p"); missing.className = "empty";
+        missing.textContent = "Map image unavailable"; button.append(missing);
+      });
+      button.append(image);
+    } else {
+      const missing = document.createElement("p"); missing.className = "empty";
+      missing.textContent = "Not built or unavailable"; button.append(missing);
+    }
+    button.disabled = !byDate.has(date);
+    button.addEventListener("click", () => selectDate(date));
+    grid.append(button);
   }
 }
 function setupCirculationTabs() {
@@ -170,10 +215,15 @@ async function renderCirculation() {
   const panel = $("circulation-panel");
   if (!circulationEnabled || !panel) return;
   panel.hidden = false;
+  $("circulation-compare").value = $("compare").value;
   $("circulation-date").textContent = selectedDate ? ` · ${dayLabel(selectedDate)} UTC` : "";
-  if (panel.open && circulationShownDate === selectedDate) return;
+  const viewKey = `${selectedDate}|${$("compare").value}`;
+  if (panel.open && circulationShownDate === viewKey) return;
   const epoch = ++circulationEpoch, date = selectedDate;
   circulationShownDate = "";
+  // Keep the single shared selector alive across tab/date redraws and errors.
+  $("circulation-view-fallback").append($("circulation-view-control"));
+  $("circulation-view-fallback").hidden = false;
   $("circulation-maps").replaceChildren();
   $("circulation-tabs").hidden = true;
   $("circulation-retry").hidden = true;
@@ -186,20 +236,26 @@ async function renderCirculation() {
       .then(validateCirculationManifest);
     const records = await circulationPromise;
     if (epoch !== circulationEpoch || !panel.open || date !== selectedDate) return;
+    circulationRecords = records;
     const record = records.get(date);
-    if (!record || record.status !== "available") {
+    const available = record?.status === "available";
+    if (!available) {
       $("circulation-status").textContent = `Circulation maps unavailable for ${dayLabel(date)} UTC. No other date has been substituted.`;
-      circulationShownDate = date; return;
+      if ($("compare").value === "single") {circulationShownDate = viewKey; return;}
+    } else {
+      $("circulation-status").textContent = "";
     }
-    $("circulation-status").textContent = "";
     for (const [field,title] of [["height500","500-mb heights"],["jet250","250-mb jet and flow"],["moisture","Precipitable water, sea-level pressure and 850-mb flow"]]) {
       const figure = document.createElement("figure");
       figure.id = `circulation-map-${field}`; figure.circulationField = field;
+      figure.circulationTitle = title; figure.circulationEpoch = epoch;
       figure.setAttribute("role","tabpanel"); figure.setAttribute("aria-labelledby",`circulation-tab-${field}`);
       figure.tabIndex = 0;
       const img = document.createElement("img"); img.alt = `${title}, ${date} UTC daily mean`;
       img.loading = "lazy"; img.width = 1920; img.height = 1088;
-      const link = document.createElement("a"); link.href = record.images[field]; link.target = "_blank"; link.rel = "noopener";
+      const link = document.createElement("a"); link.target = "_blank"; link.rel = "noopener";
+      img.hidden = link.hidden = !available;
+      if (available) link.href = record.images[field];
       link.textContent = "Open full-resolution map ↗";
       img.addEventListener("error",() => {
         if (epoch !== circulationEpoch) return;
@@ -207,10 +263,16 @@ async function renderCirculation() {
         $("circulation-status").textContent = `A circulation image could not be loaded for ${dayLabel(date)} UTC. PRISM maps remain available.`;
         $("circulation-retry").hidden = false;
       });
-      img.circulationSource = record.images[field]; figure.append(img,link); $("circulation-maps").append(figure);
+      if (available) img.circulationSource = record.images[field];
+      const caption = document.createElement("p"); caption.className = "muted small"; caption.hidden = true;
+      const grid = document.createElement("div"); grid.className = "comparison"; grid.hidden = true;
+      figure.circulationCaption = caption; figure.circulationGrid = grid;
+      const actions = document.createElement("div"); actions.className = "map-actions";
+      actions.append(link); figure.circulationActions = actions;
+      figure.append(img,actions,caption,grid); $("circulation-maps").append(figure);
     }
     $("circulation-tabs").hidden = false; selectCirculationTab(circulationActiveTab);
-    circulationShownDate = date;
+    circulationShownDate = viewKey;
   } catch (error) {
     if (epoch !== circulationEpoch || !panel.open) return;
     $("circulation-status").textContent = "Circulation availability could not be loaded. PRISM maps remain available; try again.";
@@ -264,6 +326,18 @@ function selectDate(date) {
   }
   selectedDate = date; render();
 }
+function selectLatestDate() {
+  const date = days.at(-1)?.date;
+  if (date) selectDate(date);
+}
+function changeMapView(source = "compare") {
+  $("compare").value = $(source).value;
+  $("circulation-compare").value = $("compare").value;
+  // Opening the month grid starts at the newest day in the chosen season,
+  // rather than silently retaining a day previously selected while browsing.
+  if ($("compare").value === "30") selectedDate = filterDates().at(-1) || "";
+  render();
+}
 function comparisonDates() {
   if (!selectedDate || $("compare").value === "single") return [];
   const monthly = $("compare").value === "30";
@@ -296,14 +370,36 @@ function addStat(label, value, unit, signed = false) {
   const caption = document.createElement("span"); caption.textContent = label;
   box.append(number, caption); $("stats").append(box);
 }
+const DATE_CONTROLS = [
+  {input:"date", previous:"previous", next:"next", latest:"latest"},
+  {input:"circulation-date-input", previous:"circulation-previous", next:"circulation-next", latest:"circulation-latest"}
+];
+function renderDateControls() {
+  for (const ids of DATE_CONTROLS) {
+    const input = $(ids.input);
+    input.value = selectedDate; input.disabled = !days.length;
+    $(ids.previous).disabled = !selectedDate || !inCachedDateRange(shift(selectedDate, -1));
+    $(ids.next).disabled = !selectedDate || !inCachedDateRange(shift(selectedDate, 1));
+    $(ids.latest).disabled = !days.length || selectedDate === days.at(-1).date;
+    if (days.length) {input.min = days[0].date; input.max = days.at(-1).date;}
+  }
+}
+function setupDateControls() {
+  for (const ids of DATE_CONTROLS) {
+    $(ids.input).addEventListener("change", () => {
+      const input = $(ids.input);
+      if (inCachedDateRange(input.value)) selectDate(input.value);
+      else input.value = selectedDate;
+    });
+    $(ids.previous).addEventListener("click", () => selectDate(shift(selectedDate, -1)));
+    $(ids.next).addEventListener("click", () => selectDate(shift(selectedDate, 1)));
+    $(ids.latest).addEventListener("click", selectLatestDate);
+  }
+}
 function renderMap() {
   const date = selectedDate, variable = $("variable").value, image = imageFor(date);
-  $("date").value = date;
+  renderDateControls();
   $("map-title").textContent = date ? dayLabel(date) : "No cached dates in this season";
-  $("previous").disabled = !date || !inCachedDateRange(shift(date, -1));
-  $("next").disabled = !date || !inCachedDateRange(shift(date, 1));
-  $("date").disabled = !days.length;
-  if (days.length) {$("date").min = days[0].date; $("date").max = days.at(-1).date;}
   $("map").hidden = !image; $("open-map").hidden = !image; $("unavailable").hidden = !!image;
   if (image) {$("map").src = image; $("map").alt = `${$("variable").selectedOptions[0].textContent}, ${variable === "pcpn" ? "observed" : $("view").value}, ${dayLabel(date)}`; $("open-map").href = image;}
   else {$("map").removeAttribute("src"); $("unavailable").textContent = "This map is unavailable in the local cache. Choose another date or display mode.";}
@@ -375,12 +471,12 @@ async function initialize() {
     const years = [...new Set(days.map(day => day.water_year))].sort((a,b) => b-a);
     setOptions($("year"), years.map(year => [String(year), `${year} · Oct ${year-1}–Sep ${year}`]), String(years[0]));
     $("coverage").textContent = `${payload.publication_mode ? "Daily maps" : "Cached daily maps"}: ${dayLabel(days[0].date)}–${dayLabel(days.at(-1).date)} · Latest PRISM date: ${dayLabel(payload.latest_cached_date)} · Temperature reference: ${payload.baseline}`;
-    refreshMetricOptions(); render();
-    for (const id of ["year","season","region","view","metric","ranking","compare"]) $(id).addEventListener("change", render);
+    refreshMetricOptions(); selectLatestDate();
+    for (const id of ["year","season","region","view","metric","ranking"]) $(id).addEventListener("change", render);
+    $("compare").addEventListener("change", () => changeMapView());
+    $("circulation-compare").addEventListener("change", () => changeMapView("circulation-compare"));
     $("variable").addEventListener("change", () => {refreshMetricOptions(true); render();});
-    $("date").addEventListener("change", () => {if (inCachedDateRange($("date").value)) selectDate($("date").value); else $("date").value = selectedDate;});
-    $("previous").addEventListener("click", () => selectDate(shift(selectedDate,-1)));
-    $("next").addEventListener("click", () => selectDate(shift(selectedDate,1)));
+    setupDateControls();
     $("discussion-close").addEventListener("click", closeDiscussionReader);
     $("discussion-frame").addEventListener("error", () => {
       if (!$("discussion-reader").hidden) $("discussion-reader-status").textContent =

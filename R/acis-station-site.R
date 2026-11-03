@@ -34,6 +34,10 @@ swc_station_beta_snapshot <- function(directory) {
           (is.finite(rows$pcpn_anomaly) | is.finite(rows$pcpn_percentile))))
     stop("A provisional precipitation total has a comparison value.",
          call. = FALSE)
+  explorer_js <- paste(readLines(file.path(directory, "explorer.js"), warn = FALSE), collapse = "\n")
+  if (grepl("cumulative/index.html", explorer_js, fixed = TRUE))
+    validate_acis_station_cumulative_site(file.path(directory, "cumulative"),
+      unique(rows$uid), rows$as_of[[1L]])
   list(date = as.Date(rows$as_of[[1L]]), rows = rows,
        stations = length(unique(rows$uid)),
        mapped = length(unique(rows$uid[rows$role == "fixed"])),
@@ -71,6 +75,9 @@ swc_station_beta_stage <- function(
   if (!all(copied) || !length(details) || !all(detail_copied))
     stop("Could not copy the full station snapshot; last good page retained.",
          call. = FALSE)
+  if (dir.exists(file.path(source_dir, "cumulative")) &&
+      !file.copy(file.path(source_dir, "cumulative"), stage, recursive = TRUE))
+    stop("Could not copy cumulative station resources; last good page retained.")
   swc_station_beta_snapshot(stage)
   had_previous <- dir.exists(destination)
   if (had_previous && !file.rename(destination, backup))

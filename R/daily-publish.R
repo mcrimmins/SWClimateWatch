@@ -292,6 +292,7 @@ swc_daily_publish_update_stations <- function(today = Sys.Date()) {
                  "R/acis-station-daily-pilot.R", "R/map-southwest.R",
                  "R/acis-station-current-prototype.R",
                  "R/acis-station-explorer-prototype.R",
+                 "R/acis-station-cumulative-pilot.R",
                  "R/acis-station-explorer-update-pilot.R",
                  "R/acis-station-publication-audit.R",
                  "R/acis-station-site.R"))
@@ -410,6 +411,14 @@ swc_daily_publish_validate_stations <- function(output_dir) {
   if (!all(file.exists(details)) || any(file.info(details)$size <= 0))
     stop("Rendered station details are missing; S3 sync stopped.",
          call. = FALSE)
+  explorer_js <- paste(readLines(file.path(station_dir, "explorer.js"), warn = FALSE), collapse = "\n")
+  if (grepl("cumulative/index.html", explorer_js, fixed = TRUE)) {
+    context <- new.env(parent = environment())
+    if (!exists("validate_acis_station_cumulative_site", mode = "function"))
+      sys.source(file.path("R", "acis-station-cumulative-pilot.R"), envir = context)
+    get("validate_acis_station_cumulative_site", envir = context)(file.path(station_dir, "cumulative"),
+      unique(rows$uid), rows$as_of[[1L]])
+  }
   invisible(TRUE)
 }
 

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Station cumulative precipitation · Southwest Climate Watch</title>
+  <link rel="stylesheet" href="cumulative.css?v=station-integration"><script src="cumulative.js?v=station-integration" defer></script></head>
+<body><main>
+  <header><div><p class="eyebrow">Southwest Climate Watch · Local prototype</p>
+    <h1>Water-year precipitation</h1><p id="snapshot">Loading cached station records…</p></div>
+    <span class="badge">Local review · Not published</span></header>
+  <p id="error" role="alert" hidden></p>
+  <section class="card controls">
+    <label>Station<select id="station" aria-label="Station"></select></label>
+    <label>Plot period<select id="period"><option value="to-date">Season to date</option>
+      <option value="full">Full water year</option></select></label>
+    <label>Comparison year<select id="comparison-year" disabled><option value="none">None</option></select></label>
+  </section>
+  <section id="station-card" class="card" aria-labelledby="station-title" hidden>
+    <h2 id="station-title">Cumulative precipitation</h2><p id="station-note" class="muted"></p>
+    <div id="stats" class="stats"></div>
+    <p id="history-status" class="history-status" role="status"></p>
+    <ul class="legend" aria-label="Plot lines"><li class="current" id="current-label">Current water year</li>
+      <li class="previous" id="previous-label">Comparison water year</li><li class="normal" id="normal-label">Climatological average</li>
+      <li id="band-label" class="band">Typical range (middle 50%)</li>
+      <li id="records-label" class="records">Historical high / low</li></ul>
+    <p id="comparison-status" class="muted small" role="status" aria-live="polite"></p>
+    <svg id="plot" viewBox="0 0 960 360" role="img" aria-label="Cumulative water-year precipitation in inches"></svg>
+    <label class="inspect">Inspect date<input id="inspect" type="range" min="0" max="364" value="0"></label>
+    <div id="readout" class="readout" aria-live="polite"></div>
+    <p id="quality" class="quality"></p>
+    <p class="muted small">Hover or tap the plot, or use the date slider and arrow keys, to compare accumulation on the same calendar date.</p>
+  </section>
+  <details class="card methods"><summary>How to read this plot</summary>
+    <p>Water years run October 1–September 30. Each line adds usable daily precipitation reports from October 1. A trace contributes zero inches. Non-trace quality flags, multi-day accumulations, invalid values and missing reports are excluded.</p>
+    <p>A current or previous-year cumulative line stops at the first unusable report. An observed subtotal after a gap is a lower bound, not a complete total. Missing days are not filled with zero, and no missing precipitation is estimated.</p>
+    <p>The gray curve is the mean of complete water-year cumulative curves from WY1991–WY2020. Shading spans their 25th–75th percentiles at each calendar date: the middle half of historical accumulations, not a confidence interval or forecast. At least 20 complete baseline years are required. The comparison dropdown lists complete water years from the station's cached record, defaulting to the previous year when eligible. Fixed stations and ThreadEx area series retain their own record identities.</p>
+    <p>Dotted boundaries show the highest and lowest cumulative totals at each calendar date among complete historical water years, excluding the current year. Their record years can change along the curve. Hover readouts identify years and ties. These are records within the eligible complete-year sample, not a claim that every year in the station's history is represented.</p>
+    <p>Closest match compares the cumulative progression from October 1 through the latest plotted observation date using root-mean-square difference in inches. It requires complete current accumulation and at least 20 complete historical years. Ties show the most recent year, with the number tied reported. Matches before 30 aligned days are labeled early season. Similarity so far does not predict the rest of the year.</p>
+    <p>Curves align by calendar month/day. February 29 has no separate plotted point; its precipitation is included in March 1 and later totals. Completed comparison curves can extend beyond the current observation date; this is historical context, not a forecast.</p>
+    <p>Source: cached RCC-ACIS station observations. The accumulation period is always the water year, independently of the Station Conditions summary-period selector.</p>
+  </details>
+</main></body></html>

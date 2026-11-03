@@ -43,6 +43,11 @@ those pages are next refreshed.
 
 | Workstream | Next bounded step | Relative effort |
 | --- | --- | --- |
+| Recent-period weather means and anomalies (requested November 2, 2026) | Scope trailing 7- and 30-day circulation/moisture means using cached CORe fields; separately assess calendar-matched anomaly baselines, missing-day guards, interpretation and update costs. Prototype means before committing to historical baseline acquisition. | Moderate for means; larger for validated anomalies |
+| Station water-year precipitation curves (requested November 1, 2026) | November 3: integrated station-detail local preview for 62 records with current cumulative precipitation, complete historical-year selection, WY1991-2020 average and middle-50% band, historical record bounds, closest progression, interactive inspection and two plot periods. Independent historical/reference caches support daily builds. Optional background curves remain a later choice. See station prototype documentation. | Integrated local review; staging next |
+| Historical seasonal and water-year time series (requested November 1, 2026) | Scope Westwide Drought Tracker-style plots of historical precipitation totals, first for stations and then selected regional/PRISM summaries. Define seasons, normals, record eligibility, incomplete-year display and reusable annual-summary caches. | Moderate; regional and long-record extensions separate |
+| Historical odds of reaching precipitation thresholds (requested November 1, 2026) | Pilot CW3E-style climatological probabilities of reaching fractions of full water-year normal given precipitation already observed. Validate Southwest seasonality, historical samples and uncertainty; benchmark cached historical remainder distributions before selecting monthly or daily updates and maps. | Moderate-large; methods validation first |
+| Google Analytics (requested November 1, 2026) | Scope site-wide analytics for page visits and use of Daily Explorer, Station Conditions and map downloads. Confirm the Google Analytics property/measurement ID, University privacy/consent requirements, and useful events. Exclude local previews and staging from production reporting; verify on staging before enabling production. Keep browser and daily publishing overhead minimal. | Small for basic page views; moderate for custom interaction events |
 | Historical snow anomaly companions | Validate seasonal peak-SWE departure and percent-of-median pilots, then stage all eligible WY2005-WY2025 years. Retain coverage and support guards and existing archive cautions. | Moderate |
 | Raster plotting warnings | Locate affected builders and correct the rendering geometry without altering climate statistics. Compare before/after maps. | Small-moderate |
 | Daily-update speed | Profile several consecutive new-date runs, cache-hit/miss behavior, costly PRISM reference work, and station processing. Benchmark before removing products or changing cadence. | Moderate |
@@ -64,6 +69,19 @@ those pages are next refreshed.
 | Hydrological observations and gauge-condition maps | Assess gauge data access, station coverage and useful streamflow/stage condition metrics, with historical context and bounded update costs. | Longer-term; scope first |
 | Hydroclimate home dashboard | Local six-map refresh and tool links implemented for review; conditionally substitute supported fresh SWE for dry-spell rank. Stage after visual approval. Separately prototype cumulative precipitation versus normal, with cached regional calculations and a runtime benchmark. | Layout small; evolution chart moderate |
 
+## New exploration: Google Analytics
+
+Requested November 1, 2026; planning only, not enabled. Add Google Analytics
+to understand which SW Climate Watch pages and tools are useful to visitors.
+Start with page views and referral sources; separately choose a small set of
+interaction events such as Explorer date/variable selection, station selection
+and full-resolution map downloads. Confirm the property owner and measurement
+ID, applicable University privacy/consent requirements, and treatment of local
+previews, staging and developer traffic before implementation. Avoid sending
+personal information in event parameters. Test collection and duplicate-event
+handling before production activation, and preserve site responsiveness without
+adding climate-data downloads or recurring R processing.
+
 ## New exploration: daily weather and circulation
 
 See [daily weather and circulation scope](weather-circulation-scope.md).
@@ -81,6 +99,44 @@ source for the current staging candidate. ERA5 remains a potential comparison
 or historical-analysis source. IVT was deferred because of its daily overhead.
 Weather climatology/anomalies and completed-year Explorer navigation remain
 separate projects; this document does not enable production configuration.
+
+### Recent-period mean weather and circulation maps
+
+Requested November 2, 2026; scope only. Consider trailing **7- and 30-day mean
+conditions**, with optional anomaly companions, to show persistent patterns
+alongside the existing daily weather maps. Candidate fields are 500-mb heights,
+250-mb jet/flow, PWAT, sea-level pressure and terrain-screened low-level flow.
+Choose a small complementary set and decide whether period controls belong in
+Daily Explorer's Weather maps panel or a separate recent-pattern view. Label
+the exact UTC averaging dates and keep these periods distinct from PRISM's
+observation-day windows and Daily Explorer's grid-of-days display.
+
+First inventory which numeric CORe fields are retained and suitable for
+aggregation; PNG images cannot be averaged. Reuse validated cached fields and
+daily summaries where possible, with bounded recovery/backfill rather than
+repeated full-period downloads. Define day/sample completeness, handling of
+unavailable fields and terrain masks, and explicit insufficient-data states.
+Do not silently average a shorter available subset and label it seven or
+30 days. For winds, distinguish mean speed from the magnitude of the mean
+vector; average vector components for a mean-flow overlay and explain that
+opposing daily flows can cancel. Daily pressure-center labels should not
+automatically be transferred to period means.
+
+Anomalies need a separate, documented reference: assess the available CORe
+record, a fixed climatological period, calendar matching/smoothing, leap days,
+grid consistency and equal-length historical windows. Start by considering
+500-mb height and PWAT departures; assess whether raw or standardized departures
+are useful for each variable, with adequate sample support. Absolute heights
+are not anomalies, and mean wind-speed anomalies differ from vector anomalies.
+Keep ENSO/teleconnection interpretation descriptive unless separately validated.
+
+Begin with a local two-period means pilot on representative winter and monsoon
+dates. Review patterns and legends, then scope a small anomaly pilot only after
+baseline feasibility is established. Benchmark one-time historical downloads,
+reference storage, incremental rolling sums/means, revision invalidation and
+daily rendering cost. Cache reference products and rebuild only affected windows;
+do not add recurring historical baseline downloads to the production job.
+No new maps or daily processing are enabled by this entry.
 
 ## New exploration: archived forecast discussions
 
@@ -121,6 +177,34 @@ revision check; cache completed months and rebuild only affected products.
 Choose reference periods and explain the difference between a fixed normal and
 a full-period ranking. Pilot a small map set before attempting long-term
 historical backfill.
+
+**Specific deliverables requested November 2, 2026:** create a **12-month SPI
+map** and a **12-month mean-temperature ranking map**, published as directly
+hotlinkable images to support the
+[Drought and Livestock Grazing dashboard](https://cales.arizona.edu/droughtandgrazing/dashboard.html).
+The existing dashboard describes Arizona maps ending in the most recent full
+month and updating at the beginning of each month. Scope Arizona-focused
+exports for this use, alongside any broader SW Climate Watch versions; confirm
+extent, dimensions and legend compatibility before replacing external links.
+
+For SPI-12, validate a genuine standardized precipitation index using 12-month
+accumulations, calendar-ending-month distributions, an explicit fitting/reference
+period, zero-precipitation handling and adequate historical support. Coordinate
+with the validated SPI workstream; a precipitation percentile or simple z-score
+is not an interchangeable substitute. For temperature, define the rolling
+12-month mean, month/day weighting, ranking direction, historical comparison
+period, eligible windows, ties and categorical labels. Clearly distinguish
+record rank, percentile and departure from normal.
+
+Provide stable public HTTPS image URLs that retain their filenames as each new
+month is published, plus dated archived images for provenance. Put the exact
+12-month dates, source and reference/ranking period on each standalone image.
+Verify direct embedding from the dashboard, image content type, cache refresh
+behavior and replacement of the existing source attribution. Publish only after
+all 12 monthly inputs qualify; retain the previous verified image if an update
+fails. Define the monthly availability/revision policy rather than promising a
+new image on the first day before inputs are ready. These are scoped
+deliverables; no dashboard links or operational products are changed yet.
 
 ### Local storm reports and NWS watch/warning polygons
 
@@ -226,6 +310,93 @@ payloads before integration. Stage IV/MRMS, IVT/AR diagnostics, subdaily radar
 and storm animations require separate source/cost assessment; they are not
 added to the routine daily downloads by this scoping entry. Existing IVT
 deferral remains in effect. No new operational product is enabled here.
+
+## Additional precipitation evolution and historical-context scope: November 1, 2026
+
+These three additions are recorded for scoping, not implementation or activation
+in the daily publisher. They connect current accumulation, historical variability
+and the range of possible end-of-year outcomes.
+
+### Station cumulative daily water-year precipitation
+
+Add an interactive plot to Station Conditions/Station Explorer, beginning
+October 1 and accumulating through the latest usable observation date. Show the
+current water year against supported climatological lines (mean and/or median,
+with optional historical percentile bands) and a small selection of previous
+water years. Hover should show date, accumulated inches and comparison values;
+allow selection of prior years without loading every full station history.
+
+Decide which climatological lines are most useful, the reference period and
+minimum sample support at each date, and whether to highlight the preceding
+year, wettest/driest complete years or user-selected years. Compute a median
+cumulative curve from historical cumulative totals, not by summing daily medians.
+Match October-September dates consistently and define February 29 handling.
+Missing/flagged precipitation must not become zero: distinguish incomplete
+observed subtotals from complete totals and withhold unsupported comparisons,
+consistent with existing station symbols and notes. Preserve ThreadEx/component
+record distinctions and station-specific reference coverage.
+
+Reuse cached ACIS daily histories and revision checks. Cache reference curves
+and completed-year summaries; increment or revise the current-year curve only
+when its inputs change. Benchmark a station-detail prototype and compact
+lazy-loaded numeric series before enabling it across the network.
+
+### Historical seasonal and water-year precipitation time series
+
+Scope interactive historical-total plots inspired by Westwide Drought Tracker:
+one seasonal or water-year total per year, with a normal line, optional departure
+or percent-of-normal view, hover values, and a clearly marked current incomplete
+season. Begin with station precipitation; separately decide which regional,
+basin or PRISM grid summaries belong on map-detail and historic-season pages.
+
+Define selectable seasons (including cool season and monsoon), year labels,
+cross-calendar-year boundaries, comparison baseline and units. Show record span,
+eligible-year counts and missing-year gaps; keep current season-to-date values
+distinct from complete historical totals. If partial-season comparisons are
+offered, compare matching dates in prior years. Treat trend fitting as a separate
+choice with record/homogeneity limitations, not a default feature.
+
+Precompute small seasonal/annual summary tables from existing station caches
+and supported PRISM archives; refresh only affected years. Coordinate longer
+regional records with the proposed monthly PRISM workstream rather than
+expanding daily downloads back to 1895. Benchmark cached generation, browser
+payloads and interaction costs before choosing the initial geographic scope.
+
+### Historical odds of reaching water-year precipitation thresholds
+
+Reference: [CW3E odds of normal water-year precipitation](https://cw3e.ucsd.edu/odds-of-normal-water-year-precipitation/),
+methodology reviewed November 1, 2026. CW3E describes combining precipitation
+already observed with historical remaining-season totals, then counting how
+often the resulting full-year total reaches a target. Its published example
+uses a WY1948-2017 sample and a 1981-2010 normal; choose and label our own
+supported sample and baseline rather than copying those periods.
+
+Candidate targets include 75%, 100%, 125% and 150% of full water-year mean
+precipitation, with other fractions or fixed amounts considered later. Decide
+whether the event is strictly above or at least the threshold; an above-average
+total is not the same as an above-median total. The denominator is the full
+water-year normal, not normal-to-date. Separately consider final-total quantile
+or exceedance ranges as a companion to threshold probabilities.
+
+Start with one station or small regional pilot: add the current observed total
+to each eligible historical remainder after the same cutoff date and calculate
+the fraction meeting each threshold. These are historical/climatological odds,
+not a dynamical forecast, and they do not automatically incorporate ENSO or
+forecast rainfall. Test the assumption that the remaining-season distribution
+can be used regardless of rainfall already received, specifically for Southwest
+cool-season/monsoon regimes; CW3E's reported California tests cannot establish
+that assumption for Arizona and New Mexico. Any conditional analog/ENSO variant
+needs separate sample-size and out-of-sample validation.
+
+Define complete historical seasons, missing-data guards, sample counts,
+finite-sample uncertainty, ties, and treatment of an already-reached target.
+Use held-out historical years to assess reliability and baseline sensitivity;
+avoid presenting an empirical zero frequency as physical impossibility.
+Cache historical remainder distributions at agreed monthly or daily cutoffs;
+update current totals from existing inputs. A monthly/month-end prototype is
+the bounded starting option. Assess daily incremental updates, gridded maps
+versus station/regional cards, reference-cache size and runtime before adding
+these products to the operational daily cycle.
 
 ## Suggested sequence
 

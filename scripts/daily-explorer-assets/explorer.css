@@ -25,4 +25,6 @@
 .discussion-reader-actions{display:flex;align-items:center;gap:12px;font-size:13px;flex-wrap:wrap}
 .discussion-reader-actions button{font-size:13px;min-height:32px;padding:4px 9px}
 #discussion-frame{display:block;width:100%;height:520px;border:1px solid var(--line);background:white}
+.date-controls{flex-wrap:wrap}
+.weather-view{justify-content:flex-end;flex-wrap:wrap}
 @media(max-width:760px){#discussion-frame{height:420px}}

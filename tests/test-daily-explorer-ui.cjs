@@ -2,7 +2,7 @@
 const fs = require('node:fs');
 const vm = require('node:vm');
 const assert = require('node:assert/strict');
-const controls = {compare: {value: 'single'}};
+const controls = {compare: {value: 'single'}, 'circulation-compare': {value: 'single'}};
 const element = () => ({children: [], attributes: {}, textContent: '', hidden: false,
   listeners: {},
   append(...items) {this.children.push(...items);},
@@ -125,7 +125,46 @@ evaluate('selectDate("2026-10-01")');
 assert.equal(controls.year.value, '2027');
 assert.equal(evaluate('selectedDate'), '2026-10-01');
 assert.equal(new URL(controls['discussion-national'].children[0].children[0].href).searchParams.get('sdate'), '2026-10-01T00:00Z');
+// Reproduce a stale selected day with newer data already available. Opening
+// 30 days must end on Nov 1, not the previously selected Oct 10.
+evaluate(`days = Array.from({length: 62}, (_, i) => {
+  const date = shift('2026-09-01', i);
+  return {date, water_year: date < '2026-10-01' ? 2026 : 2027};
+}); byDate = new Map(days.map(day => [day.date, day])); selectedDate = '2026-10-10';`);
+controls.compare.value = '30';
+controls.year.value = '2027';
+controls.season.value = 'all';
+evaluate('changeMapView()');
+assert.equal(evaluate('selectedDate'), '2026-11-01');
+assert.equal(evaluate('comparisonDates()[0]'), '2026-10-03');
+assert.equal(evaluate('comparisonDates().at(-1)'), '2026-11-01');
+// Historical windows remain accessible through deliberate date navigation.
+evaluate('selectDate("2026-10-10")');
+assert.equal(evaluate('comparisonDates().at(-1)'), '2026-10-10');
+evaluate('selectLatestDate()');
+assert.equal(evaluate('selectedDate'), '2026-11-01');
+assert.equal(controls.compare.value, '30');
+// Opening a historical year's month grid respects that year's date filter.
+controls.year.value = '2026';
+evaluate('changeMapView()');
+assert.equal(evaluate('selectedDate'), '2026-09-30');
+evaluate('selectLatestDate()');
+assert.equal(controls.year.value, '2027');
+assert.equal(evaluate('selectedDate'), '2026-11-01');
+// Latest can leave an older seasonal filter when required.
+controls.season.value = 'monsoon';
+evaluate('selectLatestDate()');
+assert.equal(controls.season.value, 'all');
+assert.equal(evaluate('selectedDate'), '2026-11-01');
+// Other view switches preserve the intentionally selected historical date.
+evaluate('selectDate("2026-10-10")');
+controls.compare.value = '7';
+evaluate('changeMapView()');
+assert.equal(evaluate('selectedDate'), '2026-10-10');
+evaluate('days = []; selectedDate = ""; selectLatestDate(); changeMapView()');
+assert.equal(evaluate('selectedDate'), '');
 const html = fs.readFileSync('scripts/daily-explorer-assets/index.html', 'utf8');
+assert.match(html, /id="latest"[^>]*aria-label="Go to the latest available map date"/);
 for (const id of Object.keys(controls).filter(id => id.startsWith('discussion-')))
   assert.ok(html.includes(`id="${id}"`), `Missing discussion panel element ${id}`);
 assert.match(html, /id="discussion-frame"[^>]*sandbox=""[^>]*referrerpolicy="no-referrer"/);

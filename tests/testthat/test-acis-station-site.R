@@ -61,3 +61,36 @@ testthat::test_that("render validation requires the page and every station detai
   testthat::expect_error(swc_daily_publish_validate_stations(root),
                          "details are missing")
 })
+
+testthat::test_that("station staging carries cumulative curves and rejects missing comparisons", {
+  root <- tempfile("swc-cumulative-stage-")
+  site <- file.path(root, "site"); dir.create(site, recursive = TRUE)
+  on.exit(unlink(root, recursive = TRUE), add = TRUE)
+  writeLines("project:", file.path(site, "_quarto.yml"))
+  source_dir <- file.path(root, "source")
+  station_beta_fixture(source_dir, "2025-03-01")
+  rows <- read.csv(file.path(source_dir, "station-explorer-data.csv"))
+  rows$uid <- 1L
+  write.csv(rows, file.path(source_dir, "station-explorer-data.csv"), row.names = FALSE)
+  file.rename(file.path(source_dir, "station-details", "123.json"),
+    file.path(source_dir, "station-details", "1.json"))
+  station <- data.frame(uid = 1L, sid = "test", name = "Test", state = "AZ", role = "fixed")
+  dates <- seq(as.Date("2022-10-01"), as.Date("2025-03-01"), by = "day")
+  cache <- list(uid = 1L, as_of = as.Date("2025-03-01"), daily = data.frame(
+    date = dates, variable = "pcpn", numeric_value = 0.1, observed = TRUE,
+    flag = "", trace = FALSE, accumulated = FALSE))
+  write_acis_station_cumulative_site(station, list(cache), cache$as_of, source_dir,
+    file.path(root, "cache"), file.path(project_root, "scripts", "station-cumulative-assets"))
+  writeLines('const cumulative = "cumulative/index.html";', file.path(source_dir, "explorer.js"))
+  destination <- file.path(site, "stations")
+  swc_station_beta_stage(source_dir, destination)
+  testthat::expect_true(file.exists(file.path(destination, "cumulative", "history", "1", "2023.json")))
+  dir.create(file.path(site, "pages"))
+  writeLines('<iframe src="../stations/index.html?embedded=1"></iframe>',
+    file.path(site, "pages", "station-conditions.html"))
+  testthat::expect_invisible(swc_daily_publish_validate_stations(site))
+  unlink(file.path(destination, "cumulative", "history", "1", "2023.json"))
+  testthat::expect_error(swc_daily_publish_validate_stations(site), "comparison curve")
+  unlink(file.path(source_dir, "cumulative", "1.json"))
+  testthat::expect_error(swc_station_beta_stage(source_dir, destination), "payload is missing")
+})

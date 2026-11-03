@@ -79,6 +79,12 @@ limits the active dataset but retains old cached files for reuse.
 - The Map view selector offers Single day, a centered seven-day grid, and a
   30-day grid ending on the selected date. The monthly grid uses five columns
   and six rows on large screens, with three or two columns on smaller screens.
+  On opening the explorer, the latest available date is selected. Switching
+  Map view to 30 days resets the endpoint to the newest built date in the chosen
+  water year/season. Deliberate date navigation still permits older windows;
+  the Latest button returns to the newest available date across the entire
+  collection, adjusting the year/season if needed. This avoids reopening a
+  month view anchored to an old selection when newer maps are available.
   Grids use built dates across season/water-year boundaries, preserving gaps.
   Clicking a thumbnail selects its date in the large map and adjusts the year
   and season selectors if needed. Every map uses the same geographic extent and
@@ -86,6 +92,41 @@ limits the active dataset but retains old cached files for reuse.
   image; they are not described as full-resolution exports.
 - Notable days are ranked within the selected period. They do not claim
   historical records, event impacts, station extremes, or formal Climdex indices.
+
+### Linked weather map views
+
+Weather maps have the same Single day, 7 days and 30 days Map view choices.
+These are collections of individual daily maps, not period-mean weather maps.
+Both selectors control one shared mode: the timeline, PRISM thumbnails and
+weather thumbnails use the same centered seven-day or trailing 30-day window.
+Choosing 30 days from either control starts at the latest date in the selected
+year/season; date navigation and Latest then behave identically for both sections.
+Selecting a weather thumbnail updates the main date, PRISM map, timeline,
+discussion links and other weather tabs. The weather product tab is retained.
+The weather section also has synchronized Latest, previous/next calendar-day
+buttons and a date picker. Both sets use the full Explorer date range, cross
+month/year boundaries identically and reflect the same disabled boundary
+states. Latest uses the newest Explorer/PRISM date, even if weather for that
+date is still unavailable; it does not silently jump to an older CORe date.
+The date controls sit above the weather map at the right, matching the PRISM
+map. Map view sits below the active weather map beside its image link, before
+the thumbnail grid. One shared weather selector moves between product tabs;
+it remains accessible below the status message when maps are unavailable.
+
+Each weather tab lazily loads only its own thumbnails. Closing the section
+avoids weather image/manifest loading; the manifest is reused between views.
+Missing weather dates remain explicitly unavailable at their actual dates,
+including when the newest PRISM date is ahead of CORe. The grid never shifts
+back to hide a weather gap. Weather dates use UTC daily means; showing maps
+side by side does not make their reporting periods identical to PRISM's.
+Region/PRISM-variable selectors change PRISM statistics and maps, while the
+weather tab independently selects circulation, jet or moisture context.
+
+Run the combined selector regression test with:
+
+```bash
+node tests/test-daily-explorer-selectors-ui.cjs
+```
 
 Area-weighted summaries use native grid cells whose centers fall in Arizona
 or New Mexico, with geodesic cell areas from `terra::cellSize`. At least 95%

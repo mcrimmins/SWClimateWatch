@@ -26,6 +26,12 @@
   const detailSubtitleEl = document.getElementById("detail-subtitle");
   const detailContentEl = document.getElementById("detail-content");
   const detailCache = new Map();
+  window.addEventListener("message", event => {
+    const frame = detailContentEl.querySelector(".cumulative-frame");
+    if (!frame || event.source !== frame.contentWindow || event.origin !== window.location.origin ||
+        event.data?.type !== "swc-cumulative-height" || !Number.isFinite(event.data.height)) return;
+    frame.style.height = `${Math.max(180, Math.min(4000, event.data.height))}px`;
+  });
   const markers = new Map();
   let selectedUid = null;
   let activeTab = "current";
@@ -718,6 +724,12 @@
       `<p class="detail-chart-note">Daily bars are observations, not a cumulative total. ` +
       `Trace precipitation counts as zero; missing and flagged days are not filled. ` +
       `Use the day buttons or left and right arrow keys to move between chart dates.</p>` +
+      `<section class="station-cumulative"><h3>Water-year cumulative precipitation</h3>` +
+      `<p class="detail-chart-note">October 1–September 30; independent of the summary period above. ` +
+      `Historical comparisons use complete water years.</p>` +
+      `<iframe title="Water-year cumulative precipitation for ${escapeHtml(station.name)}" ` +
+      `src="cumulative/index.html?embedded=1&amp;uid=${encodeURIComponent(station.uid)}&amp;as_of=${encodeURIComponent(station.as_of)}" ` +
+      `loading="lazy" class="cumulative-frame"></iframe></section>` +
       selectedExtremeSummary(station) +
       `<div class="detail-lower"><section><h3>Historical standing</h3>` +
       `<p>Each rank compares one eligible corresponding ${escapeHtml(periodLabels[station.period])} ` +

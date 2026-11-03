@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Daily Explorer · Southwest Climate Watch</title>
-  <link rel="stylesheet" href="explorer.css"><script src="explorer.js" defer></script>
+  <link rel="stylesheet" href="explorer.css?v=20261103-weather-layout"><script src="explorer.js?v=20261103-weather-layout" defer></script>
 </head>
 <body>
 <main>
@@ -32,6 +32,7 @@
   </section>
   <section class="card map-card" aria-labelledby="map-title">
     <div class="section-heading"><h2 id="map-title">Selected day</h2><div class="date-controls">
+      <button id="latest" type="button" aria-label="Go to the latest available map date">Latest</button>
       <button id="previous" aria-label="Previous calendar day">←</button>
       <input type="date" id="date" aria-label="Selected date">
       <button id="next" aria-label="Next calendar day">→</button></div></div>
@@ -48,6 +49,14 @@
   <details id="circulation-panel" class="card circulation" hidden>
     <summary>Weather maps<span id="circulation-date"></span></summary>
     <p class="muted small">NOAA CPC CORe reanalysis · UTC daily means · Pacific–North America context. The selected calendar date is used exactly; PRISM reporting periods may differ. These maps provide circulation context, not forecasts or evidence of causation.</p>
+    <div class="map-actions weather-view">
+      <div class="date-controls">
+        <button id="circulation-latest" type="button" aria-label="Go to the latest Explorer date">Latest</button>
+        <button id="circulation-previous" type="button" aria-label="Previous weather map calendar day">←</button>
+        <input type="date" id="circulation-date-input" aria-label="Weather selected date">
+        <button id="circulation-next" type="button" aria-label="Next weather map calendar day">→</button>
+      </div>
+    </div>
     <p id="circulation-status" role="status" aria-live="polite"></p>
     <button id="circulation-retry" type="button" hidden>Retry circulation maps</button>
     <div id="circulation-tabs" class="circulation-tabs" role="tablist" aria-label="Circulation map" hidden>
@@ -56,6 +65,9 @@
       <button id="circulation-tab-moisture" type="button" role="tab" aria-selected="false" aria-controls="circulation-map-moisture" tabindex="-1">Moisture &amp; low-level flow</button>
     </div>
     <div id="circulation-maps"></div>
+    <div id="circulation-view-fallback" class="map-actions weather-view">
+      <label id="circulation-view-control">Map view<select id="circulation-compare" aria-label="Weather map view"><option value="single">Single day</option><option value="7">7 days</option><option value="30">30 days</option></select></label>
+    </div>
     <p class="muted small">500-mb contours show absolute heights in dam, with a shared 480–612 dam scale; blue/orange shading is not an anomaly. Purple outlines locate AZ/NM. Jet shading is the speed of daily-mean 250-mb wind components in knots, not a daily maximum or gust. Streamlines show mean flow, not storm tracks. No anomaly baseline is included.</p>
     <p class="muted small">Moisture shading shows total precipitable water (0–3+ inches), with sea-level pressure contours every 4 hPa. Arrows show 850-mb flow, not surface winds or integrated vapor transport. Winds are omitted when hourly terrain-screening inputs are incomplete; the map notes this limitation. H/L labels use daily surface pressure for separate terrain screening and describe filtered daily-mean pressure centers, not tracked storms.</p>
   </details>

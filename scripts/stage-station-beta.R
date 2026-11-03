@@ -3,6 +3,7 @@
 source(file.path("R", "config.R"))
 source(file.path("R", "acis-station-inventory.R"))
 source(file.path("R", "acis-station-explorer-prototype.R"))
+source(file.path("R", "acis-station-cumulative-pilot.R"))
 source(file.path("R", "acis-station-site.R"))
 station_beta <- swc_station_beta_stage()
 message(sprintf("Staged station page for %s: %d stations, %d mapped.",

@@ -30,3 +30,5 @@ source(file.path(project_root, "R", "update-enabled-prism-maps.R"))
 source(file.path(project_root, "R", "daily-update.R"))
 source(file.path(project_root, "R", "prism-seasonal-archive.R"))
 source(file.path(project_root, "R", "validate-prism-seasonal-archive.R"))
+
+source(file.path(project_root, "R", "acis-station-cumulative-pilot.R"))
