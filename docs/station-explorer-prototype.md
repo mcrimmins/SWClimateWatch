@@ -405,11 +405,37 @@ source("scripts/serve-acis-station-explorer-prototype.R")
 
 Select a station on the map or in a table, then scroll below its daily plots.
 The earlier three-airport standalone prototype remains available for isolated
-plot experiments. This integration still needs staging review before production.
+plot experiments. The cumulative integration is live as of November 4; the
+historical-total chart described below is a subsequent local increment.
 
 The full-network local benchmark produced about 16 MB of cumulative JSON
 (3,902 files, including the main station payloads and catalog). A repeat build
 reused all 62 historical/reference caches in about 29 seconds, with no ACIS
 requests. This measures the cumulative stage only, not full publication. Browser
 startup does not fetch this collection; files are requested for a selected station
-and comparison year. VM runtime and S3 copy cost still need staging verification.
+and comparison year. Production integration was confirmed by the user on November 4;
+the benchmark above remains a laptop measurement.
+
+## Historical water-year totals (November 4 local increment)
+
+Below the cumulative plot, completed water years now appear as interactive
+precipitation-total bars. This reuses `comparison_years` annual totals already
+present in each station's small payload; no additional daily histories,
+downloads, historical-curve requests or numerical fitting are introduced.
+Small `annual_history` metadata adds the cached record's starting year,
+missing/incomplete years and supported full-year normal. The current year
+is a hatched bar, labeled season to date with its observation cutoff and any
+lower-bound caution. It remains excluded from completed-year comparisons.
+
+The normal is the endpoint of the supported complete-WY1991–WY2020 mean
+cumulative curve. It is withheld below 20 complete baseline years. Hover/tap or
+keyboard slider inspection reports year, inches and percent of that full-year
+average; percent is unavailable if the normal is missing or zero. Above/below
+average colors describe amounts, not statistical rarity. Incomplete/flagged
+years are gaps rather than zero bars. No trend or record-homogeneity claim is
+made. Seasonal periods and regional summaries remain future increments.
+
+Refresh with `scripts/build-acis-station-cumulative.R`; the normal daily
+station builder includes this update automatically. Review locally, then stage
+before explicit production promotion. The same integrated preview is served
+from the station explorer directory.

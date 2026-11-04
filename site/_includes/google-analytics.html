@@ -1,0 +1,13 @@
+<!-- SWC analytics bootstrap: only the production site and top-level documents. -->
+<script>
+(() => {
+  if (window.location.hostname !== "cales.arizona.edu" ||
+      !/^\/climate\/watch(?:\/|$)/.test(window.location.pathname) ||
+      window.self !== window.top || window.__swcAnalyticsLoading) return;
+  window.__swcAnalyticsLoading = true;
+  const script = document.createElement("script");
+  script.src = "/climate/watch/assets/site-analytics.js";
+  script.async = true;
+  document.head.appendChild(script);
+})();
+</script>

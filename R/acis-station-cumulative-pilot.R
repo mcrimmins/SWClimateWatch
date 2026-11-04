@@ -204,6 +204,19 @@ acis_cumulative_refresh_current <- function(reference, cache, as_of, history) {
   acis_cumulative_history_context(reference, history, reuse_reference = TRUE)
 }
 
+acis_cumulative_annual_history <- function(payload, history) {
+  first <- if (nrow(history$audit)) min(history$audit$water_year) else NA_integer_
+  last <- payload$water_year - 1L
+  years <- if (is.finite(first) && first <= last) seq.int(first, last) else integer()
+  complete <- vapply(history$catalog, function(x) as.integer(x$water_year), integer(1))
+  normal <- if (isTRUE(payload$baseline$available)) tail(payload$points$normal, 1L) else NA_real_
+  payload$annual_history <- list(first_year = first, last_year = last,
+    complete_years = length(complete), missing_years = unname(setdiff(years, complete)),
+    normal_inches = normal, period = "October 1-September 30",
+    note = "Complete earlier water years only; missing or flagged years remain gaps. Current accumulation is separate.")
+  payload
+}
+
 acis_cumulative_write_json <- function(value, path) {
   serialized <- as.character(jsonlite::toJSON(value, auto_unbox = TRUE,
     dataframe = "rows", na = "null", digits = NA, pretty = FALSE))
@@ -256,6 +269,7 @@ write_acis_station_cumulative_site <- function(stations, caches, as_of, output_d
         saveRDS(list(key = key, history = history, reference = payload), cache_path)
       }
       payload$comparison_years <- history$catalog
+      payload <- acis_cumulative_annual_history(payload, history)
       payload$available <- TRUE
       output_key_path <- file.path(directory, "history", as.character(uid), "source-key.txt")
       output_current <- file.exists(output_key_path) &&
@@ -327,6 +341,7 @@ build_acis_station_cumulative_pilot <- function(
   for (i in seq_along(payloads)) {
     payloads[[i]] <- acis_cumulative_history_context(payloads[[i]], histories[[i]])
     payloads[[i]]$comparison_years <- histories[[i]]$catalog
+    payloads[[i]] <- acis_cumulative_annual_history(payloads[[i]], histories[[i]])
     acis_cumulative_write_json(payloads[[i]], file.path(output_dir, paste0(uids[[i]], ".json")))
     for (curve in histories[[i]]$curves) acis_cumulative_write_json(curve,
       file.path(output_dir, sprintf("history/%d/%d.json", curve$uid, curve$water_year)))

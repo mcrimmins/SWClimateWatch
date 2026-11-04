@@ -2,6 +2,7 @@ project:
   type: website
   output-dir: _site
   resources:
+    - assets/site-analytics.js
     - stations/**
     - daily-explorer/**
     - maps/generated/snodas/current/*.png
@@ -286,6 +287,7 @@ website:
 
 format:
   html:
+    include-in-header: _includes/google-analytics.html
     theme:
       light: flatly
       dark: darkly

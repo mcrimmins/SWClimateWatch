@@ -13,6 +13,7 @@ function payload(uid) {return {schema_version:1,uid,sid:'TEST',name:`Station ${u
   baseline:{water_years:[1991,2020],sample_years:30,available:true},
   comparison_years:[{water_year:2026,annual_total:18.2,file:`history/${uid}/2026.json`},
     {water_year:2025,annual_total:9.1,file:`history/${uid}/2025.json`}],
+  annual_history:{first_year:2024,last_year:2026,normal_inches:10},
   current:{total:0.5,missing_days:0,flagged_days:0},
   historical_context:{available:true,sample_years:50,first_year:1976,last_year:2026,
     cutoff_date:'2026-10-06',current_status:'WITHIN_RANGE'},
@@ -45,6 +46,36 @@ const run=code=>vm.runInContext(code,context);
   assert.equal(controls['comparison-year'].value,'2026');
   assert.match(controls.plot.innerHTML,/fill="#d5e8e3"/);
   assert.match(controls['station-title'].textContent,/Station 1/);
+  assert.equal(controls['annual-history'].hidden,false);
+  assert.match(controls['annual-note'].textContent,/2 complete.*1 incomplete/);
+  assert.match(controls['annual-readout'].textContent,/Current WY2027.*0.50 in.*incomplete water year/);
+  assert.doesNotMatch(controls['annual-readout'].textContent,/%/);
+  assert.match(controls['annual-current'].textContent,/hatched bar.*excluded/);
+  assert.match(controls['annual-plot'].innerHTML,/fill="url\(#current-year-hatch\)"/);
+  run('inspectAnnual(2)');
+  assert.match(controls['annual-readout'].textContent,/WY2026: 18.20 in.*182%/);
+  run('inspectAnnual(0)');
+  assert.match(controls['annual-readout'].textContent,/WY2024: Incomplete.*no total/);
+  assert.doesNotMatch(controls['annual-readout'].textContent,/0.00 in/);
+  run('data.annual_history.normal_inches=0; renderAnnual(); inspectAnnual(2)');
+  assert.match(controls['annual-readout'].textContent,/Percent of average unavailable/);
+  run('data.annual_history.normal_inches=null; renderAnnual()');
+  assert.equal(controls['annual-normal-label'].hidden,true);
+  run('data.annual_history.normal_inches=10; renderAnnual()');
+  assert.equal(controls['annual-normal-label'].hidden,false);
+  run('data.current.total=null; data.current.observed_subtotal=1.2; data.current.missing_days=2; renderAnnual()');
+  assert.match(controls['annual-readout'].textContent,/≥1.20 in. recorded; 2 missing/);
+  assert.doesNotMatch(controls['annual-readout'].textContent,/%/);
+  run('data.current.observed_subtotal=null; renderAnnual()');
+  assert.match(controls['annual-readout'].textContent,/Unavailable/);
+  assert.doesNotMatch(controls['annual-plot'].innerHTML,/data-current-year=/);
+  run('data.current.total=0; data.current.missing_days=0; renderAnnual()');
+  assert.match(controls['annual-readout'].textContent,/0.00 in/);
+  assert.match(controls['annual-plot'].innerHTML,/data-current-year="2027"/);
+  run('data.current.total=100; renderAnnual()');
+  const currentY=Number(controls['annual-plot'].innerHTML.match(/data-current-year="2027"[^>]* y="([\d.-]+)"/)[1]);
+  assert.ok(currentY>=24,'A current record amount must fit the plotted scale');
+  run('data.current.total=0.5; data.current.observed_subtotal=0.5; renderAnnual()');
   controls.period.value='full'; controls.period.listeners.change();
   assert.equal(controls.inspect.max,'364');
   run('inspect(40)');
@@ -75,6 +106,7 @@ const run=code=>vm.runInContext(code,context);
   context.fetch=path=>new Promise(r=>resolve=()=>r({ok:true,json:async()=>payload(2)}));
   controls.station.value='2'; const slow=run('selectStation()');
   assert.equal(controls['station-card'].hidden,true);
+  assert.equal(controls['annual-history'].hidden,true);
   controls.station.value='3'; await run('selectStation()');
   resolve(); await slow;
   assert.match(controls['station-title'].textContent,/Station 3/);

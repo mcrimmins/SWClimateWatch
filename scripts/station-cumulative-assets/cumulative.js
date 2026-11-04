@@ -6,6 +6,7 @@ let catalog, data, selectedIndex = 0, lastIndex = 0, plotGeometry, selectionEpoc
 let comparisonYear = null, comparisonValues = null, comparisonEpoch = 0;
 const comparisonCache = new Map();
 const cache = new Map(), colors = {current:"#167b80",previous:"#b86432",normal:"#647181"};
+let annualYears = [], annualGeometry = null;
 const recordLabels = {NEW_HIGH:"Above historical high",NEW_LOW:"Below historical low",TIED_HIGH:"Tied historical high",
   TIED_LOW:"Tied historical low",TIED_BOTH:"All historical years tied",WITHIN_RANGE:"Within historical range",UNAVAILABLE:"Historical comparison unavailable"};
 function matchNote() {
@@ -152,6 +153,85 @@ function render() {
   $("inspect").max = String(lastIndex);
   inspect(Math.min(selectedIndex,lastIndex));
 }
+function inspectAnnual(index) {
+  if (!annualGeometry || !annualYears.length) return;
+  index = Math.max(0,Math.min(annualYears.length-1,Math.round(index)));
+  const year = annualYears[index], entry = data.comparison_years.find(item=>item.water_year===year);
+  const isCurrent = year === data.water_year;
+  const normal = data.annual_history?.normal_inches;
+  const percent = entry && finite(normal) && normal > 0 ? 100*entry.annual_total/normal : null;
+  $("annual-inspect").value = String(index);
+  $("annual-readout").textContent = isCurrent ? currentAnnualReadout() : `WY${year}: ${entry ? inches(entry.annual_total) : "Incomplete / unavailable — no total shown"}` +
+    (entry ? finite(percent) ? ` · ${percent.toFixed(0)}% of 1991–2020 average` : " · Percent of average unavailable" : "");
+  $("annual-inspect").setAttribute("aria-valuetext",$("annual-readout").textContent);
+  $("annual-cursor").setAttribute("x1",annualGeometry.x(index));
+  $("annual-cursor").setAttribute("x2",annualGeometry.x(index));
+}
+function currentAnnualReadout() {
+  const amount = finite(data.current.total) ? inches(data.current.total) :
+    finite(data.current.observed_subtotal) ? `≥${data.current.observed_subtotal.toFixed(2)} in. recorded; ${data.current.missing_days} missing, ${data.current.flagged_days} flagged` : 'Unavailable';
+  const complete = data.as_of.endsWith('-09-30') && finite(data.current.total);
+  return `Current WY${data.water_year} through ${labelDate(data.as_of)}: ${amount} · ${complete ? 'Complete current water year' : 'Season to date — incomplete water year'}`;
+}
+function renderAnnual() {
+  const entries = Array.isArray(data.comparison_years) ? data.comparison_years : [];
+  const summary = data.annual_history;
+  if (!summary || !Number.isInteger(summary.first_year) ||
+      summary.first_year > data.water_year-1 || data.water_year-summary.first_year > 500) {
+    $("annual-history").hidden = true; annualGeometry = null; annualYears = []; return;
+  }
+  const valid = entries.every(item=>Number.isInteger(item.water_year) && item.water_year >= summary.first_year &&
+    item.water_year < data.water_year && finite(item.annual_total) && item.annual_total >= 0);
+  if (!valid || new Set(entries.map(item=>item.water_year)).size !== entries.length) {
+    $("annual-history").hidden = true; annualGeometry = null; annualYears = []; return;
+  }
+  const first = summary.first_year, last = data.water_year-1;
+  annualYears = Array.from({length:data.water_year-first+1},(_,i)=>first+i);
+  const normal = summary.normal_inches, supported = finite(normal) && normal >= 0;
+  const left=62,right=938,top=24,bottom=248;
+  const currentAmount = finite(data.current.total) ? data.current.total : data.current.observed_subtotal;
+  const maximum=Math.max(1,...entries.map(item=>item.annual_total),supported?normal:0,finite(currentAmount)?currentAmount:0);
+  const step=maximum<=5?1:maximum<=15?3:maximum<=30?5:maximum<=60?10:20;
+  const upper=Math.ceil(maximum/step)*step;
+  const width=(right-left)/annualYears.length;
+  const x=i=>left+(i+0.5)*width, y=value=>bottom-value/upper*(bottom-top);
+  annualGeometry={x,left,right,width};
+  let svg=`<defs><pattern id="current-year-hatch" patternUnits="userSpaceOnUse" width="6" height="6"><rect width="6" height="6" fill="white"/><path d="M-1,1 L1,-1 M0,6 L6,0 M5,7 L7,5" stroke="#516b76" stroke-width="1.5"/></pattern></defs>`+
+    `<text x="${left}" y="15" fill="#647882" font-size="12">Water-year precipitation (inches); current year is season to date</text>`;
+  for(let tick=0;tick<=upper;tick+=step) svg+=
+    `<line x1="${left}" x2="${right}" y1="${y(tick)}" y2="${y(tick)}" stroke="#e2eaed"/>`+
+    `<text x="${left-12}" y="${y(tick)+4}" text-anchor="end" fill="#647882" font-size="12">${tick}</text>`;
+  const byYear=new Map(entries.map(item=>[item.water_year,item]));
+  annualYears.forEach((year,i)=>{
+    const entry=byYear.get(year);
+    if(year === data.water_year && finite(currentAmount)) {
+      const height=Math.max(2,bottom-y(currentAmount));
+      svg+=`<rect data-current-year="${year}" x="${x(i)-width*0.4}" y="${bottom-height}" width="${Math.max(1,width*0.8)}" height="${height}" fill="url(#current-year-hatch)" stroke="#334e59" stroke-width="1.2"/>`;
+    } else if(entry) {
+      const fill=!supported || Math.abs(entry.annual_total-normal)<0.0001 ? '#7c909b' : entry.annual_total>normal?'#25878c':'#bd874f';
+      const height=Math.max(1,bottom-y(entry.annual_total));
+      svg+=`<rect x="${x(i)-width*0.4}" y="${bottom-height}" width="${Math.max(1,width*0.8)}" height="${height}" fill="${fill}"/>`;
+    } else svg+=`<path d="M${x(i)-2},${bottom-3} L${x(i)+2},${bottom+1} M${x(i)+2},${bottom-3} L${x(i)-2},${bottom+1}" stroke="#bcc8ce"/>`;
+  });
+  if(supported) svg+=`<line x1="${left}" x2="${right}" y1="${y(normal)}" y2="${y(normal)}" stroke="#647181" stroke-width="2" stroke-dasharray="5 4"/>`;
+  const interval=annualYears.length>100?20:annualYears.length>45?10:5;
+  const ticks=[0,...annualYears.map((year,i)=>year%interval===0?i:-1).filter(i=>i>0 && i<annualYears.length-1),annualYears.length-1];
+  [...new Set(ticks)].forEach(i=>{if(i!==0 && i!==annualYears.length-1 && (i<3 || i>annualYears.length-4))return;
+    svg+=`<text x="${x(i)}" y="273" text-anchor="middle" fill="#647882" font-size="12">${annualYears[i]}${annualYears[i]===data.water_year?'*':''}</text>`;});
+  svg+=`<line id="annual-cursor" y1="${top}" y2="${bottom}" stroke="#273a42" stroke-dasharray="3 4"/>`;
+  $("annual-plot").innerHTML=svg;
+  $("annual-note").textContent=`WY${first}–${last} · ${entries.length} complete earlier water years · ${last-first+1-entries.length} incomplete or unavailable. ${data.role==='fixed'?'Fixed station':'ThreadEx area series'}.`;
+  $("annual-normal-label").hidden=!supported;
+  $("annual-normal-label").textContent=`1991–2020 average: ${inches(normal)} (${data.baseline.sample_years} complete years)`;
+  $("annual-wet-label").textContent=supported?'Above average':'Complete total';
+  $("annual-wet-label").className=supported?'annual-wet':'annual-total';
+  $("annual-dry-label").hidden=$("annual-neutral-label").hidden=!supported;
+  $("annual-current").textContent=currentAnnualReadout()+'. The hatched bar is excluded from completed-year comparisons; no end-of-year projection is shown.';
+  $("annual-current").className=`quality annual-current${finite(data.current.total)?'':' caution'}`;
+  $("annual-inspect").max=String(annualYears.length-1);
+  $("annual-history").hidden=false;
+  inspectAnnual(annualYears.length-1);
+}
 function showStation() {
   $("station-title").textContent = `${data.name} · ${data.state}`;
   $("station-note").textContent = `${data.sid} · ${data.role === "fixed" ? "Fixed station" : "ThreadEx area"} · Water year ${data.water_year}: October 1–September 30 · Data through ${data.as_of}` +
@@ -192,6 +272,7 @@ function showStation() {
   const initial = yearsAvailable.find(item=>item.water_year===data.previous_water_year) || yearsAvailable[0];
   selector.value = initial ? String(initial.water_year) : "none"; selector.disabled = false;
   selectedIndex = Math.max(0,data.points.findLastIndex(point=>point.date<=data.as_of)); selectComparison();
+  renderAnnual();
 }
 async function selectStation() {
   const epoch = ++selectionEpoch, uid = Number($("station").value);
@@ -199,6 +280,7 @@ async function selectStation() {
   $("comparison-year").disabled = true;
   $("error").hidden = true;
   $("station-card").hidden = true;
+  $("annual-history").hidden = true; annualGeometry = null; annualYears = [];
   $("station-card").setAttribute("aria-busy","true");
   try {
     const entry = catalog.stations.find(station=>station.uid===uid);
@@ -255,6 +337,14 @@ async function initialize() {
       inspect((svgX-plotGeometry.left)/(plotGeometry.right-plotGeometry.left)*lastIndex);
     };
     $("plot").addEventListener("pointermove",hover); $("plot").addEventListener("pointerdown",hover);
+    $("annual-inspect").addEventListener("input",()=>inspectAnnual(Number($("annual-inspect").value)));
+    const annualHover=event=>{
+      if(!annualGeometry)return;
+      const rect=$("annual-plot").getBoundingClientRect(), sx=(event.clientX-rect.left)*960/rect.width;
+      inspectAnnual((sx-annualGeometry.left)/annualGeometry.width-0.5);
+    };
+    $("annual-plot").addEventListener("pointermove",annualHover);
+    $("annual-plot").addEventListener("pointerdown",annualHover);
     await selectStation();
   } catch(error) {$("error").hidden = false; $("error").textContent = `${error.message} Open this plot through the site or a local preview server.`;}
 }

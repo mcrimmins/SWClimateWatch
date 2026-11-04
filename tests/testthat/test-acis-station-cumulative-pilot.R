@@ -112,6 +112,18 @@ testthat::test_that("comparison years include only complete past water years wit
   testthat::expect_equal(tail(history$curves[["2024"]]$values,1),366)
   testthat::expect_false(history$audit$eligible[history$audit$water_year==2023L])
   testthat::expect_false(any(history$audit$water_year==2025L))
+  payload <- acis_station_cumulative_payload(station, cache,
+    baseline_water_years = 2023:2024, min_years = 2L)
+  annual <- acis_cumulative_annual_history(payload, history)$annual_history
+  testthat::expect_equal(annual$first_year, 2023L)
+  testthat::expect_equal(annual$last_year, 2024L)
+  testthat::expect_equal(annual$complete_years, 1L)
+  testthat::expect_identical(annual$period, "October 1-September 30")
+  testthat::expect_equal(annual$missing_years, 2023L)
+  testthat::expect_true(is.na(annual$normal_inches))
+  supported <- acis_station_cumulative_payload(station, cache,
+    baseline_water_years = 2024L, min_years = 1L)
+  testthat::expect_equal(acis_cumulative_annual_history(supported, history)$annual_history$normal_inches, 366)
 })
 
 testthat::test_that("unchanged comparison files are reused without rewriting", {
