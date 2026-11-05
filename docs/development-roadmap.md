@@ -39,17 +39,35 @@ November 4 production run. Record the production cumulative/cache timing when
 available. Production changes still require local checks, a committed release,
 VM staging review and explicit promotion.
 
-## Selected work for November 4
+Release `ea5d88157d7df10e672cf302a8f10f8b552f8463` passed staging review,
+including Analytics and station annual precipitation bars with a hatched,
+incomplete current-year bar. Its site-only publication took 3m 09s and passed
+51/51 current and 352/352 historic map checks. The user reports production
+promotion is running; successful completion and GA4 Realtime collection still
+need confirmation. Do not treat these additions as confirmed live yet.
 
-1. Reconcile this roadmap with the confirmed production release (completed).
-2. Google Analytics tag `G-XS7RFBPW01` prepared locally with production-only
-   collection and embedded-view deduplication. Offline scope tests and a two-page
-   Quarto render passed; verify GA4 Realtime after deployment before custom events.
-3. Historical water-year precipitation bars implemented locally in Station
-   Conditions using existing catalogued totals: supported 1991–2020 mean,
-   interactive year/amount/percent-of-average readout, missing-year gaps and
-   hatched, explicitly incomplete current-year bar. Review locally, then stage; seasonal
-   windows and regional maps are subsequent increments.
+## Priority order and working sequence
+
+This is the proposed working order, with one feature increment active at a time.
+It preserves all backlog items below; priority is not a commitment to deliver
+every candidate. A deadline for the external monthly-map deliverable would move
+that work ahead of discretionary features.
+
+| Priority | Work | Next bounded step and completion evidence |
+| --- | --- | --- |
+| P0 — close the release | Confirm the current production promotion | Check successful publication, annual bars and GA4 Realtime. Record runtime; inspect the two reported weather gaps without making broad optimization a release prerequisite. A real publication/data failure takes precedence over new features. |
+| P1 — work now | Template conditions synopsis | November 5: Home Maps/Synopsis tabs and a standalone template page are implemented locally, with rendered validation and destination-specific successful-publication comparisons. Targeted tests and local renders pass. Next run the [staging release](synopsis-staging.md), collect VM timing and review before production promotion. Regional snow narrative remains pending and is explicitly disclosed; Current Snow is linked. AI experiments and the proposed daily AI page remain deferred. See [scope](conditions-synopsis-scope.md). |
+| P2 — next project 1 | Monthly PRISM external deliverable | Verify access/record coverage and scope hotlinkable SPI-12 and 12-month temperature-ranking images for Drought and Grazing. Validate SPI methods before publishing; use a monthly update cycle. |
+| P2 — next project 2 | Station seasonal precipitation histories | Extend the reviewed annual chart to explicitly defined cool-season and monsoon totals, reusing station caches and completeness rules. Keep regional historical maps separate. |
+| P2 — next project 3 | Recent-period weather means | Inventory retained numeric CORe fields; prototype a small 7-/30-day 500-mb/PWAT mean set with completeness checks and measured cost. Anomaly baselines follow separately. |
+| P2 — next project 4 | Historic seasonal snow anomalies | Validate existing peak-SWE departure/percent-of-median pilots and stage eligible years with support guards. Reorder within P2 if cool-season monitoring makes this more useful sooner. |
+| Alongside increments | Operational maintenance | Track freshness and source revisions, station audit age, raster warnings and measured cache/runtime behavior. Address specific failures promptly; schedule broader profiling as its own bounded task. |
+| Later — scope before building | New sources and statistical extensions | Local storm reports/hazard polygons, gauge conditions, historical odds, completed-year Explorer/historic-season integration, custom station dates, ENSO composites and further SPI products. Each needs its own source/method/performance assessment. |
+| Later — polish | Consistency and optional interactions | Shared city-label styling, historic RONI labels at the next archive refresh, custom Analytics events and remaining documentation reconciliation. |
+
+Selected work for November 4: reconcile and prioritize this roadmap, close the
+current release when results arrive, and scope the synopsis. Local synopsis
+planning does not depend on waiting for the production run or weather-gap repair.
 
 ## Agreed additions and enhancements
 
@@ -66,11 +84,12 @@ those pages are next refreshed.
 
 | Workstream | Next bounded step | Relative effort |
 | --- | --- | --- |
+| Conditions synopsis / daily text summary (requested November 4, 2026) | P1: finish and stage the deterministic template. AI comparisons were explored locally and deferred November 5; retain their findings for future consideration. See the [first-increment scope](conditions-synopsis-scope.md) and overview below. | Moderate for remaining template integration; AI deferred |
 | Recent-period weather means and anomalies (requested November 2, 2026) | Scope trailing 7- and 30-day circulation/moisture means using cached CORe fields; separately assess calendar-matched anomaly baselines, missing-day guards, interpretation and update costs. Prototype means before committing to historical baseline acquisition. | Moderate for means; larger for validated anomalies |
 | Station water-year precipitation curves (requested November 1, 2026) | Live November 4 for 62 records: current cumulative precipitation, historical-year selection, WY1991-2020 mean and middle-50% band, record bounds, closest progression and interactive inspection. Historical/reference caches support daily builds. Review production cache timing; optional background curves remain deferred. | Live; monitor |
-| Historical seasonal and water-year time series (requested November 1, 2026) | November 4 local implementation: completed station water-year bars and a supported normal line reuse the cumulative-history catalog, with interactive year/total/percent-of-average readouts, missing-year gaps and a hatched current season-to-date bar excluded from full-year comparisons. Review and stage the first increment; seasonal and regional summaries follow separately. | Local review; staging next |
+| Historical seasonal and water-year time series (requested November 1, 2026) | Annual station bars passed staging in ea5d881; production promotion is underway. Completed-year totals and a supported normal line reuse the cumulative-history catalog; a hatched current season-to-date bar is excluded from full-year comparisons. Seasonal and regional summaries follow separately. | Annual release verification; seasonal extension moderate |
 | Historical odds of reaching precipitation thresholds (requested November 1, 2026) | Pilot CW3E-style climatological probabilities of reaching fractions of full water-year normal given precipitation already observed. Validate Southwest seasonality, historical samples and uncertainty; benchmark cached historical remainder distributions before selecting monthly or daily updates and maps. | Moderate-large; methods validation first |
-| Google Analytics (requested November 1, 2026) | November 4: tag G-XS7RFBPW01 prepared locally, gated to the production hostname/path and top-level views. Local/staging exclusions and embedded deduplication tested; verify GA4 Realtime after deployment. See site-analytics.md. Custom interaction events remain deferred. | Local implementation; deployment verification pending |
+| Google Analytics (requested November 1, 2026) | Tag G-XS7RFBPW01 passed staging in ea5d881, gated to the production hostname/path and top-level views. Local/staging exclusions and embedded deduplication tested; verify GA4 Realtime after production promotion completes. See site-analytics.md. Custom interaction events remain deferred. | Production verification pending |
 | Historical snow anomaly companions | Validate seasonal peak-SWE departure and percent-of-median pilots, then stage all eligible WY2005-WY2025 years. Retain coverage and support guards and existing archive cautions. | Moderate |
 | Raster plotting warnings | Locate affected builders and correct the rendering geometry without altering climate statistics. Compare before/after maps. | Small-moderate |
 | Daily-update speed | Profile several consecutive new-date runs, cache-hit/miss behavior, costly PRISM reference work, and station processing. Benchmark before removing products or changing cadence. | Moderate |
@@ -94,8 +113,8 @@ those pages are next refreshed.
 
 ## New exploration: Google Analytics
 
-Requested November 1; tag `G-XS7RFBPW01` implemented locally November 4, 2026.
-Production collection awaits release and verification in GA4 Realtime. See
+Requested November 1; tag `G-XS7RFBPW01` passed staging November 4, 2026.
+Production promotion is underway; collection awaits verification in GA4 Realtime. See
 [Analytics setup and validation](site-analytics.md). Add Google Analytics
 to understand which SW Climate Watch pages and tools are useful to visitors.
 Start with page views and referral sources; separately choose a small set of
@@ -426,21 +445,145 @@ the bounded starting option. Assess daily incremental updates, gridded maps
 versus station/regional cards, reference-cache size and runtime before adding
 these products to the operational daily cycle.
 
+## New exploration: conditions synopsis and daily change summary
+
+**Active decision, November 5:** move forward with the template synopsis.
+AI interpretation and an unlisted daily AI review page are deferred. The optional
+API approaches below remain historical scoping notes, not scheduled work.
+
+The [first-increment scope](conditions-synopsis-scope.md) now specifies the
+evidence inventory, candidate thresholds, change accounting, local template/API
+comparison and performance/release gates. It is the implementation-scoping
+reference; the following preserves the broader intent of the request.
+
+Seasonal behavior is part of the first-increment acceptance criteria: winter
+snow storage/deficits, spring snow loss and transition, summer localized rain
+and heat, and fall first freezes/snow plus the water-year reset. Configurable
+editorial priorities retain common 30-day/water-year anchors and source quality
+guards. Review representative seasonal examples and boundary behavior; calendar
+changes alone must not create climate-change claims. See the scope's seasonal
+priorities and transitions section.
+
+November 4 local increment: `scripts/build-conditions-synopsis-evidence.R`
+now inventories five cached PRISM grids (39 regional facts), strictly matched
+station observations and snow pair/checksum availability. The local
+`scripts/build-conditions-synopsis-draft.R` adds a linked HTML/Markdown template
+with up to two screened station extremes, selected by seasonal priority and
+complementary geography/metric family. Temperature and freeze departures are
+included alongside daily/three-day rainfall. Local wording/seasonal review,
+regional snow interpretation, published-snapshot change accounting and
+publication integration remain pending; historical extreme ranks and hot/warm
+threshold-count highlights remain separate adapters. These scripts write only
+diagnostic review artifacts and make no requests or publication changes.
+
+The subsequent local increment leads with seven-day conditions, then 30-day and
+water-year context as bullets. Cached daily grids supply recent rainfall,
+temperature and notable-day coverage; matching seven-day station details supply
+extremes. Freeze-night departures remain seasonal. A separate local-preview
+history exercises event novelty, stable reruns, supported material changes and
+quiet-day wording without advancing a published snapshot. Production comparison
+hooks, regional snow interpretation and seasonal review are still pending.
+
+The next local refinement adds readable narrative dates and direct station
+extreme ranks/anomalies from complete matching windows in the cached full
+record. Focus now responds to rainfall, heat/cold, mixed and quieter-week
+signals; unusual dry spells and seasonal departures provide longer-term
+fallbacks. New-date historical processing took about one minute on the laptop,
+while unchanged cached previews took about 4–5 seconds. Benchmark on the VM
+before enabling a daily dependency. No new downloads or impact claims are made.
+
+Requested November 4, 2026 while the production release was running. Planning
+only: no new page, API request or daily-workflow dependency is enabled here.
+Consider a Home **Maps / Synopsis** tab, with a directly linkable synopsis page
+for sharing and accessibility. Keep the map dashboard as the initial view until
+a local layout trial is approved. The synopsis should help visitors interpret
+conditions and find the relevant maps, stations and Explorer dates.
+
+### Content and evidence
+
+- **Past 30 days:** rainfall amount/coverage, dry/wet percentile-area patterns,
+  temperature departures and supported notable days. Identify spatial contrasts
+  across AZ/NM, not just a combined regional mean. Reuse existing regional
+  summaries and add only a small agreed set of cached state/subregional metrics.
+- **Water year to date:** precipitation totals and supported comparisons,
+  station accumulation and freeze-night context, plus seasonal snow storage
+  and seven-day change when meaningful. Retain each variable's actual period,
+  baseline, geographic coverage, units and data-through date.
+- **What changed:** a short, prioritized set of changes since the **last
+  successfully published** evidence snapshot. Distinguish newly observed days,
+  revisions to older source data, rolling-window days entering/leaving, and
+  actual condition changes. A failed publish must not advance this comparison
+  anchor; a rerun with identical facts should not claim a new event.
+- **Notable observations and where to look:** eligible station extremes,
+  changes in spatial coverage or large supported departures, with links to
+  existing product pages, station views, Explorer dates and discussions where
+  valid links are available. Scope new deep-link support if necessary rather
+  than inventing selector URLs that the tools do not support.
+
+Build a compact, versioned numeric evidence file after data validation. Each
+fact needs an ID, source/product, period/end date, geography, reference/sample
+support, quality status and approved link. Apply explicit, configurable
+thresholds for salience, geographic extent and publication-to-publication
+change. Favor a small number of meaningful highlights; do not manufacture a
+daily narrative change from unchanged data or noisy single-pixel maxima.
+Avoid double-counting overlapping ThreadEx and fixed-station records as
+independent evidence. Incomplete station precipitation remains a lower bound;
+unsupported comparisons and low-median snow ratios remain withheld.
+
+CORe circulation/PWAT may provide descriptive context, but absolute height or
+moisture maps cannot support an anomaly claim without a validated baseline.
+Weather UTC means, PRISM reporting days, SNODAS snapshots and station dates
+are not interchangeable. Attribute any discussion-based interpretation to
+its dated NWS/WPC source. Do not infer ENSO causation, flood impacts or drought
+classification from spatial coincidence or a single index value.
+
+### Rendering options and proposed sequence
+
+1. **Template baseline:** generate concise linked sentences from validated
+   evidence and deterministic highlight rules. This is reproducible, requires
+   no AI calls, and provides an operational fallback. The page remains static
+   HTML published to S3 even though its content is regenerated daily.
+2. **Optional AI-assisted synthesis:** send the compact curated evidence, not
+   whole rasters, full histories or screenshots, to the OpenAI API. Request a
+   short structured response containing a headline, period summaries,
+   change highlights, limitations and supporting fact IDs. Let local code
+   supply numeric values, dates and approved links where practical. Test
+   whether this improves synthesis and explanation enough to justify it.
+3. **Validation and release:** check returned structure, fact references,
+   dates/numbers/units and unsupported-record/causal wording. Structured
+   Outputs constrains response shape, not scientific accuracy. Compare
+   template and AI drafts on wet/dry/mixed periods, sparse or lagged data,
+   early water year, source revisions and unchanged reruns before release.
+   Require evidence checks; do not assume automated prose validation can
+   establish every interpretive claim.
+
+Cache the evidence and generated text by input/prompt/model version. Reuse
+unchanged results and regenerate only after materially changed approved facts;
+benchmark evidence extraction separately from API latency and cost. Use a
+bounded timeout/retry and output-length limit. API failure or invalid output
+must fall back to the current deterministic summary without blocking map/site
+publication. Any retained older narrative must be visibly dated and cannot
+appear to describe new inputs. Keep API credentials on the VM, record usage
+and generation metadata, and label AI-assisted prose if that option is adopted.
+
+First bounded task: agree the evidence fields and 5–10 highlight rules, then
+produce a local template-based synopsis for several cached dates. Review that
+before selecting a model, acquiring credentials or enabling external calls.
+Model choice, actual daily cost, account settings and latency remain to be
+measured; no API budget or pricing estimate is assumed in this scope.
+
+References for the optional API route: official OpenAI
+[Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs)
+and [production guidance](https://developers.openai.com/api/docs/guides/production-best-practices).
+
 ## Suggested sequence
 
-1. Stage the November 4 Analytics tag and verify its collection exclusions;
-   verify production-only page views after explicit promotion.
-2. Locally review the implemented station water-year precipitation history charts;
-   stage the reviewed increment before production promotion. Extend to cool-season
-   and monsoon totals after agreeing period definitions and completeness rules.
-3. Select recent-period weather means, seasonal snow companions, raster warning
-   cleanup or operational profiling as separate subsequent tasks.
-4. Continue source freshness/revision policy, weather gap monitoring and station
-   audit maintenance. Scope anomaly baselines and completed-year Explorer
-   navigation separately.
-5. Schedule larger monthly PRISM/SPI, archive, impact, hydrology and composite
-   projects from the backlog; preserve the monthly SPI-12 and temperature-ranking
-   hotlinkable image requirement for Drought and Grazing.
+Follow the [priority order above](#priority-order-and-working-sequence).
+The immediate development deliverable is a cached-data synopsis evidence report
+and short template draft, while the current release finishes production checks.
+Review that draft before selecting a model or enabling API calls. Move one
+bounded increment through local review, staging and explicit promotion before
+adding another daily-publication dependency.
 
 Keep the operational daily publisher stable while experiments run locally.
 Retain the VM staging cache for development. The earlier report of 192 GB free

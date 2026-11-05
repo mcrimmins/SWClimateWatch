@@ -1,0 +1,31 @@
+```{=html}
+<style>.synopsis-content{max-width:1050px;line-height:1.65}.synopsis-content h3{font-size:1.2rem;margin-top:1.5rem}.synopsis-content li{margin-bottom:14px}.synopsis-content small{font-size:.85em;color:#566b75}.synopsis-content details{margin:20px 0}.synopsis-waiting{padding:16px;background:#fff4df}.synopsis-date{color:#566b75}.synopsis-content .signal-wet{color:#11685D;}.synopsis-content .signal-dry{color:#87501C;}.synopsis-content .signal-warm{color:#A34618;}.synopsis-content .signal-cold{color:#235FA0;}</style>
+<section class="synopsis-content" data-synopsis-status="READY" data-synopsis-date="2026-11-03">
+<p class="synopsis-date"><strong>Data through November 3, 2026</strong></p>
+<h3>Past 7 days</h3><ul>
+<li>During Oct 28–Nov 3, 2026, precipitation averaged <strong class="signal-neutral">1.57 inches</strong> across Arizona and New Mexico (Arizona 2.25; New Mexico 0.94). The largest daily regional mean in this seven-day window was 0.80 inches on November 2; 91% of the area received at least 0.10 inch that day.<br><small><a href="https://cales.arizona.edu/climate/watch/pages/products/pcpn_total_07day.html">Supporting map</a> · <a href="https://cales.arizona.edu/climate/watch/pages/daily-explorer.html">Supporting map</a></small></li>
+<li>Mean temperature during Oct 28–Nov 3, 2026 was <span class="signal-warm">3.7°F above</span> the 1991-2020 average (Arizona +1.3°F; New Mexico +5.9°F).<br><small><a href="https://cales.arizona.edu/climate/watch/pages/daily-explorer.html">Supporting map</a></small></li>
+<li>FLAGSTAFF AP (AZ) received <strong class="signal-wet">3.37 inches</strong> of precipitation on November 1. The weekly wettest-day amount <strong class="signal-wet">is the highest among 97 matching 7-day periods</strong> (1893–2025, plus this period).<br><small><a href="https://cales.arizona.edu/climate/watch/pages/station-conditions.html">Station Conditions</a></small></li>
+</ul>
+<h3>Past 30 days</h3><ul>
+<li>During Oct 5–Nov 3, 2026, precipitation averaged 3.31 inches across Arizona and New Mexico (Arizona 3.94; New Mexico 2.72). <span class="signal-wet">98% of the area was above percentile 67</span> and <span class="signal-dry">&lt;1% below percentile 33</span> for the matching period.<br><small><a href="https://cales.arizona.edu/climate/watch/pages/products/pcpn_total_30day.html">Supporting map</a> · <a href="https://cales.arizona.edu/climate/watch/pages/products/pcpn_percentile_30day.html">Supporting map</a></small></li>
+<li>During Oct 5–Nov 3, 2026, <span class="signal-warm">13 of 16 eligible fixed stations</span> in New Mexico (81%) had mean temperatures above the 90th percentile for their matching historical periods. ThreadEx series are excluded; station counts are not regional land-area percentages.<br><small><a href="https://cales.arizona.edu/climate/watch/pages/station-conditions.html">Station Conditions</a></small></li>
+</ul>
+<h3>Water year so far</h3><ul>
+<li>During Oct 1–Nov 3, 2026, precipitation averaged 3.43 inches across Arizona and New Mexico (Arizona 3.96; New Mexico 2.93). <span class="signal-wet">98% of the area was above percentile 67</span> and <span class="signal-dry">&lt;1% below percentile 33</span> for the matching period. These early-water-year comparisons do not predict the full-year outcome.<br><small><a href="https://cales.arizona.edu/climate/watch/pages/products/pcpn_water_year_total.html">Supporting map</a> · <a href="https://cales.arizona.edu/climate/watch/pages/products/pcpn_water_year_percentile.html">Supporting map</a></small></li>
+<li>CHAMA (NM) had <strong class="signal-neutral">11 freeze nights</strong> during Oct 1–Nov 3, 2026: <strong class="signal-warm">15.4 fewer</strong> than its 1991–2020 mean of 26.4 nights (23 usable reference years).<br><small><a href="https://cales.arizona.edu/climate/watch/pages/station-conditions.html">Station Conditions</a></small></li>
+</ul>
+<p><a href="https://cales.arizona.edu/climate/watch/pages/current-snow.html">Current Snow: latest SWE and snowpack changes</a></p>
+<details><summary>Reading this synopsis</summary><ul>
+<li>Reference periods are retained with each fact in the evidence file. Regional amounts and temperature departures are area-weighted grid summaries; station values describe individual locations.</li>
+<li>Station peak rankings compare complete windows of the same length ending on the same calendar date in earlier years, with the current period included once in the rank count. They are not rankings of all calendar days or all weeks. At least 25 earlier complete windows are required; gaps and ties are retained. Peak anomalies compare matching window extrema with at least 15 complete 1991–2020 windows.</li>
+<li>Precipitation includes rain and the liquid equivalent of snow. A freeze night has a daily minimum at or below 32°F. Dry-spell lengths use precipitation below 0.04 inch and are limited to their stated window; they are not necessarily ongoing spells. Supporting products may use a newer observation date than this synopsis cutoff.</li>
+<li>Editorial focus follows supported rainfall, heat/cold and longer-term signals; no flood, damage or other impact is inferred from observations alone.</li>
+<li>Regional snow interpretation is pending mountain/reference-area metrics; verified files alone do not establish a regional snow anomaly.</li>
+<li>No compatible prior successful publication is available for comparison; no change since the previous publication is claimed.</li>
+<li>PRISM, station and snow products have different reporting-time conventions. A shared cutoff date does not make their daily observation intervals identical.</li>
+<li>Station network fractions use eligible fixed stations in AZ/NM, with complete current observations, publication screening and supported historical percentiles. ThreadEx series and ambiguous duplicate records are excluded. Comparison records differ among stations; these fractions are not land-area coverage. Day-to-day network-count changes are not interpreted without a matched station set.</li>
+<li>Warm-day/cold-night counts use daily percentile thresholds; the frequency count itself is not historically ranked. A 14-day change in a rolling 30-day precipitation rank is not a precipitation amount or a change since yesterday.</li>
+</ul></details>
+</section>
+```

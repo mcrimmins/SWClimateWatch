@@ -19,6 +19,9 @@ filters: [filters/dashboard-status.lua]
 :::
 :::
 
+::: {.panel-tabset #home-views}
+## Maps
+
 ::: {.archive-year-intro .dashboard-roni .archive-roni-el-nino}
 [Strong El Niño-range conditions · RONI +1.7 °C]{.archive-roni-badge}
 
@@ -177,6 +180,14 @@ Additional completed years are listed under Historic Years in the navigation men
 
 ::: {.dashboard-explore-more}
 **Explore more:** [Daily Explorer](pages/daily-explorer.qmd) · [Station Conditions](pages/station-conditions.qmd) · [Current Snow](pages/current-snow.qmd) · [Historic Seasons](#historic-seasons)
+:::
+
+## Synopsis
+
+[Open synopsis as a separate page](pages/synopsis.qmd)
+
+{{< include pages/_synopsis-content.qmd >}}
+
 :::
 
 ::: {.institutional-branding .dashboard-branding}

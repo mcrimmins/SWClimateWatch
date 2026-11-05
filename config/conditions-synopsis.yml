@@ -1,0 +1,58 @@
+version: 1
+# Local evidence pilot only; this does not enable publication.
+minimum_area_coverage: 0.98
+rain_threshold_inches: 0.10
+lower_percentile: 33
+upper_percentile: 67
+very_low_percentile: 10
+very_high_percentile: 90
+maximum_station_examples: 2
+maximum_section_bullets: 3  # Two by default; a third must add a distinct signal.
+station_states: [AZ, NM]
+minimum_freeze_normal_years: 15  # Matches the Station Conditions comparison gate.
+minimum_freeze_departure_nights: 3
+minimum_weekly_daily_rain_inches: 0.10
+minimum_weekly_three_day_rain_inches: 0.25
+minimum_recent_rain_area_percent: 25
+material_area_change_points: 10
+material_temperature_change_f: 0.5
+minimum_extreme_rank_years: 25
+minimum_extreme_normal_years: 15
+unusual_station_percentile: 90
+active_week_temperature_departure_f: 3
+quiet_week_temperature_departure_f: 2
+minimum_impact_daily_rain_inches: 0.5
+minimum_impact_three_day_rain_inches: 1
+minimum_dry_spell_days: 10
+regional_highlights:
+  extreme_count_days: 6  # 30-day count; not a historical percentile of the count.
+  minimum_area_percent: 20
+  rank_change_points: 20
+  station_tail_low: 10
+  station_tail_high: 90
+  minimum_stations: 10
+  minimum_state_stations: 5
+  minimum_station_fraction_percent: 30
+formatting:
+  enabled: true
+  temperature_color_f: 3
+  temperature_strong_f: 6
+  exceptional_station_percentile: 98
+  freeze_strong_departure_nights: 10
+  colors:
+    wet: '#11685D'
+    dry: '#87501C'
+    warm: '#A34618'
+    cold: '#235FA0'
+station_metric_order:
+  winter: [freeze_nights_anomaly, max_daily_pcpn, coldest_night, max_3day_pcpn, hottest_day, longest_dry_spell]
+  spring: [max_daily_pcpn, freeze_nights_anomaly, hottest_day, coldest_night, max_3day_pcpn, longest_dry_spell]
+  early_summer: [hottest_day, max_daily_pcpn, max_3day_pcpn, coldest_night, longest_dry_spell]
+  summer: [max_daily_pcpn, hottest_day, max_3day_pcpn, coldest_night, longest_dry_spell]
+  fall: [freeze_nights_anomaly, max_daily_pcpn, coldest_night, max_3day_pcpn, hottest_day, longest_dry_spell]
+seasons:
+  winter: {start: '12-01', end: '03-31', emphasis: 'Precipitation, snow storage/deficits and freezes'}
+  spring: {start: '04-01', end: '05-31', emphasis: 'Precipitation, remaining snow and temperature transitions'}
+  early_summer: {start: '06-01', end: '06-14', emphasis: 'Dryness/warmth and completed-season snow context'}
+  summer: {start: '06-15', end: '09-30', emphasis: 'Localized rainfall, dry intervals and heat; monsoon context'}
+  fall: {start: '10-01', end: '11-30', emphasis: 'Early water-year precipitation, first freezes and initial snow'}

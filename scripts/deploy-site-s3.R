@@ -124,6 +124,7 @@ deploy_swc_site <- function(
     quarto <- swc_deploy_quarto()
     swc_deploy_run(rscript, "scripts/build-map-product-site.R", "Build and validate map catalog")
     swc_deploy_run(rscript, "scripts/stage-daily-explorer.R", "Stage cached Daily Explorer")
+    swc_deploy_run(rscript, c("scripts/stage-conditions-synopsis.R", destination), "Stage cached template synopsis")
     swc_deploy_run(quarto, c("render", "site"), "Render Quarto site")
   }
   output_dir <- file.path(project_dir, "site", "_site")
@@ -138,6 +139,8 @@ deploy_swc_site <- function(
   validation <- swc_deploy_validation_summary()
   source(file.path("R", "daily-publish.R"), local = TRUE)
   swc_daily_publish_validate_explorer(output_dir)
+  source(file.path("R", "conditions-synopsis-site.R"), local = TRUE)
+  validate_conditions_synopsis_publication(output_dir, destination)
   output_dir <- normalizePath(output_dir, winslash = "/", mustWork = TRUE)
   if (!is.null(extra_validation)) extra_validation(output_dir)
   swc_deploy_run(
@@ -148,6 +151,7 @@ deploy_swc_site <- function(
   if (dry_run) {
     message("Dry run complete; no S3 objects were changed.")
   } else {
+    commit_conditions_synopsis_publication(destination)
     message("Site sync complete: ", destination)
   }
   invisible(list(destination = destination, dry_run = dry_run, delete = delete,
