@@ -1,0 +1,48 @@
+---
+title: "Freeze timing and season length"
+page-layout: full
+toc: false
+---
+
+```{=html}
+<div class="current-group-preview" data-group="freeze-monitoring">
+<p>First/last freeze maps use August–July cold seasons; freeze-free length uses the displayed calendar year. Check each map’s year before comparing.</p>
+<div class="temperature-variable-tabs" role="tablist" aria-label="Freeze timing and season length">
+<button type="button" id="group-tab-first" role="tab" data-tab="first" aria-controls="group-maps">First freeze</button>
+<button type="button" id="group-tab-last" role="tab" data-tab="last" aria-controls="group-maps">Last freeze</button>
+<button type="button" id="group-tab-length" role="tab" data-tab="length" aria-controls="group-maps">Freeze-free season</button>
+</div>
+<div class="temperature-period-control group-variant-control"><label for="group-variant">Display</label><select id="group-variant"></select></div>
+<div id="group-maps" role="tabpanel" aria-live="polite">
+<article class="group-map" data-product="mint_first_freeze_date" data-tab="first" data-variant="observed" data-option="Date"><h2 class="group-map-heading">First-freeze date</h2>
+<a href="../maps/generated/prism/temperature/mint-first-freeze-date-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/mint-first-freeze-date-latest.png" alt="First-freeze date" loading="lazy"></a>
+<p>This map shows the first date with minimum temperature at or below 32 degrees F in the displayed August 1-July 31 cold season. Areas without a recorded freeze are blank, and the prior completed season remains displayed until the new season has sufficient coverage.</p>
+<p><a href="../maps/generated/prism/temperature/mint-first-freeze-date-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="mint_first_freeze_departure" data-tab="first" data-variant="departure" data-option="Departure"><h2 class="group-map-heading">First-freeze departure</h2>
+<a href="../maps/generated/prism/temperature/mint-first-freeze-departure-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/mint-first-freeze-departure-latest.png" alt="First-freeze departure" loading="lazy"></a>
+<p>The observed first freeze in the displayed August 1-July 31 season is compared with the local median first-freeze date from 1991-2020. Negative values mean the first freeze arrived early and positive values mean it arrived late; areas without a reliable historical comparison are blank.</p>
+<p><a href="../maps/generated/prism/temperature/mint-first-freeze-departure-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="mint_last_freeze_date" data-tab="last" data-variant="observed" data-option="Date"><h2 class="group-map-heading">Last-freeze date</h2>
+<a href="../maps/generated/prism/temperature/mint-last-freeze-date-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/mint-last-freeze-date-latest.png" alt="Last-freeze date" loading="lazy"></a>
+<p>This map shows the latest date with minimum temperature at or below 32 degrees F in the displayed August 1-July 31 cold season. The current season's date can change if another freeze occurs before July 31; areas without a recorded freeze are blank.</p>
+<p><a href="../maps/generated/prism/temperature/mint-last-freeze-date-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="mint_last_freeze_departure" data-tab="last" data-variant="departure" data-option="Departure"><h2 class="group-map-heading">Last-freeze departure</h2>
+<a href="../maps/generated/prism/temperature/mint-last-freeze-departure-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/mint-last-freeze-departure-latest.png" alt="Last-freeze departure" loading="lazy"></a>
+<p>The observed last freeze in the displayed August 1-July 31 season is compared with the local median last-freeze date from 1991-2020. Negative values mean the last freeze was early and positive values mean it was late; a current-season result remains provisional until July 31.</p>
+<p><a href="../maps/generated/prism/temperature/mint-last-freeze-departure-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="mint_freeze_free_length" data-tab="length" data-variant="observed" data-option="Length"><h2 class="group-map-heading">Freeze-free season length</h2>
+<a href="../maps/generated/prism/temperature/mint-freeze-free-season-length-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/mint-freeze-free-season-length-latest.png" alt="Freeze-free season length" loading="lazy"></a>
+<p>Freeze-free season length is the number of days between the last January-July freeze and the first August-December freeze in the displayed calendar year. Longer periods mean more days between these freeze events; areas missing either freeze date are blank.</p>
+<p><a href="../maps/generated/prism/temperature/mint-freeze-free-season-length-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="mint_freeze_free_departure" data-tab="length" data-variant="departure" data-option="Departure"><h2 class="group-map-heading">Freeze-free season departure</h2>
+<a href="../maps/generated/prism/temperature/mint-freeze-free-season-departure-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/mint-freeze-free-season-departure-latest.png" alt="Freeze-free season departure" loading="lazy"></a>
+<p>The displayed year's freeze-free season length is compared with the local median length from 1991-2020. Positive values mean a longer-than-median interval and negative values a shorter one; areas without both freeze dates or a reliable historical comparison are blank.</p>
+<p><a href="../maps/generated/prism/temperature/mint-freeze-free-season-departure-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+</div></div><script src="../assets/current-map-groups/current-map-groups.js"></script>
+```

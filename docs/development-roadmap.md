@@ -4,6 +4,14 @@ Planning review: November 4, 2026. This is the consolidated backlog, not a
 commitment to enable every candidate product. No production settings change
 when this document is edited.
 
+## Collaboration and scope guardrails
+
+Agreed November 6, 2026: use this document as the shared project roadmap and
+the continuing roadmap conversation for new ideas, scoping and prioritization.
+Update this roadmap only with decisions explicitly agreed with the user.
+Monthly PRISM development is underway in a separate conversation; do not modify
+its implementation files as part of roadmap planning.
+
 ## Operational baseline
 
 The user confirmed the November 4 morning production run published release
@@ -61,6 +69,10 @@ that work ahead of discretionary features.
 | P2 — next project 2 | Station seasonal precipitation histories | Extend the reviewed annual chart to explicitly defined cool-season and monsoon totals, reusing station caches and completeness rules. Keep regional historical maps separate. |
 | P2 — next project 3 | Recent-period weather means | Inventory retained numeric CORe fields; prototype a small 7-/30-day 500-mb/PWAT mean set with completeness checks and measured cost. Anomaly baselines follow separately. |
 | P2 — next project 4 | Historic seasonal snow anomalies | Validate existing peak-SWE departure/percent-of-median pilots and stage eligible years with support guards. Reorder within P2 if cool-season monitoring makes this more useful sooner. |
+| After existing commitments — 1 | Station daily-chart normals and records | Add temperature normals and calendar-date temperature/precipitation records to existing daily plots. Establish shared station reference calculations before expanding the climatology section. See [agreed scope](#station-and-regional-climatology-agreed-november-6-2026). |
+| After existing commitments — 2 | Station climatology section | Build a collapsible selected-station view using the same reference calculations, with calendar-year/water-year ordering and monthly summaries. Coordinate with existing seasonal precipitation histories. |
+| After existing commitments — 3 | Climate of the region page | Start with 1991–2020 annual and seasonal precipitation normals and temperature averages when the required PRISM inputs are available. Historical extremes follow separately. |
+| Deferred until spring 2027 | Station heat metrics | Scope station-appropriate temperature thresholds, counts and departures; reuse existing hot-day/warm-night screening. No implementation before spring 2027. |
 | Alongside increments | Operational maintenance | Track freshness and source revisions, station audit age, raster warnings and measured cache/runtime behavior. Address specific failures promptly; schedule broader profiling as its own bounded task. |
 | Later — scope before building | New sources and statistical extensions | Local storm reports/hazard polygons, gauge conditions, historical odds, completed-year Explorer/historic-season integration, custom station dates, ENSO composites and further SPI products. Each needs its own source/method/performance assessment. |
 | Later — polish | Consistency and optional interactions | Shared city-label styling, historic RONI labels at the next archive refresh, custom Analytics events and remaining documentation reconciliation. |
@@ -95,7 +107,7 @@ those pages are next refreshed.
 | Daily-update speed | Profile several consecutive new-date runs, cache-hit/miss behavior, costly PRISM reference work, and station processing. Benchmark before removing products or changing cadence. | Moderate |
 | SNODAS source revisions | Define a bounded recheck policy for already processed archives, provenance changes, and affected reference/map invalidation. | Moderate |
 | Completed-year Daily Explorer | Decide what remains public at water-year rollover, then test dated manifests, navigation, retention, storage and rebuild costs before historical backfill. | Moderate-large |
-| Station metadata and additional extremes | Scope station/component history and historical extremes comparisons. Any additional formal indices need explicit periods, thresholds, completeness, ties and baseline definitions. | Variable |
+| Station metadata and additional extremes | Scope station/component history and historical extremes comparisons. Calendar-date plot records and the station climatology section are now bounded increments in the [November 6 scope](#station-and-regional-climatology-agreed-november-6-2026); heat metrics are deferred until spring 2027. Any additional formal indices need explicit periods, thresholds, completeness, ties and baseline definitions. | Variable |
 | Station custom date periods | Assess a start/end-date selector alongside presets, initially bounded to the recent daily data already published. Separate basic summaries from historical comparisons; benchmark map/table recalculation, lazy loading, payload size and browser responsiveness before implementation. | Moderate; full historical comparisons substantially larger |
 | Shared city-label styling | Consider the smaller Daily Explorer labels for other maps; review representative precipitation, temperature and snow backgrounds before a site-wide rebuild. | Small-moderate |
 | Station audit maintenance | Establish a repeatable full-record audit refresh cadence, visible audit age and automatic cautions; avoid a manual station-by-station approval requirement. | Moderate |
@@ -110,6 +122,75 @@ those pages are next refreshed.
 | Historic-season station and Daily Explorer content | Decide which station summaries, extreme-event views and daily-map navigation belong in historic seasons; define retention, completeness and storage limits. | Longer-term; scope first |
 | Hydrological observations and gauge-condition maps | Assess gauge data access, station coverage and useful streamflow/stage condition metrics, with historical context and bounded update costs. | Longer-term; scope first |
 | Hydroclimate home dashboard | Dashboard layout, map-matched summaries, linked condition cards and RONI/CPC context are live. Separately scope regional cumulative precipitation versus normal with cached calculations and a runtime benchmark. | Live layout; regional evolution chart moderate |
+
+## Station and regional climatology: agreed November 6, 2026
+
+Keep existing release/synopsis commitments and all four P2 projects ahead of
+these additions, including Monthly PRISM, station seasonal precipitation
+histories, recent-period weather means and historic seasonal snow anomalies.
+Implement the additions in the order below, with heat metrics deferred until
+spring 2027. This expands existing station-extremes, historical-time-series and
+long-term PRISM ideas; it does not authorize changes to Monthly PRISM
+implementation files in this roadmap conversation.
+
+### 1. Station daily-chart normals and records
+
+Enhance existing Station Conditions daily plots with normal high/low temperature
+lines and calendar-date record high/low values, plus historical maximum daily
+precipitation in the background of observed precipitation bars. Identify new
+and tied records, with record values and years available interactively. Use
+subtle reference marks and hover/readout details to retain chart legibility.
+These historical comparisons extend the existing selected-period extremes.
+
+Use 1991–2020 for normals and the eligible full station record for records,
+labeling both periods and historical support. Assess official station-normal
+coverage before choosing official normals or project-calculated reference
+averages. Share reference calculations with the climatology section below.
+Compare each observation against earlier eligible years when identifying a
+new record; define ties, leap-day handling, missing/flagged data and station/
+ThreadEx record provenance. Accumulated precipitation reports are ineligible
+as individual daily records. Cache reference calculations and measure update
+and browser costs before daily integration.
+
+### 2. Collapsible station climatology section
+
+For the selected station, provide interactive daily normal high/low/mean
+temperatures, calendar-date record highs/lows and daily precipitation averages
+and records, with calendar-year or water-year ordering. Include monthly
+precipitation totals and temperature averages to make the seasonal cycle clear.
+Reuse the daily-chart reference calculations and existing cumulative
+precipitation display; coordinate with seasonal precipitation histories.
+
+Retain wet-day frequency, typical wet-day amount, precipitation variability,
+freeze frequency and first/last-freeze distributions as later candidates for
+scoping. Growing-degree days require a defined audience and method before
+selection. Heat counts belong to the deferred spring increment.
+
+### 3. Climate of the region page
+
+Create a regional climate-context page, beginning with 1991–2020 precipitation
+totals and temperature averages for annual and JFM/AMJ/JAS/OND seasonal maps,
+with short explanations of elevation and seasonal contrasts. Reuse suitable
+PRISM normals/monthly inputs when available from the separate workstream.
+Cool-season and monsoon summaries are later options to coordinate with station
+seasonal histories.
+
+Avoid duplicating annual precipitation-normal maps solely to switch calendar-
+year/water-year labels: both complete cycles contain the same twelve monthly
+normals. Water-year ordering remains useful for accumulation curves and
+individual-year histories. Historical wettest/driest years and warmest/coldest
+seasons are separate follow-ups with explicit comparison periods. Monthly
+PRISM high/low temperatures are averages of daily highs/lows; they cannot
+establish daily temperature or rainfall records.
+
+### Deferred until spring 2027: station heat metrics
+
+Revisit spring/summer station counts above thresholds such as 100°F and 110°F,
+with station-appropriate choices and explicit greater-than versus at-or-above
+definitions. Calculate departures from matching season-to-date counts in
+1991–2020 with completeness guards. Complement the existing percentile-based
+hot-day/warm-night indicators and reuse their screening where appropriate.
+This is a deferred planning item, not an active implementation commitment.
 
 ## New exploration: Google Analytics
 
@@ -208,6 +289,78 @@ runtime, local/public storage and browser costs before selecting a pilot.
 
 ### Monthly PRISM: long-term climate record
 
+November 6: the [monthly access/cache pilot](prism-monthly.md) is implemented
+locally. The user has now verified all 4,746 inputs for January 1895-October
+2026. The full-cache audit and first 12-month temperature-ranking pilot are
+implemented for laptop testing; full-record results and the map await user
+review. SPI validation and monthly scheduling remain separate from the live
+daily workflow.
+
+November 7 monthly temperature validation: independent daily-calendar expansion
+and base-R ranks passed at eight grid locations for October 2026 and an October
+1993 historical contrast (128 metric checks and 1,832 window comparisons; zero
+failures). This validates local arithmetic using the same PRISM inputs, not the
+underlying modeled temperatures against an external dataset. See the
+[monthly guide](prism-monthly.md#independent-numerical-checks).
+
+November 7 next local increment: 1-/3-/6-/12-month temperature and precipitation
+ranking pilots share one cache audit, use per-product verified completion
+markers, and write a local eight-map review gallery. Precipitation uses sums
+and empirical zero/tie handling, not SPI. Full multi-period results await laptop
+testing and user review; no scheduled update or publication is enabled. See
+[multi-period testing](prism-monthly.md#multi-period-temperature-and-precipitation-ranking-review).
+
+User-selected refinement: add distinct record-warm and record-wet categories
+above the percentile classes, including tied maxima only with complete eligible
+history at the cell. Incomplete-history cells retain supported percentiles;
+constant/all-zero series are not highlighted as records. Scientific percentiles
+remain separate from display codes. The next local gallery rebuild includes
+these flags; production remains unchanged.
+
+The symmetric record-cold/record-dry classes are also implemented for local
+testing. Zero-total record-dry highlighting requires zero frequency <=2% across
+the complete matching record; common-zero and constant histories retain their
+ordinary percentile display. Tied/unique record flags and counts remain separate
+from the scientific percentiles and from SPI development.
+
+SPI-1/3/6/12 local pilots are implemented for laptop testing, using fixed
+1895-2020 calendar-matched gamma-MLE fits with explicit zero mass and automatic
+support/fit guards. Independent optimizer and zero-transform checks pass.
+October 2026 SPI-1 smoke testing produced 47,056 valid cells and withheld 118
+of the 47,174 currently valid padded-domain cells; remaining durations await
+user review. Fit coefficients and successful map outputs are cached separately.
+See [SPI testing and method choices](prism-monthly.md#spi-1-spi-3-spi-6-and-spi-12-local-pilots).
+Calibration/fit-policy review and the external hotlink exports remain release
+requirements; daily publishing and monthly scheduling are not enabled yet.
+
+November 8: revision-aware monthly updater implemented for local testing.
+Refresh the latest eight completed months during days 1–5, with explicit manual
+catch-up, staged validation, resumable downloads, installation rollback and
+per-cycle completion records. Rebuild only affected retained products and ensure
+the latest twelve maps; reuse fixed SPI calibration fits for recent revisions.
+Age-based stability is not source-confirmed final status. Next: run the local
+revision test, review change/build reports, then integrate staging publication
+and the monthly operational entry point. See the
+[revision updater commands](prism-monthly.md#revision-aware-monthly-updater-local-testing).
+
+November 8 local site review: Monthly Climate page added with temperature,
+precipitation and SPI tabs and a shared 1-/3-/6-/12-month selector. Staging
+verifies current source/policy fingerprints and copies a complete twelve-map
+release. Rendered-page validation checks checksums, images, links and one
+consistent ending month. Local October 2026 render passed 12/12 maps; selector
+tests cover all twelve combinations. Next: user layout review, then daily-runner
+integration, monthly cache transfer and VM staging. No deployment in this step.
+
+Approved local groupings are now applied to the actual site for staging review:
+temperature values/departures/ranks/freeze timing, precipitation totals/ranks/
+dry spells/wet-day characteristics, and tabbed/grid Snow. Individual product URLs
+remain, but the preview's Original individual pages navigation is excluded.
+Monthly Climate remains above Historic Years. Generated navigation preserves
+the new layout; grouped and monthly rendered-map checks now gate S3 sync.
+See [staging preparation and VM commands](monthly-and-grouped-maps-staging.md).
+Monthly calculation scheduling/status integration and monthly cache/SPI-fit
+transfer are still pending; this layout release publishes retained monthly maps.
+
 Explore the monthly PRISM record proposed for **1895-present**, verifying the
 actual available variables, resolution, geographic coverage and latest complete
 month before adopting that period as a product label. Decide which maps benefit
@@ -215,12 +368,39 @@ from the longer record: candidates include monthly or seasonal precipitation
 totals, mean temperatures, departures, rankings and percentiles. Monthly data
 cannot supply daily extremes, freeze-night counts or daily spell metrics.
 
+**Historic Years rebuild requested November 8, 2026:** prefer the monthly PRISM
+dataset for completed seasonal and water-year precipitation totals, mean
+temperatures, departures, rankings and SPI wherever the product can be derived
+from complete monthly inputs. Reuse the monthly cache and methods to rebuild
+these archive products and extend coverage toward 1895, subject to sufficient
+comparison support and complete cross-year windows (the first full October–
+September water year is WY1896). Decide explicitly whether historical rankings
+use the full available record or only data available through that year, and
+label the choice. Retain daily PRISM for extremes, freeze and spell metrics,
+station observations for station histories, and SNODAS for snow; those products
+cannot be reconstructed from monthly PRISM. Pilot comparable existing years
+before replacing archive maps, document any method differences, then backfill
+the longer record and validate the pages. This is scoped future work; no
+historic maps are rebuilt in the current Monthly Climate release.
+
 Plan a **once-monthly update**, separate from daily PRISM processing. Define the
 release/completeness cutoff, preliminary-versus-final handling and a bounded
 revision check; cache completed months and rebuild only affected products.
 Choose reference periods and explain the difference between a fixed normal and
 a full-period ranking. Pilot a small map set before attempting long-term
 historical backfill.
+
+**Scheduling requirement confirmed November 6, 2026:** the previous month's
+monthly data become available during the first couple of days of the new month.
+Schedule a bounded early-month availability/retry window (exact days to be
+confirmed in the access pilot), rather than downloading or rebuilding monthly
+products throughout the daily cycle. Record the last successfully completed
+target month and skip subsequent scheduled attempts once it is complete.
+Validate all required fields before advancing that marker; if inputs are not
+ready, retain the previous verified maps and retry within the window. Report
+an unresolved update at the end of the window. Include any bounded checks for
+revisions to recent preliminary months in this same monthly run. Explicit
+manual catch-up/rebuild commands may run outside the scheduled window.
 
 **Specific deliverables requested November 2, 2026:** create a **12-month SPI
 map** and a **12-month mean-temperature ranking map**, published as directly

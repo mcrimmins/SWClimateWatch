@@ -40,9 +40,9 @@ swc_region <- list(
 swc_prism <- list(
   aoi_id = "az-nm-pad050",
   daily_endpoint = "https://grid2.rcc-acis.org/GridData",
-  monthly_endpoint = "https://data.rcc-acis.org/GridData",
+  monthly_endpoint = "https://grid2.rcc-acis.org/GridData",
   daily_grid = "prism",
-  monthly_grid = "21",
+  monthly_grid = "prism",
   # `variables` are requested from RCC-ACIS. `tmean` is derived locally from
   # maxt and mint so it never adds API traffic.
   variables = c("maxt", "mint", "pcpn"),

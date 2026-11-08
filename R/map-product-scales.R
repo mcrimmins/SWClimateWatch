@@ -58,7 +58,11 @@ map_product_categorical_classes <- function(
     stop("Categorical map scales require two increasing finite limits.", call. = FALSE)
   }
 
-  if (identical(product_id, "snodas_swe_observed")) {
+  if (identical(product_id, "monthly_spi")) {
+    boundaries <- seq(0.5, 8.5, by = 1)
+    labels <- c("<=-2\nextremely dry", "-2 to -1.5\nseverely dry", "-1.5 to -1\nmoderately dry",
+      "-1 to 1\nnear normal", "1 to 1.5\nmoderately wet", "1.5 to 2\nvery wet", ">=2\nextremely wet", "Not\nestimated")
+  } else if (identical(product_id, "snodas_swe_observed")) {
     boundaries <- c(0, 0.1, 1, 2, 4, 8, 12, 20, 30, 90)
     labels <- c("<=0.1", "0.1-1", "1-2", "2-4", "4-8",
                 "8-12", "12-20", "20-30", ">30")
@@ -70,6 +74,23 @@ map_product_categorical_classes <- function(
     boundaries <- c(0, 1, 7, 30, 60, 90, 120, 180, 244)
     labels <- c("<=1", "1-7", "7-30", "30-60", "60-90",
                 "90-120", "120-180", ">180")
+  } else if (product_id %in% c("monthly_temperature_record_percentile", "monthly_precipitation_record_percentile")) {
+    boundaries <- c(-1, 0, 2, 10, 33, 67, 90, 98, 100, 101)
+    labels <- if (product_id == "monthly_temperature_record_percentile") {
+      c("Record\ncold*", "<=2\nnear-record cold", "2-10\nvery cold", "10-33\ncool", "33-67\nnear middle",
+        "67-90\nwarm", "90-98\nvery warm", ">98\nnear-record warm", "Record\nwarm*")
+    } else {
+      c("Record\ndry*", "<=2\nnear-record dry", "2-10\nvery dry", "10-33\ndry", "33-67\nnear middle",
+        "67-90\nwet", "90-98\nvery wet", ">98\nnear-record wet", "Record\nwet*")
+    }
+  } else if (identical(product_id, "monthly_temperature_percentile")) {
+    boundaries <- c(0, 2, 10, 33, 67, 90, 98, 100)
+    labels <- c("<=2\nexceptionally cold", "2-10\nvery cold", "10-33\ncool",
+      "33-67\nnear middle", "67-90\nwarm", "90-98\nvery warm", ">98\nexceptionally warm")
+  } else if (identical(product_id, "monthly_precipitation_percentile")) {
+    boundaries <- c(0, 2, 10, 33, 67, 90, 98, 100)
+    labels <- c("<=2\nexceptionally dry", "2-10\nvery dry", "10-33\ndry",
+      "33-67\nnear middle", "67-90\nwet", "90-98\nvery wet", ">98\nexceptionally wet")
   } else if (grepl("percentile", product_id) && !grepl("change", product_id)) {
     boundaries <- c(0, 2, 10, 33, 67, 90, 98, 100)
     labels <- c(

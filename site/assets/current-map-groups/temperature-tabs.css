@@ -1,0 +1,23 @@
+.temperature-preview-note { color:var(--bs-secondary-color,#536670); font-size:.9rem; }
+.temperature-period-control { display:flex; gap:.7rem; align-items:center; margin:1.2rem 0; }
+.temperature-period-control select { padding:.4rem .7rem; border:1px solid #b9c8ce; border-radius:4px; background:var(--bs-body-bg); color:var(--bs-body-color); }
+.temperature-variable-tabs { display:flex; flex-wrap:wrap; gap:.25rem; border-bottom:1px solid #ccd5da; margin:1.2rem 0; }
+.temperature-variable-tabs button { background:transparent; color:inherit; border:0; padding:.7rem 1.2rem; border-bottom:3px solid transparent; }
+.temperature-variable-tabs button[aria-selected="true"] { color:#b54a25; border-bottom-color:#b54a25; font-weight:600; }
+.temperature-variable-tabs button:focus-visible { outline:2px solid #248b9a; outline-offset:2px; }
+.temperature-map img { width:100%; height:auto; }
+.temperature-map { max-width:1400px; margin:0 auto 1.2rem; }
+.temperature-description { margin:1rem 0; }
+.temperature-enhanced .temperature-fallback-title { display:none; }
+.temperature-tabs-preview [hidden] { display:none !important; }
+.precipitation-period-preview [hidden] { display:none !important; }
+.precipitation-enhanced .precipitation-fallback-title { display:none; }
+.current-group-preview [hidden] { display:none !important; }
+.group-map img { width:100%; height:auto; }
+.group-map { min-width:0; margin:0 auto 1.4rem; max-width:1400px; }
+.group-enhanced:not(.group-all-maps) .group-map-heading { display:none; }
+.group-all-maps #group-maps { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1.4rem; }
+.group-all-maps .group-map { padding:1rem; border:1px solid #ccd5da; border-radius:6px; }
+.group-map-heading { font-size:1.1rem; }
+.group-unavailable { padding:1rem; background:var(--bs-tertiary-bg,#f2f4f4); border:1px solid #ccd5da; border-radius:5px; }
+@media(max-width:850px) { .group-all-maps #group-maps { grid-template-columns:1fr; } }

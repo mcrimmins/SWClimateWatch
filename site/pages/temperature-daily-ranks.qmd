@@ -1,0 +1,32 @@
+---
+title: "Daily temperature percentile ranks"
+page-layout: full
+toc: false
+---
+
+```{=html}
+<div class="current-group-preview" data-group="temperature-daily-ranks">
+<div class="temperature-variable-tabs" role="tablist" aria-label="Daily temperature percentile ranks">
+<button type="button" id="group-tab-maxt" role="tab" data-tab="maxt" aria-controls="group-maps">Maximum</button>
+<button type="button" id="group-tab-tmean" role="tab" data-tab="tmean" aria-controls="group-maps">Mean</button>
+<button type="button" id="group-tab-mint" role="tab" data-tab="mint" aria-controls="group-maps">Minimum</button>
+</div>
+<div class="temperature-period-control group-variant-control"><label for="group-variant">Display</label><select id="group-variant"></select></div>
+<div id="group-maps" role="tabpanel" aria-live="polite">
+<article class="group-map" data-product="maxt_percentile_daily" data-tab="maxt" data-variant="rank" data-option="Percentile rank"><h2 class="group-map-heading">Maximum temperature</h2>
+<a href="../maps/generated/prism/temperature/maxt-percentile-rank-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/maxt-percentile-rank-latest.png" alt="Maximum temperature" loading="lazy"></a>
+<p>The latest daily maximum temperature is ranked against 1991-2020 maximum temperatures from the same calendar date and two days on either side. High percentile ranks indicate unusually hot afternoons for this time of year, while low ranks indicate unusually cool afternoons.</p>
+<p><a href="../maps/generated/prism/temperature/maxt-percentile-rank-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="tmean_percentile_daily" data-tab="tmean" data-variant="rank" data-option="Percentile rank"><h2 class="group-map-heading">Mean temperature</h2>
+<a href="../maps/generated/prism/temperature/tmean-percentile-rank-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/tmean-percentile-rank-latest.png" alt="Mean temperature" loading="lazy"></a>
+<p>The latest daily mean temperature is ranked against 1991-2020 daily means from the same calendar date and two days on either side. High percentile ranks indicate unusually warm conditions for this time of year, while low ranks indicate unusually cool conditions.</p>
+<p><a href="../maps/generated/prism/temperature/tmean-percentile-rank-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="mint_percentile_daily" data-tab="mint" data-variant="rank" data-option="Percentile rank"><h2 class="group-map-heading">Minimum temperature</h2>
+<a href="../maps/generated/prism/temperature/mint-percentile-rank-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/mint-percentile-rank-latest.png" alt="Minimum temperature" loading="lazy"></a>
+<p>The latest daily minimum temperature is ranked against 1991-2020 minimum temperatures from the same calendar date and two days on either side. High percentile ranks indicate unusually warm nights for this time of year, while low ranks indicate unusually cold nights.</p>
+<p><a href="../maps/generated/prism/temperature/mint-percentile-rank-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+</div></div><script src="../assets/current-map-groups/current-map-groups.js"></script>
+```

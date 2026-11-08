@@ -58,7 +58,7 @@ testthat::test_that("redundant map landing pages are absent", {
   testthat::expect_false(any(grepl("current-conditions.qmd|map-browser.qmd", c(navigation, homepage))))
   testthat::expect_true(any(grepl("Site updated:", homepage, fixed = TRUE)))
   testthat::expect_true(any(grepl("- section: Current Maps", navigation, fixed = TRUE)))
-  testthat::expect_equal(sum(grepl("- href: pages/current-snow.qmd", navigation, fixed = TRUE)), 1L)
+  testthat::expect_equal(sum(grepl("- href: pages/snow-conditions.qmd", navigation, fixed = TRUE)), 1L)
   testthat::expect_true(any(grepl("text: Snow", navigation, fixed = TRUE)))
   testthat::expect_true(any(grepl("[Climate Assessment for the Southwest](https://www.climas.arizona.edu/)", homepage, fixed = TRUE)))
   testthat::expect_true(any(grepl("[Climate Science Applications Program](https://cales.arizona.edu/climate/)", homepage, fixed = TRUE)))
@@ -150,7 +150,7 @@ testthat::test_that("map site generation honors enabled products", {
   testthat::expect_true(any(grepl("enabled_map.qmd", homepage, fixed = TRUE)))
   testthat::expect_true(any(grepl("Site updated:", homepage, fixed = TRUE)))
   testthat::expect_true(any(grepl("- section: Current Maps", navigation, fixed = TRUE)))
-  testthat::expect_equal(sum(grepl("- href: pages/current-snow.qmd", navigation, fixed = TRUE)), 1L)
+  testthat::expect_equal(sum(grepl("- href: pages/snow-conditions.qmd", navigation, fixed = TRUE)), 1L)
   testthat::expect_true(any(grepl("text: Snow", navigation, fixed = TRUE)))
 })
 

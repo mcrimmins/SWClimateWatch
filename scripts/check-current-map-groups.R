@@ -1,0 +1,5 @@
+source("R/config.R")
+source("R/acis-prism.R")
+source("R/process-prism.R")
+source("R/map-product-site.R")
+current_group_validation <- validate_current_map_groups(rendered_dir="site/_site")

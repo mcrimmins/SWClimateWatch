@@ -1,4 +1,8 @@
 # Generate the map-product pages and Quarto navigation from one configuration.
+.swc_map_site_sources <- Filter(function(x) is.character(x) && length(x) == 1L,
+  lapply(sys.frames(), function(frame) frame$ofile))
+source(file.path(dirname(tail(.swc_map_site_sources,1)[[1]]), "current-map-group-site.R"))
+rm(.swc_map_site_sources)
 
 # Supported metrics and cached grid paths are coupled to the map product.
 map_dashboard_summary_spec <- function(id) {
@@ -719,6 +723,8 @@ validate_map_product_publication <- function(
       fixed = TRUE
     ))
     navigation_reference <- paste0("pages/products/", product$id, ".qmd")
+    grouped <- current_map_group_key(product$id)
+    if (isTRUE(product$enabled) && !is.na(grouped)) navigation_reference <- paste0("pages/",grouped,".qmd")
     navigation_link <- any(grepl(navigation_reference, navigation, fixed = TRUE))
     rendered_image_link <- any(grepl(image_reference, rendered_text, fixed = TRUE))
     rendered_download_link <- any(grepl("Open full-resolution PNG", rendered_text, fixed = TRUE))
@@ -891,11 +897,21 @@ map_product_navigation_lines <- function(products) {
     "      - section: Current Maps",
     "        contents:"
   )
+  emitted <- character()
+  definitions <- current_site_groups()
   for (section in unique(enabled$section)) {
     section_products <- enabled[enabled$section == section, , drop = FALSE]
     lines <- c(lines, paste0("          - section: ", section), "            contents:")
     for (group in unique(section_products$group)) {
       group_products <- section_products[section_products$group == group, , drop = FALSE]
+      keys <- vapply(group_products$id,current_map_group_key,character(1))
+      for (key in unique(keys[!is.na(keys)])) {
+        if (!key %in% emitted) lines <- c(lines,paste0("              - href: pages/",key,".qmd"),
+          paste0("                text: ",definitions[[key]]$title))
+        emitted <- unique(c(emitted,key))
+      }
+      group_products <- group_products[is.na(keys),,drop=FALSE]
+      if (!nrow(group_products)) next
       lines <- c(lines, paste0("              - section: ", group), "                contents:")
       for (index in seq_len(nrow(group_products))) {
         product <- group_products[index, , drop = FALSE]
@@ -908,7 +924,7 @@ map_product_navigation_lines <- function(products) {
     }
   }
   c(lines,
-    "          - href: pages/current-snow.qmd",
+    "          - href: pages/snow-conditions.qmd",
     "            text: Snow",
     "      # END GENERATED MAP BROWSER")
 }
@@ -987,6 +1003,7 @@ build_map_product_site <- function(
     products,
     quarto_path = file.path(site_dir, "_quarto.yml")
   )
+  stage_current_map_groups(site_dir=site_dir,config_path=config_path)
   if (isTRUE(require_images)) {
     validate_map_product_publication(
       products = products,

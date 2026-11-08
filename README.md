@@ -35,6 +35,15 @@ documentation remain outside the website source tree.
 
 ## Local build
 
+The separate [monthly PRISM access pilot](docs/prism-monthly.md) verifies
+long-record monthly inputs and resumable regional caching. It is not part of
+the operational daily publisher yet.
+
+For the reviewed Current Maps groupings and Monthly Climate page, see the
+[staging release guide](docs/monthly-and-grouped-maps-staging.md). Local review:
+`source("scripts/preview-climate-site.R")`. Rendered grouped/monthly publication
+checks are enabled; automatic monthly calculations remain a separate follow-up.
+
 For the Daily Explorer timeline and single-, seven-, and 30-day map views, see
 [Daily Explorer](docs/daily-explorer.md). The daily publisher stages the
 current water year plus the preceding September automatically, retaining each

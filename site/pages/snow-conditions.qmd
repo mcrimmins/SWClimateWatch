@@ -1,0 +1,40 @@
+---
+title: "Snow conditions"
+page-layout: full
+toc: false
+---
+
+```{=html}
+<div class="current-group-preview" data-group="snow-conditions">
+<p>Latest map date: October 7, 2026</p>
+<p>Seven-day SWE change unavailable (2026-09-30 to 2026-10-07): Exact prior endpoint is missing or unverified. No date substitution or zero filling is used.</p>
+<div class="temperature-period-control"><label for="group-layout">View</label><select id="group-layout"><option value="single">Selected map</option><option value="all">All maps</option></select></div>
+<div class="temperature-variable-tabs" role="tablist" aria-label="Snow conditions">
+<button type="button" id="group-tab-swe" role="tab" data-tab="swe" aria-controls="group-maps">SWE</button>
+<button type="button" id="group-tab-departure" role="tab" data-tab="departure" aria-controls="group-maps">Departure</button>
+<button type="button" id="group-tab-percent" role="tab" data-tab="percent" aria-controls="group-maps">Percent of median</button>
+<button type="button" id="group-tab-change" role="tab" data-tab="change" aria-controls="group-maps">7-day change</button>
+</div>
+<div class="temperature-period-control group-variant-control"><label for="group-variant">Display</label><select id="group-variant"></select></div>
+<div id="group-maps" role="tabpanel" aria-live="polite">
+<article class="group-map" data-product="snow_swe" data-tab="swe" data-variant="map" data-option="SWE"><h2 class="group-map-heading">Snow water equivalent</h2>
+<a href="../maps/generated/snodas/current/swe-observed.png" target="_blank" rel="noopener"><img src="../maps/generated/snodas/current/swe-observed.png" alt="Snow water equivalent" loading="lazy"></a>
+<p>Modeled snowpack water in inches, not daily snowfall. Pale areas may be snow-free; missing cells remain uncolored. Dates are printed on each map.</p>
+<p><a href="../maps/generated/snodas/current/swe-observed.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="snow_departure" data-tab="departure" data-variant="map" data-option="Departure"><h2 class="group-map-heading">SWE departure</h2>
+<a href="../maps/generated/snodas/current/swe-departure.png" target="_blank" rel="noopener"><img src="../maps/generated/snodas/current/swe-departure.png" alt="SWE departure" loading="lazy"></a>
+<p>SWE minus the centered-five-day WY2005–WY2025 date-specific median, in inches. Positive values mean more snow water than the reference median.</p>
+<p><a href="../maps/generated/snodas/current/swe-departure.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="snow_percent" data-tab="percent" data-variant="map" data-option="Percent of median"><h2 class="group-map-heading">SWE percent of median</h2>
+<a href="../maps/generated/snodas/current/swe-percent-median.png" target="_blank" rel="noopener"><img src="../maps/generated/snodas/current/swe-percent-median.png" alt="SWE percent of median" loading="lazy"></a>
+<p>SWE divided by the date-specific median, times 100. Ratios require a median of at least 1 inch and 18 reference years. Gray indicates low typical SWE; this is not a percentile.</p>
+<p><a href="../maps/generated/snodas/current/swe-percent-median.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="snow_change" data-tab="change" data-variant="map" data-option="7-day change"><h2 class="group-map-heading">Seven-day SWE change</h2>
+<p class="group-unavailable" role="status">This map is currently unavailable. No map from a different date has been substituted.</p>
+<p>Net modeled snowpack-water gain or loss over exactly seven days, in inches. This is not snowfall, and losses are not a measure of melt alone.</p>
+</article>
+</div></div><script src="../assets/current-map-groups/current-map-groups.js"></script>
+```

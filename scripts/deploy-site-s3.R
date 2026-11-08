@@ -125,6 +125,7 @@ deploy_swc_site <- function(
     swc_deploy_run(rscript, "scripts/build-map-product-site.R", "Build and validate map catalog")
     swc_deploy_run(rscript, "scripts/stage-daily-explorer.R", "Stage cached Daily Explorer")
     swc_deploy_run(rscript, c("scripts/stage-conditions-synopsis.R", destination), "Stage cached template synopsis")
+    swc_deploy_run(rscript, "scripts/stage-current-map-groups.R", "Stage grouped Current Maps")
     swc_deploy_run(quarto, c("render", "site"), "Render Quarto site")
   }
   output_dir <- file.path(project_dir, "site", "_site")
@@ -137,6 +138,8 @@ deploy_swc_site <- function(
     "Validate rendered maps and pages"
   )
   validation <- swc_deploy_validation_summary()
+  swc_deploy_run(rscript, "scripts/check-current-map-groups.R", "Validate grouped Current Maps")
+  swc_deploy_run(rscript, "scripts/check-prism-monthly-publication.R", "Validate Monthly Climate")
   source(file.path("R", "daily-publish.R"), local = TRUE)
   swc_daily_publish_validate_explorer(output_dir)
   source(file.path("R", "conditions-synopsis-site.R"), local = TRUE)

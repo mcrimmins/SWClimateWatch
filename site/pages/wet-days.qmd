@@ -1,0 +1,48 @@
+---
+title: "Wet-day characteristics"
+page-layout: full
+toc: false
+---
+
+```{=html}
+<div class="current-group-preview" data-group="wet-days">
+<p>All three measures describe the latest 90 days. Wet days have at least 0.04 inch of precipitation.</p>
+<div class="temperature-variable-tabs" role="tablist" aria-label="Wet-day characteristics">
+<button type="button" id="group-tab-count" role="tab" data-tab="count" aria-controls="group-maps">Wet-day count</button>
+<button type="button" id="group-tab-intensity" role="tab" data-tab="intensity" aria-controls="group-maps">Wet-day intensity</button>
+<button type="button" id="group-tab-contribution" role="tab" data-tab="contribution" aria-controls="group-maps">Very-wet-day contribution</button>
+</div>
+<div class="temperature-period-control group-variant-control"><label for="group-variant">Display</label><select id="group-variant"></select></div>
+<div id="group-maps" role="tabpanel" aria-live="polite">
+<article class="group-map" data-product="pcpn_wet_day_count_90day" data-tab="count" data-variant="observed" data-option="Count (days)"><h2 class="group-map-heading">Wet-day count in 90 days</h2>
+<a href="../maps/generated/prism/precipitation/pcpn-wet-day-count-090day-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/precipitation/pcpn-wet-day-count-090day-latest.png" alt="Wet-day count in 90 days" loading="lazy"></a>
+<p>This map counts days with at least 0.04 inch of precipitation during the latest 90 days at each grid cell. Higher counts mean precipitation occurred more often, although they do not show how much fell on those wet days.</p>
+<p><a href="../maps/generated/prism/precipitation/pcpn-wet-day-count-090day-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="pcpn_wet_day_count_percentile_90day" data-tab="count" data-variant="rank" data-option="Percentile rank"><h2 class="group-map-heading">Wet-day-count percentile</h2>
+<a href="../maps/generated/prism/precipitation/pcpn-wet-day-count-percentile-rank-090day-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/precipitation/pcpn-wet-day-count-percentile-rank-090day-latest.png" alt="Wet-day-count percentile" loading="lazy"></a>
+<p>The latest 90-day count of days with at least 0.04 inch is ranked against 1991-2020 counts in windows ending within two calendar days of this date. High ranks mean wet days have been unusually frequent and low ranks mean they have been unusually scarce.</p>
+<p><a href="../maps/generated/prism/precipitation/pcpn-wet-day-count-percentile-rank-090day-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="pcpn_wet_day_intensity_90day" data-tab="intensity" data-variant="observed" data-option="Intensity (inches per wet day)"><h2 class="group-map-heading">Mean precipitation per wet day</h2>
+<a href="../maps/generated/prism/precipitation/pcpn-wet-day-intensity-090day-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/precipitation/pcpn-wet-day-intensity-090day-latest.png" alt="Mean precipitation per wet day" loading="lazy"></a>
+<p>This map averages precipitation only on days with at least 0.04 inch during the latest 90 days, reporting inches per wet day. Higher values mean heavier precipitation when a wet day occurred; cells with no qualifying wet days are blank.</p>
+<p><a href="../maps/generated/prism/precipitation/pcpn-wet-day-intensity-090day-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="pcpn_wet_day_intensity_percentile_90day" data-tab="intensity" data-variant="rank" data-option="Percentile rank"><h2 class="group-map-heading">Wet-day-intensity percentile</h2>
+<a href="../maps/generated/prism/precipitation/pcpn-wet-day-intensity-percentile-rank-090day-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/precipitation/pcpn-wet-day-intensity-percentile-rank-090day-latest.png" alt="Wet-day-intensity percentile" loading="lazy"></a>
+<p>Mean precipitation per wet day is calculated from days with at least 0.04 inch in the latest 90 days and ranked against 1991-2020 periods ending within two calendar days of this date. High ranks mean unusually heavy wet days and low ranks mean unusually light wet days; cells with no qualifying wet days are blank.</p>
+<p><a href="../maps/generated/prism/precipitation/pcpn-wet-day-intensity-percentile-rank-090day-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="pcpn_very_wet_contribution_90day" data-tab="contribution" data-variant="observed" data-option="Contribution (%)"><h2 class="group-map-heading">Very-wet-day contribution</h2>
+<a href="../maps/generated/prism/precipitation/pcpn-very-wet-contribution-090day-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/precipitation/pcpn-very-wet-contribution-090day-latest.png" alt="Very-wet-day contribution" loading="lazy"></a>
+<p>This map divides precipitation from days above the local 1991-2020 wet-day 95th-percentile amount by all precipitation in the latest 90 days. Higher percentages mean a larger share came from unusually large events; cells with less than 0.10 inch in total are blank.</p>
+<p><a href="../maps/generated/prism/precipitation/pcpn-very-wet-contribution-090day-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="pcpn_very_wet_contribution_percentile_90day" data-tab="contribution" data-variant="rank" data-option="Percentile rank"><h2 class="group-map-heading">Contribution percentile rank</h2>
+<a href="../maps/generated/prism/precipitation/pcpn-very-wet-contribution-percentile-rank-090day-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/precipitation/pcpn-very-wet-contribution-percentile-rank-090day-latest.png" alt="Contribution percentile rank" loading="lazy"></a>
+<p>The latest 90-day precipitation share from days above the local 1991-2020 wet-day 95th-percentile amount is ranked against shares from 1991-2020 windows ending within two calendar days of this date. High ranks mean unusually strong dependence on very wet days, while low ranks mean less dependence; cells with less than 0.10 inch in total are blank.</p>
+<p><a href="../maps/generated/prism/precipitation/pcpn-very-wet-contribution-percentile-rank-090day-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+</div></div><script src="../assets/current-map-groups/current-map-groups.js"></script>
+```

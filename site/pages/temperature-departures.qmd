@@ -1,0 +1,47 @@
+---
+title: "Departures"
+page-layout: full
+toc: false
+---
+
+```{=html}
+<div class="current-group-preview" data-group="temperature-departures">
+<div class="temperature-variable-tabs" role="tablist" aria-label="Departures">
+<button type="button" id="group-tab-maxt" role="tab" data-tab="maxt" aria-controls="group-maps">Maximum</button>
+<button type="button" id="group-tab-tmean" role="tab" data-tab="tmean" aria-controls="group-maps">Mean</button>
+<button type="button" id="group-tab-mint" role="tab" data-tab="mint" aria-controls="group-maps">Minimum</button>
+</div>
+<div class="temperature-period-control group-variant-control"><label for="group-variant">Time period</label><select id="group-variant"></select></div>
+<div id="group-maps" role="tabpanel" aria-live="polite">
+<article class="group-map" data-product="maxt_departure_daily" data-tab="maxt" data-variant="daily" data-option="Daily"><h2 class="group-map-heading">Maximum temperature departure</h2>
+<a href="../maps/generated/prism/temperature/maxt-departure-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/maxt-departure-latest.png" alt="Maximum temperature departure" loading="lazy"></a>
+<p>The latest daily maximum temperature is compared with the 1991-2020 average maximum for the same calendar date, estimated with a centered five-day window. Positive values mean warmer-than-average afternoons and negative values mean cooler-than-average afternoons, in degrees F.</p>
+<p><a href="../maps/generated/prism/temperature/maxt-departure-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="tmean_departure_daily" data-tab="tmean" data-variant="daily" data-option="Daily"><h2 class="group-map-heading">Mean temperature departure</h2>
+<a href="../maps/generated/prism/temperature/tmean-departure-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/tmean-departure-latest.png" alt="Mean temperature departure" loading="lazy"></a>
+<p>The latest daily mean temperature, calculated from maximum and minimum temperature, is compared with its 1991-2020 average for the same calendar date using a centered five-day window. Positive values mean warmer-than-average conditions and negative values mean cooler-than-average conditions, in degrees F.</p>
+<p><a href="../maps/generated/prism/temperature/tmean-departure-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="mint_departure_daily" data-tab="mint" data-variant="daily" data-option="Daily"><h2 class="group-map-heading">Minimum temperature departure</h2>
+<a href="../maps/generated/prism/temperature/mint-departure-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/mint-departure-latest.png" alt="Minimum temperature departure" loading="lazy"></a>
+<p>The latest daily minimum temperature is compared with the 1991-2020 average minimum for the same calendar date, estimated with a centered five-day window. Positive values mean warmer-than-average nights and negative values mean colder-than-average nights, in degrees F.</p>
+<p><a href="../maps/generated/prism/temperature/mint-departure-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="maxt_departure_30day" data-tab="maxt" data-variant="30day" data-option="30-day mean"><h2 class="group-map-heading">Maximum temperature departure</h2>
+<a href="../maps/generated/prism/temperature/maxt-departure-30day-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/maxt-departure-30day-latest.png" alt="Maximum temperature departure" loading="lazy"></a>
+<p>The average of the latest 30 daily maximum temperatures is compared with the average of their matching centered-five-day 1991-2020 calendar-day normals. Positive values show sustained warmer-than-average afternoons and negative values show sustained cooler-than-average afternoons, in degrees F.</p>
+<p><a href="../maps/generated/prism/temperature/maxt-departure-30day-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="tmean_departure_30day" data-tab="tmean" data-variant="30day" data-option="30-day mean"><h2 class="group-map-heading">Mean temperature departure</h2>
+<a href="../maps/generated/prism/temperature/tmean-departure-30day-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/tmean-departure-30day-latest.png" alt="Mean temperature departure" loading="lazy"></a>
+<p>The average of the latest 30 daily mean temperatures is compared with the average of their matching centered-five-day 1991-2020 calendar-day normals. Positive values show sustained warmer-than-average conditions and negative values show sustained cooler-than-average conditions, in degrees F.</p>
+<p><a href="../maps/generated/prism/temperature/tmean-departure-30day-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="mint_departure_30day" data-tab="mint" data-variant="30day" data-option="30-day mean"><h2 class="group-map-heading">Minimum temperature departure</h2>
+<a href="../maps/generated/prism/temperature/mint-departure-30day-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/mint-departure-30day-latest.png" alt="Minimum temperature departure" loading="lazy"></a>
+<p>The average of the latest 30 daily minimum temperatures is compared with the average of their matching centered-five-day 1991-2020 calendar-day normals. Positive values show sustained warmer-than-average nights and negative values show sustained colder-than-average nights, in degrees F.</p>
+<p><a href="../maps/generated/prism/temperature/mint-departure-30day-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+</div></div><script src="../assets/current-map-groups/current-map-groups.js"></script>
+```

@@ -1,0 +1,32 @@
+---
+title: "Current values"
+page-layout: full
+toc: false
+---
+
+```{=html}
+<div class="current-group-preview" data-group="temperature-values">
+<div class="temperature-variable-tabs" role="tablist" aria-label="Current values">
+<button type="button" id="group-tab-maxt" role="tab" data-tab="maxt" aria-controls="group-maps">Maximum</button>
+<button type="button" id="group-tab-tmean" role="tab" data-tab="tmean" aria-controls="group-maps">Mean</button>
+<button type="button" id="group-tab-mint" role="tab" data-tab="mint" aria-controls="group-maps">Minimum</button>
+</div>
+<div class="temperature-period-control group-variant-control"><label for="group-variant">Display</label><select id="group-variant"></select></div>
+<div id="group-maps" role="tabpanel" aria-live="polite">
+<article class="group-map" data-product="maxt_value" data-tab="maxt" data-variant="map" data-option="Daily value"><h2 class="group-map-heading">Maximum temperature</h2>
+<a href="../maps/generated/prism/temperature/maxt-value-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/maxt-value-latest.png" alt="Maximum temperature" loading="lazy"></a>
+<p>This map shows the latest PRISM daily maximum temperature at each grid cell in degrees F. Higher values mark hotter afternoons; use the departure or percentile maps to judge whether that heat is unusual for the date.</p>
+<p><a href="../maps/generated/prism/temperature/maxt-value-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="tmean_value" data-tab="tmean" data-variant="map" data-option="Daily value"><h2 class="group-map-heading">Mean temperature</h2>
+<a href="../maps/generated/prism/temperature/tmean-value-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/tmean-value-latest.png" alt="Mean temperature" loading="lazy"></a>
+<p>Daily mean temperature is calculated at each grid cell as the average of that day's PRISM maximum and minimum temperatures in degrees F. Higher values show warmer overall conditions, while the companion departure and percentile maps show how those conditions compare with the season.</p>
+<p><a href="../maps/generated/prism/temperature/tmean-value-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="mint_value" data-tab="mint" data-variant="map" data-option="Daily value"><h2 class="group-map-heading">Minimum temperature</h2>
+<a href="../maps/generated/prism/temperature/mint-value-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/mint-value-latest.png" alt="Minimum temperature" loading="lazy"></a>
+<p>This map shows the latest PRISM daily minimum temperature at each grid cell in degrees F. Lower values mark colder overnight conditions; use the departure or percentile maps to judge whether they are unusual for the date.</p>
+<p><a href="../maps/generated/prism/temperature/mint-value-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+</div></div><script src="../assets/current-map-groups/current-map-groups.js"></script>
+```

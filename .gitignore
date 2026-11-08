@@ -17,6 +17,8 @@ data/processed/*
 site/maps/generated/*
 site/stations/
 site/daily-explorer/
+site/assets/current-map-groups/manifest.json
+site/assets/current-map-groups/assets.json
 data/diagnostics/
 docs/prism-data-methods.html
 !data/raw/.gitkeep

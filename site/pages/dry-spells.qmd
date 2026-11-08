@@ -1,0 +1,36 @@
+---
+title: "Dry-spell conditions"
+page-layout: full
+toc: false
+---
+
+```{=html}
+<div class="current-group-preview" data-group="dry-spells">
+<div class="temperature-variable-tabs" role="tablist" aria-label="Dry-spell conditions">
+<button type="button" id="group-tab-current" role="tab" data-tab="current" aria-controls="group-maps">Current dry spell</button>
+<button type="button" id="group-tab-longest" role="tab" data-tab="longest" aria-controls="group-maps">Longest in 180 days</button>
+</div>
+<div class="temperature-period-control group-variant-control"><label for="group-variant">Display</label><select id="group-variant"></select></div>
+<div id="group-maps" role="tabpanel" aria-live="polite">
+<article class="group-map" data-product="pcpn_current_dry_spell_length" data-tab="current" data-variant="observed" data-option="Length (days)"><h2 class="group-map-heading">Current dry-spell length</h2>
+<a href="../maps/generated/prism/precipitation/pcpn-current-dry-spell-length-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/precipitation/pcpn-current-dry-spell-length-latest.png" alt="Current dry-spell length" loading="lazy"></a>
+<p>Starting with the latest day, this map counts consecutive days with precipitation below 0.04 inch at each grid cell. A value of zero means the latest day was wet; larger values show longer ongoing dry spells, with the map scale capped at 90+ days.</p>
+<p><a href="../maps/generated/prism/precipitation/pcpn-current-dry-spell-length-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="pcpn_current_dry_spell_percentile" data-tab="current" data-variant="rank" data-option="Percentile rank"><h2 class="group-map-heading">Current dry-spell percentile</h2>
+<a href="../maps/generated/prism/precipitation/pcpn-current-dry-spell-percentile-rank-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/precipitation/pcpn-current-dry-spell-percentile-rank-latest.png" alt="Current dry-spell percentile" loading="lazy"></a>
+<p>The ongoing number of consecutive days below 0.04 inch is ranked against 1991-2020 dry spells ending within two calendar days of this date. High ranks mean the current dry spell is unusually long for this time of year, while low ranks mean it is relatively short.</p>
+<p><a href="../maps/generated/prism/precipitation/pcpn-current-dry-spell-percentile-rank-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="pcpn_longest_dry_spell_180day" data-tab="longest" data-variant="observed" data-option="Length (days)"><h2 class="group-map-heading">Longest dry spell in 180 days</h2>
+<a href="../maps/generated/prism/precipitation/pcpn-longest-dry-spell-180day-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/precipitation/pcpn-longest-dry-spell-180day-latest.png" alt="Longest dry spell in 180 days" loading="lazy"></a>
+<p>This map finds the longest uninterrupted run of days below 0.04 inch anywhere within the latest 180 days. Higher values show a longer dry stretch during that window, even if the stretch ended before the latest day.</p>
+<p><a href="../maps/generated/prism/precipitation/pcpn-longest-dry-spell-180day-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="pcpn_longest_dry_spell_percentile_180day" data-tab="longest" data-variant="rank" data-option="Percentile rank"><h2 class="group-map-heading">Longest dry-spell percentile</h2>
+<a href="../maps/generated/prism/precipitation/pcpn-longest-dry-spell-percentile-rank-180day-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/precipitation/pcpn-longest-dry-spell-percentile-rank-180day-latest.png" alt="Longest dry-spell percentile" loading="lazy"></a>
+<p>The longest dry run in the latest 180 days is ranked against 1991-2020 180-day windows ending within two calendar days of this date. High ranks indicate an unusually long dry stretch for this time of year, whether or not it is still ongoing.</p>
+<p><a href="../maps/generated/prism/precipitation/pcpn-longest-dry-spell-percentile-rank-180day-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+</div></div><script src="../assets/current-map-groups/current-map-groups.js"></script>
+```

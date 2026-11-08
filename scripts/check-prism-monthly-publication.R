@@ -1,0 +1,5 @@
+source("scripts/load-prism-monthly.R")
+source("R/prism-monthly-site.R")
+monthly_publication <- validate_prism_monthly_publication(rendered_dir = "site/_site")
+print(monthly_publication$summary, row.names = FALSE)
+if (monthly_publication$summary$status != "PASS") stop("Rendered Monthly Climate validation failed; inspect data/diagnostics/prism-monthly-publication/checks.csv")

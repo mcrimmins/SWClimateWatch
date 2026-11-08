@@ -659,3 +659,17 @@ body.quarto-dark .climate-map h3 {
     grid-template-columns: 1fr;
   }
 }
+/* Monthly Climate: one period selector shared by all three variable tabs. */
+.monthly-climate .monthly-controls { display:flex; align-items:center; gap:.7rem; margin:1.2rem 0; }
+.monthly-climate select { padding:.4rem .7rem; border:1px solid #b9c8ce; border-radius:4px; background:var(--bs-body-bg); color:var(--bs-body-color); }
+.monthly-tabs { display:flex; flex-wrap:wrap; gap:.25rem; border-bottom:1px solid #ccd5da; margin-bottom:1rem; }
+.monthly-tabs button { background:transparent; color:inherit; border:0; padding:.7rem 1rem; border-bottom:3px solid transparent; }
+.monthly-tabs button[aria-selected="true"] { color:#b54a25; border-bottom-color:#b54a25; font-weight:600; }
+.monthly-tabs button:focus-visible { outline:2px solid #248b9a; outline-offset:2px; }
+.monthly-map img { width:100%; height:auto; }
+.monthly-map { max-width:1400px; margin:0 auto 1.2rem; }
+.monthly-period { font-weight:600; }
+.monthly-enhanced .monthly-fallback-title { display:none; }
+.monthly-climate [hidden] { display:none !important; }
+.monthly-methods { border-top:1px solid #ccd5da; padding:1rem 0; margin-top:1rem; }
+.monthly-methods summary { font-weight:600; cursor:pointer; margin-bottom:.7rem; }
