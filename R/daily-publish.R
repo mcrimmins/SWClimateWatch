@@ -1,4 +1,8 @@
 # One local, date-aware PRISM + SNODAS + station update followed by site sync.
+.swc_daily_module_files <- Filter(function(x) is.character(x)&&length(x)==1L,
+  lapply(sys.frames(),function(frame) frame$ofile))
+source(file.path(dirname(tail(.swc_daily_module_files,1)[[1]]),"monthly-publish.R"))
+rm(.swc_daily_module_files)
 
 # ntfy is opt-in. Never store a topic or access token in repository files.
 swc_ntfy_notify <- function(event, message, perform = httr2::req_perform) {
@@ -102,7 +106,7 @@ swc_daily_publish_summary_lines <- function(record, prism = NULL, snow = NULL,
                                             stations = NULL, validation = NULL,
                                             failed_stage = NULL,
                                             destination = swc_daily_publish_live_destination(),
-                                            explorer = NULL, weather = NULL) {
+                                            explorer = NULL, weather = NULL, monthly = NULL) {
   status <- switch(record$status[[1L]],
                    PUBLISHED = "Published", PREVIEW = "Preview complete",
                    SKIPPED_UNCHANGED = "Update complete; upload skipped",
@@ -180,6 +184,7 @@ swc_daily_publish_summary_lines <- function(record, prism = NULL, snow = NULL,
         coverage$explorer_dates,coverage$wind_withheld_dates,coverage$unknown_overlay_dates))
     }
   }
+  lines <- c(lines,swc_monthly_summary_line(monthly))
   if (is.list(validation) &&
       all(c("current_passed", "current_total", "archive_passed",
             "archive_total") %in% names(validation))) {
@@ -519,7 +524,8 @@ run_swc_daily_publish <- function(
     publish = NULL,
     notify = swc_ntfy_notify,
     explorer_update = swc_daily_publish_update_explorer,
-    weather_update = swc_daily_publish_update_weather) {
+    weather_update = swc_daily_publish_update_weather,
+    monthly_update = swc_daily_publish_update_monthly) {
   if (!is.logical(dry_run) || length(dry_run) != 1L || is.na(dry_run) ||
       !is.logical(force_publish) || length(force_publish) != 1L ||
       is.na(force_publish)) {
@@ -551,14 +557,14 @@ run_swc_daily_publish <- function(
     if (!dry_run) swc_ntfy_send_safe(event, message, notify = notify)
     invisible(NULL)
   }
-  prism <- snow <- stations <- explorer <- weather <- publication <- NULL
+  prism <- snow <- stations <- explorer <- weather <- monthly <- publication <- NULL
   finish <- function(event, failed_stage = NULL) {
     record$elapsed_seconds <<- round(as.numeric(difftime(
       Sys.time(), started, units = "secs")), 3)
     lines <- swc_daily_publish_summary_lines(
       record, prism, snow, stations,
       if (is.list(publication)) publication$validation else NULL,
-      failed_stage = failed_stage, destination = destination, explorer = explorer, weather = weather)
+      failed_stage = failed_stage, destination = destination, explorer = explorer, weather = weather, monthly = monthly)
     message(paste(lines, collapse = "\n"))
     if (!is.null(event)) send(event, paste(lines, collapse = "\n"))
     lines
@@ -642,6 +648,14 @@ run_swc_daily_publish <- function(
       send("warning", paste0("Station page updated with ", stations$pending,
                              " delayed station caches; see the station update log."))
     }
+    stage <- "monthly climate update"
+    monthly <- monthly_update(today)
+    if(!is.list(monthly)||length(monthly$status)!=1L||is.na(monthly$status)) stop("Monthly update returned an invalid result.")
+    if(!identical(monthly$status,"DISABLED")) {
+      if(isTRUE(monthly$needs_attention)) send("warning",swc_monthly_summary_line(monthly))
+      if(!isTRUE(monthly$publication_ready)) stop("Monthly Climate has no verified retained release; publication stopped.")
+      if(identical(monthly$status,"COMPLETE")) send("progress",swc_monthly_summary_line(monthly))
+    }
     send("progress", paste0(
       "Data checks complete. PRISM: ",
       if (record$prism_data_changed) "changed" else "unchanged",
@@ -658,7 +672,7 @@ run_swc_daily_publish <- function(
       message("Site source is unchanged since the last successful sync; upload skipped.")
       lines <- finish("success")
       return(invisible(list(status = record$status, prism = prism,
-                            snow = snow, stations = stations, explorer = explorer, weather = weather,
+                            snow = snow, stations = stations, explorer = explorer, weather = weather, monthly = monthly,
                             destination = destination,
                             published = FALSE,
                             elapsed_seconds = record$elapsed_seconds,
@@ -683,7 +697,7 @@ run_swc_daily_publish <- function(
     }
     lines <- finish(if (dry_run) NULL else "success")
     invisible(list(status = record$status, prism = prism, snow = snow,
-                   stations = stations, explorer = explorer, weather = weather,
+                   stations = stations, explorer = explorer, weather = weather, monthly = monthly,
                    destination = destination,
                    published = record$published,
                    validation = if (is.list(publication)) publication$validation

@@ -59,10 +59,10 @@ plan_prism_monthly_update <- function(today = Sys.Date(), manual = FALSE, refres
   status <- "DOWNLOAD"
   if (!is.null(state) && state$phase == "INSTALLING") status <- "RECOVERY_REQUIRED"
   else if (!is.null(state) && state$phase == "DATA_READY" && prism_monthly_update_accepted_valid(state)) status <- "REBUILD_ONLY"
-  else if (!within && !isTRUE(manual)) status <- "SKIPPED_OUTSIDE_WINDOW"
   else if (!is.null(state) && state$phase == "COMPLETE" && !refresh_again && prism_monthly_update_accepted_valid(state)) {
     status <- if (manifest_same && prism_monthly_update_artifacts_valid(state$artifacts)) "ALREADY_COMPLETE" else "REBUILD_ONLY"
   }
+  else if (!within && !isTRUE(manual)) status <- "SKIPPED_OUTSIDE_WINDOW"
   if (refresh_again && !is.null(state) && state$phase != "COMPLETE") stop("Resume the unfinished cycle before starting another source refresh.")
   requests <- data.frame(); live <- stage <- NULL
   if (status == "DOWNLOAD") {

@@ -1,5 +1,17 @@
 # Updating and publishing the site
 
+## Optional monthly climate cycle
+
+After transferring and verifying a checkout's monthly cache, set
+`SWC_MONTHLY_MAPS=true` in its VM environment file. The existing daily command
+then checks recent monthly PRISM inputs during days 1–5 and stages completed
+monthly maps before rendering. Successful cycles skip new source requests;
+failed/pending cycles retain verified maps and report status through the
+console and ntfy. No extra cron job is needed. See the
+[monthly daily integration guide](monthly-daily-integration.md) for staging
+checkout, enablement, tests and manual catch-up. This setting defaults to false;
+site-only publication always uses retained monthly products.
+
 ## PRISM freshness and automatic fallback
 
 Normal daily publication now tries yesterday after completing the usual PRISM

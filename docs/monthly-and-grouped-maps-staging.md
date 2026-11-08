@@ -136,10 +136,9 @@ Review the staging site and both validation reports before promotion.
 
 ## Separate follow-up: operational monthly updates
 
-The revision-aware updater already exists, but this release does **not** call it
-from the daily runner. Monthly Climate publishes its retained verified set.
-Before operational updates are enabled, transfer the monthly input cache and SPI
-fits, test the early-month/manual/resume paths on the staging VM, add its
-date-aware hook and status/ntfy reporting, then promote that integration. Until
-then the monthly image ending month will not advance automatically. Do not
-advertise monthly automation as enabled by this page/layout release.
+The runner hook is now implemented and opt-in with `SWC_MONTHLY_MAPS=true`.
+Keep production disabled until the staging integration test is approved. The
+staging VM verified 4,746 inputs and four October fits, built twelve maps in
+162 seconds, and repeated with `ALREADY_COMPLETE` and zero requests. Follow the
+[daily integration guide](monthly-daily-integration.md) for VM checkout,
+staging enablement, no-request checks and the real daily-runner test.

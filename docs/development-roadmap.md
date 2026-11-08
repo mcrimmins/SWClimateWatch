@@ -358,8 +358,15 @@ remain, but the preview's Original individual pages navigation is excluded.
 Monthly Climate remains above Historic Years. Generated navigation preserves
 the new layout; grouped and monthly rendered-map checks now gate S3 sync.
 See [staging preparation and VM commands](monthly-and-grouped-maps-staging.md).
-Monthly calculation scheduling/status integration and monthly cache/SPI-fit
-transfer are still pending; this layout release publishes retained monthly maps.
+The staging cache/SPI-fit transfer and page/layout trial are complete. The VM
+verified 4,746 grids and four fits, built twelve maps in 162 seconds, and skipped
+a repeated cycle with zero requests. The daily-runner hook is now implemented,
+opt-in through `SWC_MONTHLY_MAPS=true`, with early-month retries, retained-release
+fallback, overdue warnings and console/ntfy statistics. Offline integration
+tests pass; the real-cache adapter check reused October maps without requests.
+Next: enable the flag on staging and test its normal daily run, then transfer
+the production seed and promote the tested integration. No second cron job is
+needed. See [monthly daily integration](monthly-daily-integration.md).
 
 Explore the monthly PRISM record proposed for **1895-present**, verifying the
 actual available variables, resolution, geographic coverage and latest complete

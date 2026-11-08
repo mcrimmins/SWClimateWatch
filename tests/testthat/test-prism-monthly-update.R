@@ -70,6 +70,9 @@ testthat::test_that("partial downloads preserve accepted inputs and resume only 
   repeated <- f$run(.fetch = function(...) stop("Must not download again"))
   testthat::expect_equal(repeated$summary$status, "ALREADY_COMPLETE")
   testthat::expect_equal(repeated$summary$requests_attempted, 0L)
+  outside <- f$run(today=as.Date("2023-11-08"),.fetch=function(...) stop("No requests outside window"))
+  testthat::expect_equal(outside$summary$status,"ALREADY_COMPLETE")
+  testthat::expect_equal(outside$summary$requests_attempted,0L)
 })
 
 testthat::test_that("unchanged values retain file checksums and invalid temperature sets are not installed", {

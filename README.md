@@ -37,12 +37,14 @@ documentation remain outside the website source tree.
 
 The separate [monthly PRISM access pilot](docs/prism-monthly.md) verifies
 long-record monthly inputs and resumable regional caching. It is not part of
-the operational daily publisher yet.
+the operational daily publisher by default. The
+[monthly runner integration](docs/monthly-daily-integration.md) is enabled with
+`SWC_MONTHLY_MAPS=true` after seeding and testing each VM checkout.
 
 For the reviewed Current Maps groupings and Monthly Climate page, see the
 [staging release guide](docs/monthly-and-grouped-maps-staging.md). Local review:
 `source("scripts/preview-climate-site.R")`. Rendered grouped/monthly publication
-checks are enabled; automatic monthly calculations remain a separate follow-up.
+checks are enabled; monthly calculations are opt-in through the daily runner.
 
 For the Daily Explorer timeline and single-, seven-, and 30-day map views, see
 [Daily Explorer](docs/daily-explorer.md). The daily publisher stages the

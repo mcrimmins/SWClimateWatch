@@ -499,8 +499,10 @@ monthly_update_result <- run_prism_monthly_update(
 The date-aware entry point is `source("scripts/update-prism-monthly.R")`.
 Outside days 1–5 it skips new source requests unless manually overridden through
 the function. A refresh still incomplete at window end requires a manual resume.
-This entry point is **not yet connected to the daily publisher or VM cron**.
-No website rendering, S3 sync or publication occurs in these tests.
+The standalone entry point does not render or publish. The opt-in
+[`SWC_MONTHLY_MAPS=true` daily-runner adapter](monthly-daily-integration.md) now
+invokes the updater, stages completed maps and reports status. No second cron
+is needed; automatic source refresh remains limited to days 1–5.
 
 Latest reports are in `data/diagnostics/prism-monthly-update/`: `summary.csv`,
 `downloads.csv`, `changes.csv`, `products.csv` and `rebuild-plan.csv`.
@@ -555,8 +557,9 @@ testthat::test_dir("tests/testthat", filter = "^prism-monthly-site$", reporter =
 The site now includes the Monthly Climate link above Historic Years and checks
 its rendered maps before daily or site-only S3 publication. Follow the
 [grouped-map staging release instructions](monthly-and-grouped-maps-staging.md)
-to test the retained release on the VM. Automatic monthly calculation hooks
-and full cache/fit transfer remain a separate follow-up. Stable external
+to test the retained release on the VM. Automatic calculations are opt-in through
+the [daily integration](monthly-daily-integration.md); each checkout needs its
+own monthly cache and fit transfer. Stable external
 SPI-12/temperature-rank-12 aliases also remain a separate publication step.
 
 ### Remaining development

@@ -24,6 +24,12 @@ swc_production_preflight <- function(
   for (package in unique(c(swc_packages, "Rcpp", "xml2"))) {
     add("R package", package, requireNamespace(package, quietly = TRUE))
   }
+  if(swc_monthly_maps_enabled()) {
+    for(package in c("filelock","MASS")) add("R package",package,requireNamespace(package,quietly=TRUE))
+    cache <- file.path("data","processed","prism-monthly",swc_prism$aoi_id)
+    add("seed file","Monthly PRISM manifest",present(file.path(cache,"manifest.csv")),file.path(cache,"manifest.csv"))
+    add("code","Monthly update adapter",present("R/monthly-publish.R"),"R/monthly-publish.R")
+  }
   quarto <- tryCatch(swc_deploy_quarto(), error = function(error) "")
   add("command", "Quarto", nzchar(quarto), quarto)
   aws <- Sys.which("aws")
