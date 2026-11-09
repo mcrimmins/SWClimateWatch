@@ -126,6 +126,7 @@ deploy_swc_site <- function(
     swc_deploy_run(rscript, "scripts/stage-daily-explorer.R", "Stage cached Daily Explorer")
     swc_deploy_run(rscript, c("scripts/stage-conditions-synopsis.R", destination), "Stage cached template synopsis")
     swc_deploy_run(rscript, "scripts/stage-current-map-groups.R", "Stage grouped Current Maps")
+    swc_deploy_run(rscript, "scripts/stage-cached-prism-monthly-site.R", "Stage cached Monthly Climate")
     swc_deploy_run(quarto, c("render", "site"), "Render Quarto site")
   }
   output_dir <- file.path(project_dir, "site", "_site")

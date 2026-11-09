@@ -35,3 +35,14 @@ testthat::test_that("live publish entry point uses the dedicated confirmed prefi
   testthat::expect_match(script, "delete = FALSE", fixed = TRUE)
   testthat::expect_match(script, "render = TRUE", fixed = TRUE)
 })
+
+
+testthat::test_that("site renders reconcile monthly pages from cached local releases first", {
+  script<-readLines(file.path(project_root,"scripts/deploy-site-s3.R"))
+  stage<-grep('swc_deploy_run(rscript, "scripts/stage-cached-prism-monthly-site.R"',script,fixed=TRUE)
+  render<-grep('swc_deploy_run(quarto, c("render", "site")',script,fixed=TRUE)
+  testthat::expect_length(stage,1L)
+  testthat::expect_true(stage<render)
+  helper<-paste(readLines(file.path(project_root,"scripts/stage-cached-prism-monthly-site.R")),collapse="\n")
+  testthat::expect_false(grepl("run_prism_monthly_update(",helper,fixed=TRUE))
+})

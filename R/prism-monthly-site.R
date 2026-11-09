@@ -145,3 +145,57 @@ validate_prism_monthly_publication <- function(site_dir = "site", rendered_dir =
   write_prism_monthly_audit_report(summary, file.path(report_dir, "summary.csv"))
   list(summary = summary, checks = checks)
 }
+
+
+# Reconcile a checked-out page with this machine's accepted cached map releases.
+# No downloads, monthly-cycle advancement, or map calculations are permitted here.
+stage_cached_prism_monthly_site <- function(site_dir="site",
+    ranking_dir="data/diagnostics/prism-monthly-ranking-pilots",
+    spi_dir="data/diagnostics/prism-monthly-spi-pilots",today=Sys.Date(),
+    .verify_sources=TRUE, report_dir="data/diagnostics/prism-monthly-publication") {
+  months <- function(path) {
+    x<-basename(list.dirs(path,recursive=FALSE,full.names=TRUE))
+    x[grepl("^[0-9]{4}-[0-9]{2}$",x)]
+  }
+  latest<-format(as.Date(format(as.Date(today),"%Y-%m-01"))-1L,"%Y-%m")
+  candidates<-sort(intersect(months(ranking_dir),months(spi_dir)),decreasing=TRUE)
+  candidates<-candidates[candidates<=latest]
+  held<-suppressWarnings(validate_prism_monthly_publication(site_dir=site_dir,report_dir=report_dir))
+  held_manifest<-NULL
+  if(held$summary$status=="PASS") {
+    doc<-xml2::read_html(file.path(site_dir,"pages/monthly-climate.qmd"))
+    src<-xml2::xml_attr(xml2::xml_find_first(doc,'//img[@data-monthly-map]'),"src")
+    held_manifest<-jsonlite::read_json(file.path(site_dir,"pages",dirname(src),"manifest.json"),simplifyVector=TRUE)
+  }
+  failures<-character()
+  for(end in candidates) {
+    jobs<-monthly_site_products(end,ranking_dir,spi_dir)
+    # Skip incomplete pilot months before doing the full source/policy audit.
+    ready<-vapply(seq_len(nrow(jobs)),function(i) {
+      path<-file.path(jobs$folder[i],"complete.rds");marker<-prism_monthly_update_read(path)
+      !is.null(marker)&&prism_monthly_ranking_complete(path,marker$signature)&&
+        jobs$source[i] %in% marker$files&&file.exists(jobs$source[i])
+    },logical(1))
+    if(!all(ready)) {failures<-c(failures,paste0(end,": incomplete cached products"));next}
+    if(!is.null(held_manifest)&&identical(held_manifest$end_month,end)) {
+      matched<-match(paste(jobs$family,jobs$duration),paste(held_manifest$products$family,held_manifest$products$duration))
+      if(!anyNA(matched)&&identical(unname(tools::md5sum(jobs$source)),held_manifest$products$md5[matched])) {
+        message("Monthly Climate cached page/assets already match through ",end,"; no restaging or full input audit needed.")
+        return(invisible(list(end_month=end,retained=TRUE,reused=TRUE)))
+      }
+    }
+    result<-tryCatch(stage_prism_monthly_site(end=end,site_dir=site_dir,ranking_dir=ranking_dir,
+      spi_dir=spi_dir,.verify_sources=.verify_sources),error=function(e)e)
+    if(!inherits(result,"error")) {
+      message("Monthly Climate reconciled from cached maps through ",end,"; no source requests or map rebuilds.")
+      return(invisible(result))
+    }
+    failures<-c(failures,paste0(end,": ",conditionMessage(result)))
+  }
+  if(held$summary$status=="PASS") {
+    warning("Monthly Climate retained its verified staged release; no complete newer cached product set was staged.",call.=FALSE)
+    return(invisible(list(retained=TRUE)))
+  }
+  stop("Monthly Climate has no verified staged release or complete cached products. Run the monthly update/refresh first. ",
+    paste(failures,collapse="; "),call.=FALSE)
+}

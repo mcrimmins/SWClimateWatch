@@ -40,6 +40,17 @@ Do not copy laptop daily grids, maps, generated synopsis fragments, or success
 markers to the VM. Existing VM caches supply the inputs; the publisher rebuilds
 the current fragment. Production promotion remains a separate approval.
 
+### Monthly page reconciliation after checkout
+
+The site-only publisher now runs `scripts/stage-cached-prism-monthly-site.R`
+before rendering. This repairs a checked-out Monthly Climate page whose
+laptop-specific release directory does not exist on the VM. It uses complete,
+verified cached ranking/SPI products; it does not download, calculate maps or
+advance the monthly update cycle. Matching page/assets take a fast checksum-only
+path. Incomplete new-month caches retain an existing verified release. If neither
+cached products nor a valid retained release exists, publication stops before
+rendering; the normal rendered checks remain required.
+
 ## Original integration instructions (historical)
 
 The release adds Home Maps/Synopsis tabs (Maps first/default) and the directly
