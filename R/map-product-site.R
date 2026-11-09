@@ -463,6 +463,40 @@ map_dashboard_snow_selection <- function(site_dir="site",today=Sys.Date(),
   },error=function(e) unavailable("Snow comparison/reference unavailable; showing dry-spell rank."))
 }
 
+map_dashboard_footer_text <- function(dashboard,snow=NULL,archive_years=integer(),show_headlines=FALSE) {
+  settings <- attr(dashboard,"summary_config")
+  threshold_text <- function(cards) {
+    cards <- Filter(function(card) !identical(card$enabled,FALSE),cards)
+    if(!length(cards)) return("the cutoffs configured for each map")
+    pairs <- unique(vapply(cards,function(card) sprintf("below percentile %g / above percentile %g",
+      card$lower_percentile,card$upper_percentile),character(1)))
+    if(length(pairs)==1L) pairs else "the cutoffs configured for each map (which can differ between maps)"
+  }
+  headline_cards <- settings$headlines$cards
+  headline_cards <- headline_cards[grepl("^pcpn_",names(headline_cards))]
+  map_cards <- settings$summaries
+  map_cards <- map_cards[grepl("^pcpn_(percentile_[0-9]+day|water_year_percentile)$",names(map_cards))]
+  summary_visible <- identical(settings$layout,"per_map")
+  years <- sort(unique(as.integer(archive_years)),decreasing=TRUE)
+  years <- years[!is.na(years)]
+  c("<!-- BEGIN HOME MAP FOOTER -->","```{=html}",
+    '<details id="home-map-notes" class="dashboard-reading-notes">',
+    '<summary>Reading these maps</summary>', '<ul>',
+    '<li><strong>Reference and dates:</strong> PRISM ranks and departures use seasonally matched 1991&ndash;2020 comparisons. Low precipitation ranks mean drier conditions; high dry-spell ranks mean unusually long dry spells. Positive temperature departures mean warmer conditions, in &deg;F. Recent inputs are preliminary; use each map\'s data date.</li>',
+    '<li><strong>Water year:</strong> Precipitation starts October 1. Early-season ranks cover a short period; the 90-day map provides broader context.</li>',
+    if(summary_visible||show_headlines) '<li><strong>Regional values:</strong> Summaries cover Arizona and New Mexico, weighted by grid-cell area within state boundaries, and require at least 98% valid area. Percentile percentages describe affected area, not an average percentile. Each summary follows its map\'s period and date.</li>',
+    if(show_headlines&&length(headline_cards)) paste0('<li><strong>Headline precipitation cards:</strong> Below-/above-normal area uses ',threshold_text(headline_cards),'. Mixed shading retains both dry and wet signals.</li>'),
+    if(summary_visible&&length(map_cards)) paste0('<li><strong>Very dry/wet map summaries:</strong> Affected area uses ',threshold_text(map_cards),'. Dry-spell summaries highlight the unusually long tail. Map-summary tooltips give the thresholds and dates.</li>'),
+    if(summary_visible||show_headlines) '<li><strong>Summary color cues:</strong> Stronger precipitation or dry-spell summary colors highlight a larger affected area, not more extreme grid-cell values. Temperature summary colors show warmer/cooler departures, not statistical significance. Rainfall amounts remain neutral because amount alone does not establish rarity. These cues are not a combined drought classification.</li>',
+    if(isTRUE(snow$available)) '<li><strong>Snow:</strong> Snow percentages are not percentile ranks. SWE ratios require a typical median of at least 1 inch and at least 18 reference years. The snow date and WY2005&ndash;WY2025 reference differ from PRISM.</li>',
+    '</ul><p><a href="pages/methods.html">About the data and methods</a></p></details>',
+    '<nav id="historic-seasons" class="dashboard-context-links" aria-label="Historical climate context">',
+    '<span class="dashboard-context-label">Historical context</span>',
+    '<a href="pages/monthly-climate.html">Monthly Climate</a>',
+    if(length(years)) sprintf('<a href="pages/archive/wy%d.html">Latest completed water year (WY%d)</a>',years[1],years[1]),
+    '</nav>', '```', '<!-- END HOME MAP FOOTER -->')
+}
+
 map_dashboard_page_text <- function(dashboard, expected_data_dates = NULL, snow=NULL,archive_years=integer(),
     roni=swc_read_dashboard_roni(), summaries=NULL,headlines=NULL) {
   summary_config <- attr(dashboard,"summary_config")
@@ -529,31 +563,7 @@ map_dashboard_page_text <- function(dashboard, expected_data_dates = NULL, snow=
     lines,
     ":::",
     "",
-    "::: {.dashboard-note}",
-    "PRISM percentile ranks compare matching periods in 1991\u20132020. Low precipitation ranks indicate drier conditions. Temperature departure is in \u00b0F; positive values mean warmer conditions. A high dry-spell rank means an unusually long ongoing dry spell. These indicators describe conditions, not a combined drought classification.",
-    "",
-    "Water-year precipitation starts October 1. Early-season ranks describe a short period; use the 90-day map for broader context.",
-    "",
-    "Map summaries describe combined Arizona and New Mexico, weighted by grid-cell area within state boundaries. At least 98% valid area is required. Percentile summaries show area below or above the stated thresholds; they do not average pixel percentiles. Rainfall coverage uses the stated accumulation threshold. Each summary follows its map's period and data date.",
-    "",
-    "Very dry/wet: percentage of AZ/NM area below the 10th/above the 90th precipitation percentile by default. Long dry spells uses the high tail. Stronger chip colors indicate a larger affected area, not greater severity; gray indicates a smaller footprint. Temperature colors indicate cooler/warmer departures, not a significance test. Hover over a value for its configured threshold and date. Rainfall amounts remain neutral because amount alone does not establish rarity.",
-    "",
-    if(length(headlines)) "Headline precipitation cards show area below the 33rd/above the 67th percentile by default. Brown/teal indicates widespread below-/above-normal conditions; mixed shading retains both signals. These display cues are not regional percentile ranks or drought classifications. Headline temperature is an area-weighted departure from 1991\u20132020 normal.",
-    if(isTRUE(snow$available)) "\nSnow percentages are not percentile ranks. Ratios use typical SWE of at least 1 inch and at least 18 reference years; the snow date and reference differ from PRISM." else character(),
-    ":::",
-    "",
-    "::: {#historic-seasons .dashboard-history-links}",
-    "## Compare historic seasons",
-    "Browse completed water years:",
-    paste0(vapply(head(sort(unique(archive_years),decreasing=TRUE),5L),function(year) paste0("[WY",year,
-      "](pages/archive/wy",year,".qmd)"),character(1)),collapse=" \u00b7 "),
-    "",
-    "Additional completed years are listed under Historic Years in the navigation menu.",
-    ":::",
-    "",
-    "::: {.dashboard-explore-more}",
-    "**Explore more:** [Daily Explorer](pages/daily-explorer.qmd) \u00b7 [Station Conditions](pages/station-conditions.qmd) \u00b7 [Current Snow](pages/current-snow.qmd) \u00b7 [Historic Seasons](#historic-seasons)",
-    ":::",
+    map_dashboard_footer_text(dashboard,snow,archive_years,show_headlines=length(headlines)>0L),
     "",
     "## Synopsis",
     "",
@@ -897,19 +907,20 @@ map_product_navigation_lines <- function(products) {
     "      - section: Current Maps",
     "        contents:"
   )
-  emitted <- character()
   definitions <- current_site_groups()
   for (section in unique(enabled$section)) {
     section_products <- enabled[enabled$section == section, , drop = FALSE]
     lines <- c(lines, paste0("          - section: ", section), "            contents:")
+    for (key in names(definitions)) {
+      definition <- definitions[[key]]
+      if (identical(definition$section, section) && any(section_products$id %in% definition$ids)) {
+        lines <- c(lines,paste0("              - href: pages/",key,".qmd"),
+          paste0("                text: ",definition$title))
+      }
+    }
     for (group in unique(section_products$group)) {
       group_products <- section_products[section_products$group == group, , drop = FALSE]
       keys <- vapply(group_products$id,current_map_group_key,character(1))
-      for (key in unique(keys[!is.na(keys)])) {
-        if (!key %in% emitted) lines <- c(lines,paste0("              - href: pages/",key,".qmd"),
-          paste0("                text: ",definitions[[key]]$title))
-        emitted <- unique(c(emitted,key))
-      }
       group_products <- group_products[is.na(keys),,drop=FALSE]
       if (!nrow(group_products)) next
       lines <- c(lines, paste0("              - section: ", group), "                contents:")
@@ -1003,7 +1014,7 @@ build_map_product_site <- function(
     products,
     quarto_path = file.path(site_dir, "_quarto.yml")
   )
-  stage_current_map_groups(site_dir=site_dir,config_path=config_path)
+  stage_current_map_groups(site_dir=site_dir,config_path=config_path,expected_data_dates=expected_data_dates)
   if (isTRUE(require_images)) {
     validate_map_product_publication(
       products = products,

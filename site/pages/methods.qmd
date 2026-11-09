@@ -1,19 +1,31 @@
 ---
-title: "Methods"
+title: "About"
 description: "Data sources, update timing, and how to read the maps"
 ---
 
 ## Data sources and updates
 
-The site combines three data streams: PRISM gridded temperature and precipitation, RCC-ACIS station observations, and SNODAS modeled snowpack. Their reporting dates, reference periods, and quality checks differ; use the date and legend shown on each map or explorer rather than assuming all products describe the same day.
+Southwest Climate Watch brings together PRISM gridded temperature and precipitation, RCC-ACIS station observations, SNODAS modeled snowpack, and NOAA CORe reanalysis for weather context. Their reporting dates, reference periods, and quality checks differ; use the date and legend shown on each map or explorer rather than assuming all products describe the same day.
 
 ### PRISM temperature and precipitation
 
 These maps use daily, approximately 4-km precipitation and maximum- and minimum-temperature grids produced by the [PRISM Climate Group at Oregon State University](https://prism.oregonstate.edu/data/). We retrieve the PRISM grids through the [RCC-ACIS web service](https://www.rcc-acis.org/docs_webservices.html) for Arizona, New Mexico, and a half-degree buffer around the two states. Temperature is shown in °F and precipitation in inches. Mean temperature is calculated at each grid cell as the average of that day's maximum and minimum. PRISM grids are spatial estimates informed by weather-station data, not direct observations at every pixel.
 
-**Recent maps mostly use preliminary data.** According to [PRISM's update calendar](https://prism.oregonstate.edu/calendar/), a day's first grid is modeled about 24 hours after the day ends, then modeled again after about five days and roughly monthly through six months. The eighth daily run is considered final unless the whole dataset is later revised. Our daily update checks for newly available dates *and* revisits recent dates so revised PRISM values can flow into the maps. The date printed on each map is the latest PRISM date actually used; it may lag today's date. Recent values and derived rankings can change as their source grids are revised. These maps do not use the separate PRISM monthly dataset.
+**Recent maps mostly use preliminary data.** According to [PRISM's update calendar](https://prism.oregonstate.edu/calendar/), a day's first grid is modeled about 24 hours after the day ends, then modeled again after about five days and roughly monthly through six months. The eighth daily run is considered final unless the whole dataset is later revised. Our daily update checks for newly available dates *and* revisits recent dates so revised PRISM values can flow into the maps. The date printed on each map is the latest PRISM date actually used; it may lag today's date. Recent values and derived rankings can change as their source grids are revised. Daily Current Maps and Daily Explorer use these daily grids; Monthly Climate uses the separate monthly dataset described below.
 
 The daily update tries yesterday's precipitation and both temperature fields together. That date is used only after all three pass date, grid, value-range and coverage checks. If any field is unavailable or incomplete, the site retains the newest verified complete set; it does not fill missing days or mix dates to make the maps appear more current.
+
+### Monthly PRISM and SPI
+
+Monthly Climate uses the separate PRISM monthly precipitation and maximum-/minimum-temperature grids, retrieved through RCC-ACIS, with records beginning in **January 1895**. Maps cover complete **1-, 3-, 6- and 12-month periods** ending with the last available month. Temperature averages are weighted by the number of days in each month; precipitation is summed. Monthly updates run during days 1–5 and recheck the latest eight completed months for revisions. A successful cycle is reused; incomplete updates retain the previous verified maps. Recent monthly inputs are preliminary, and age alone does not confirm final status.
+
+- **Monthly rankings:** Compare matching calendar-month windows across the available record, including the displayed period. Higher percentiles mean warmer or wetter conditions. These expanding-record rankings differ from the daily maps' fixed 1991–2020 comparisons. Record categories require complete historical comparison support and a varying record; ties count, while common zero-precipitation totals are not highlighted as record dry.
+- **SPI calculation:** At each grid cell, sum monthly precipitation over the selected duration. Fit a **two-parameter gamma distribution by maximum likelihood** to positive historical totals for that same duration and ending calendar month. The fixed calibration uses eligible complete windows ending in **1895–2020**; newer observations do not enter the fit.
+- **Zeros and standardization:** Estimate the probability of a zero total from all usable calibration years. Combine that probability with the fitted gamma distribution, then transform the resulting cumulative probability to the standard normal scale. A zero total uses its historical zero probability. SPI is not a precipitation z-score or an empirical percentile.
+- **Support and fit checks:** Require at least 50 usable calibration years, at least 90% of eligible reference windows, and at least 30 positive totals. Withhold estimates where at least half the reference totals are zero, positive amounts are effectively constant, the fit fails, or the positive-sample fitted distribution differs too much from the historical sample. The latter uses a maximum cumulative-probability difference of 0.15 as a quality guard, not a formal significance test. Gray indicates that SPI could not be estimated reliably.
+- **Reading SPI:** Negative values indicate drier conditions and positive values wetter conditions relative to that calendar-matched calibration. Values beyond ±1, ±1.5 and ±2 mark progressively more unusual conditions. SPI describes precipitation alone; it does not directly measure soil moisture, streamflow or temperature-driven evaporative demand.
+
+For background, see the [WMO Standardized Precipitation Index User Guide](https://www.droughtmanagement.info/literature/WMO_standardized_precipitation_index_user_guide_en_2012.pdf). The calibration period, fitting method and quality safeguards above describe this site's implementation.
 
 ## Reference periods and interpretation
 

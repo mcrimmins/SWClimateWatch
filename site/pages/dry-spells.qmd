@@ -1,12 +1,12 @@
 ---
-title: "Dry-spell conditions"
+title: "Dry spells"
 page-layout: full
 toc: false
 ---
 
 ```{=html}
 <div class="current-group-preview" data-group="dry-spells">
-<div class="temperature-variable-tabs" role="tablist" aria-label="Dry-spell conditions">
+<div class="temperature-variable-tabs" role="tablist" aria-label="Dry spells">
 <button type="button" id="group-tab-current" role="tab" data-tab="current" aria-controls="group-maps">Current dry spell</button>
 <button type="button" id="group-tab-longest" role="tab" data-tab="longest" aria-controls="group-maps">Longest in 180 days</button>
 </div>

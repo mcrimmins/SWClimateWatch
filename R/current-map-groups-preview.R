@@ -56,6 +56,7 @@ current_group_preview_page <- function(key, group, products, available) {
   lines <- c('---', paste0('title: "', group$title, '"'), 'page-layout: full', 'toc: false', '---', '', '```{=html}',
     sprintf('<div class="current-group-preview" data-group="%s">', key),
     '<p class="temperature-preview-note">Local layout review · Existing maps; dates are printed on each map.</p>')
+  if (!is.null(group$intro)) lines <- c(lines, paste0("<p>", temperature_preview_escape(group$intro), "</p>"))
   if (key == "wet-days") lines <- c(lines, '<p>All three measures describe the latest 90 days. Wet days have at least 0.04 inch of precipitation.</p>')
   if (key == "freeze-monitoring") lines <- c(lines, '<p>First/last freeze maps use August–July cold seasons; freeze-free length uses the displayed calendar year. Check each map’s year before comparing.</p>')
   if (group$all_maps) lines <- c(lines, '<div class="temperature-period-control"><label for="group-layout">View</label><select id="group-layout"><option value="single">Selected map</option><option value="all">All maps</option></select></div>')
@@ -68,8 +69,11 @@ current_group_preview_page <- function(key, group, products, available) {
     r <- rows[i, ]; p <- products[[r$product]]; src <- paste0("maps/", basename(p$image))
     lines <- c(lines, sprintf('<article class="group-map" data-product="%s" data-tab="%s" data-variant="%s" data-option="%s"><h2 class="group-map-heading">%s</h2>',
       r$product, r$tab, r$variant, temperature_preview_escape(r$option), temperature_preview_escape(p$label)))
+    if (!is.null(group$tab_notes[[r$tab]])) lines <- c(lines, paste0('<p class="group-map-caution">', temperature_preview_escape(group$tab_notes[[r$tab]]), '</p>'))
     if (available[[r$product]]) lines <- c(lines, sprintf('<a href="%s" target="_blank" rel="noopener"><img src="%s" alt="%s" loading="lazy"></a>', src, src, temperature_preview_escape(p$label))) else
-      lines <- c(lines, '<p class="group-unavailable" role="status">This map is not available in the laptop’s current cached set. No map from a different date has been substituted.</p>')
+      lines <- c(lines, paste0('<p class="group-unavailable" role="status">',
+        temperature_preview_escape(if (!is.null(group$unavailable_notes[[r$product]])) group$unavailable_notes[[r$product]] else
+          "This map is not available in the laptop’s current cached set. No map from a different date has been substituted."), '</p>'))
     lines <- c(lines, paste0('<p>', temperature_preview_escape(p$description), '</p>'))
     if (available[[r$product]]) lines <- c(lines, sprintf('<p><a href="%s" target="_blank" rel="noopener">Open full-resolution PNG</a> · <a href="individual/%s.html">Original individual map page</a></p>', src, r$product))
     lines <- c(lines, '</article>')

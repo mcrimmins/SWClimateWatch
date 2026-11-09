@@ -1,12 +1,12 @@
 ---
-title: "Rolling mean temperature ranks"
+title: "7–90-day mean ranks"
 page-layout: full
 toc: false
 ---
 
 ```{=html}
 <div class="current-group-preview" data-group="temperature-rolling-ranks">
-<div class="temperature-variable-tabs" role="tablist" aria-label="Rolling mean temperature ranks">
+<div class="temperature-variable-tabs" role="tablist" aria-label="7–90-day mean ranks">
 <button type="button" id="group-tab-mean" role="tab" data-tab="mean" aria-controls="group-maps">Mean temperature</button>
 </div>
 <div class="temperature-period-control group-variant-control"><label for="group-variant">Time period</label><select id="group-variant"></select></div>

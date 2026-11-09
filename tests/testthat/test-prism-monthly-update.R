@@ -73,6 +73,13 @@ testthat::test_that("partial downloads preserve accepted inputs and resume only 
   outside <- f$run(today=as.Date("2023-11-08"),.fetch=function(...) stop("No requests outside window"))
   testthat::expect_equal(outside$summary$status,"ALREADY_COMPLETE")
   testthat::expect_equal(outside$summary$requests_attempted,0L)
+  state_path <- file.path(f$args$state_dir,"cycles","2023-11","state.rds")
+  state <- readRDS(state_path); state$product_policy <- NULL
+  saveRDS(state,state_path)
+  changed_display <- f$run(today=as.Date("2023-11-08"),.fetch=function(...) stop("Display changes must not request sources"))
+  testthat::expect_equal(changed_display$summary$status,"COMPLETE")
+  testthat::expect_equal(changed_display$summary$requests_attempted,0L)
+  testthat::expect_identical(readRDS(state_path)$product_policy,prism_monthly_update_product_policy())
 })
 
 testthat::test_that("unchanged values retain file checksums and invalid temperature sets are not installed", {

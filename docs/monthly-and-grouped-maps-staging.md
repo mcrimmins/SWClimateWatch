@@ -1,12 +1,37 @@
 # Monthly Climate and grouped Current Maps: staging release
 
-This release adopts the reviewed grouping layout on the site. The sidebar has
-temperature values/departures/ranks/freeze timing; precipitation totals/ranks/
-dry spells/wet-day characteristics; and Snow with Selected map / All maps.
-Remaining metrics keep their individual links. No **Original individual pages**
+This release adopts the reviewed grouping layout on the site. Only Temperature and Precipitation expand under Current Maps; Snow is a direct
+link with Selected map / All maps. All 51 enabled PRISM products are covered by
+the grouped pages. No **Original individual pages**
 section is published. Existing individual product URLs remain available for
 bookmarks and links from elsewhere on the site. Monthly Climate sits immediately
 above Historic Years.
+
+## Current Maps navigation (November 8 review)
+
+| Temperature | Precipitation |
+| --- | --- |
+| Current temperatures | Recent totals |
+| Departures from normal | Percentile ranks |
+| Daily percentile ranks | Percent of normal |
+| 7–90-day mean ranks | Recent precipitation change |
+| Temperature extremes | Water-year precipitation |
+| Freeze nights | Water-year precipitation extremes |
+| Freeze dates and season length | Dry spells |
+| | Wet-day characteristics |
+
+The new temperature-extremes and freeze-night pages use tabs for their two
+companion maps. Percent of normal offers 30/90-day periods. Recent precipitation
+change is a single-map page. Water-year precipitation groups total, percent of
+normal and percentile rank; water-year extremes groups the largest three-day
+total, event percentile and precipitation concentration.
+
+The event-percentile tab explicitly explains its comparison against **completed**
+1991–2020 water-year maxima. Three-day products remain unavailable on October
+1–2 even if prior-year PNGs are still on disk. Existing individual URLs continue
+to work, but do not clutter navigation. Product descriptions, images and enabled
+settings still come from `config/map-products.yml`; presentation combinations and
+ordering live in `R/current-map-group-site.R`.
 
 The map catalog generator preserves this navigation on later daily runs. It
 honors enabled products and refreshes grouped pages from existing images and
@@ -36,7 +61,7 @@ anything. To reopen an already rendered site:
 browseURL(normalizePath("site/_site/index.html"))
 ```
 
-Review navigation, all ten grouped pages and Monthly Climate. Check bookmark
+Review navigation, all sixteen Current Maps pages and Monthly Climate. Check bookmark
 reloads, maximum/mean/minimum, departure periods, Date versus Length freeze
 labels, wet-day units and snow's All maps layout. The local snapshot has no
 seven-day snow-change image, so that slot has an unavailable notice. The VM can

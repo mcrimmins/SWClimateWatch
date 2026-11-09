@@ -1,4 +1,7 @@
 # Revision-aware local monthly workflow. No rendering of the website or S3 sync.
+prism_monthly_update_product_policy <- function() digest::digest(list(
+  ranking="monthly-ranking-pilots-v3.1-record-both-zero02",
+  spi=prism_monthly_spi_policy(),spi_display=prism_monthly_spi_display_policy()),algo="sha256")
 prism_monthly_update_save <- function(object, path) {
   dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
   temporary <- tempfile("monthly-state-", tmpdir = dirname(path), fileext = ".rds")
@@ -60,7 +63,8 @@ plan_prism_monthly_update <- function(today = Sys.Date(), manual = FALSE, refres
   if (!is.null(state) && state$phase == "INSTALLING") status <- "RECOVERY_REQUIRED"
   else if (!is.null(state) && state$phase == "DATA_READY" && prism_monthly_update_accepted_valid(state)) status <- "REBUILD_ONLY"
   else if (!is.null(state) && state$phase == "COMPLETE" && !refresh_again && prism_monthly_update_accepted_valid(state)) {
-    status <- if (manifest_same && prism_monthly_update_artifacts_valid(state$artifacts)) "ALREADY_COMPLETE" else "REBUILD_ONLY"
+    status <- if (manifest_same && identical(state$product_policy,prism_monthly_update_product_policy()) &&
+      prism_monthly_update_artifacts_valid(state$artifacts)) "ALREADY_COMPLETE" else "REBUILD_ONLY"
   }
   else if (!within && !isTRUE(manual)) status <- "SKIPPED_OUTSIDE_WINDOW"
   if (refresh_again && !is.null(state) && state$phase != "COMPLETE") stop("Resume the unfinished cycle before starting another source refresh.")
@@ -313,6 +317,7 @@ run_prism_monthly_update <- function(today = Sys.Date(), manual = FALSE, dry_run
           status <- "PENDING_PRODUCTS"; note <- "Accepted data retained; rerun to resume map generation without new downloads."
         } else {
           state$phase <- "COMPLETE"; state$artifacts <- built$artifacts
+          state$product_policy <- prism_monthly_update_product_policy()
           state$manifest_md5 <- unname(tools::md5sum(file.path(cache_dir, "manifest.csv")))
           state$completed_utc <- format(Sys.time(), tz = "UTC", usetz = TRUE)
           prism_monthly_update_save(state, state_path)

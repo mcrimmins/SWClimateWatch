@@ -1,12 +1,12 @@
 ---
-title: "Departures"
+title: "Departures from normal"
 page-layout: full
 toc: false
 ---
 
 ```{=html}
 <div class="current-group-preview" data-group="temperature-departures">
-<div class="temperature-variable-tabs" role="tablist" aria-label="Departures">
+<div class="temperature-variable-tabs" role="tablist" aria-label="Departures from normal">
 <button type="button" id="group-tab-maxt" role="tab" data-tab="maxt" aria-controls="group-maps">Maximum</button>
 <button type="button" id="group-tab-tmean" role="tab" data-tab="tmean" aria-controls="group-maps">Mean</button>
 <button type="button" id="group-tab-mint" role="tab" data-tab="mint" aria-controls="group-maps">Minimum</button>

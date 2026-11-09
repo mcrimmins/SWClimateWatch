@@ -282,9 +282,9 @@ testthat::test_that("product pages place the map before supporting text", {
   )
 })
 
-testthat::test_that("Methods page documents data timing and every map family", {
+testthat::test_that("About page documents data timing, monthly SPI and every map family", {
   page <- paste(
-    readLines(file.path(project_root, "site", "pages", "methods.qmd"), warn = FALSE),
+    readLines(file.path(project_root, "site", "pages", "methods.qmd"), warn = FALSE, encoding = "UTF-8"),
     collapse = "\n"
   )
 
@@ -302,5 +302,9 @@ testthat::test_that("Methods page documents data timing and every map family", {
   testthat::expect_true(grepl("preliminary data", page, fixed = TRUE))
   testthat::expect_true(grepl("1991", page, fixed = TRUE))
   testthat::expect_true(grepl("1982", page, fixed = TRUE))
+  testthat::expect_true(grepl('title: "About"',page,fixed=TRUE))
+  for(text in c("Monthly PRISM and SPI","maximum likelihood","1895–2020","at least 30 positive","zero probability")) {
+    testthat::expect_true(grepl(text,page,fixed=TRUE))
+  }
   testthat::expect_false(grepl("\\b(terra|ggplot2|lubridate)\\b|S3 deployment", page))
 })

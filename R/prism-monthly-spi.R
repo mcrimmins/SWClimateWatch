@@ -1,4 +1,5 @@
-# Local SPI pilot: mixed-zero gamma MLE, fixed calendar-matched calibration.
+# Monthly SPI: mixed-zero gamma MLE, fixed calendar-matched calibration.
+prism_monthly_spi_display_policy <- function() "spi-seven-classes-v2-production-footer"
 prism_monthly_spi_policy <- function() list(version = "gamma-mle-classic-zero-v1",
   calibration_start = 1895L, calibration_end = 2020L, min_years = 50L,
   min_fraction = 0.9, min_positive = 30L, max_zero_fraction = 0.5,
@@ -147,13 +148,13 @@ build_prism_monthly_spi_pilots <- function(end = prism_monthly_latest_complete()
   methods <- validate_prism_monthly_spi_methods()
   dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   jsonlite::write_json(policy, file.path(output_dir, "method-policy.json"), auto_unbox = TRUE, pretty = TRUE)
-  writeLines(c("SPI pilot: calendar-matched monthly precipitation sums, zero-adjusted two-parameter gamma MLE.",
+  writeLines(c("SPI: calendar-matched monthly precipitation sums, zero-adjusted two-parameter gamma MLE.",
     "Fixed calibration ends in 2020; current values after 2020 do not enter the fit.",
     "MLE fits positive amounts. Zero probability q uses all nonmissing calibration totals.",
     "Mixed probability H(x)=q+(1-q)*pgamma(x,shape,scale); SPI=qnorm(H(x)).",
     "Classic zero convention H(0)=q. Common-zero periods (q>=0.5) are withheld.",
     "Require at least 50 years, 90% of eligible calibration windows, and 30 positive totals by default.",
-    "Positive-sample fitted-CDF distance >0.15 is a conservative pilot guard, not a formal KS p-value.",
+    "Positive-sample fitted-CDF distance >0.15 is a conservative quality guard, not a formal KS p-value.",
     "Nonconvergent/constant/unsupported fits are withheld, never replaced by precipitation z-scores or ranks.",
     "Probabilities are bounded to [1e-10,1-1e-10] for numerical inversion; clipped cells are flagged.",
     "Scientific SPI is not clipped to the map color range. Display class codes 1-8 are not SPI values.",
@@ -176,7 +177,7 @@ build_prism_monthly_spi_pilots <- function(end = prism_monthly_latest_complete()
     product_source <- prism_monthly_input_signature(audit, "pcpn",
       prism_monthly_spi_dependencies(start, end, duration, policy))
     signature <- digest::digest(list(policy = policy, source = product_source, end = end,
-      duration = duration, maps = make_maps, display = "spi-seven-classes-v1"), algo = "sha256")
+      duration = duration, maps = make_maps, display = prism_monthly_spi_display_policy()), algo = "sha256")
     row <- tryCatch({
       if (!force && prism_monthly_ranking_complete(complete, signature)) {
         row <- readRDS(complete)$row; row$event <- "REUSED"; row$fit_reused <- TRUE
@@ -240,7 +241,7 @@ build_prism_monthly_spi_pilots <- function(end = prism_monthly_latest_complete()
           save_southwest_map(plot, map_path, logo_path = southwest_brand_logo_path(),
             footer_text = paste0("Data: PRISM Climate Group via RCC-ACIS\nGamma MLE; fixed ",
               policy$calibration_start, "-", policy$calibration_end,
-              " calibration; zero-adjusted\nGray: insufficient support, common zeros or poor fit | Local pilot"))
+              " calibration; zero-adjusted\nGray: insufficient support, common zeros or poor fit"))
         }
         row <- data.frame(duration_months = duration, status = "READY", event = "BUILT", fit_reused = fit_reused,
           calibration_windows = nrow(windows), current_valid_cells = sum(is.finite(current)),
@@ -269,10 +270,10 @@ build_prism_monthly_spi_pilots <- function(end = prism_monthly_latest_complete()
       '</h2><a href="', end, '/', sprintf("%02dmonth", d), '/spi.png"><img src="', end, '/',
       sprintf("%02dmonth", d), '/spi.png" alt="SPI-', d, '"></a></article>'), character(1))
     gallery <- file.path(output_dir, "index.html")
-    writeLines(c('<!doctype html><html lang="en"><meta charset="utf-8"><title>Monthly SPI pilots</title>',
+    writeLines(c('<!doctype html><html lang="en"><meta charset="utf-8"><title>Monthly SPI</title>',
       '<meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:system-ui;max-width:1500px;margin:24px auto;padding:0 16px;background:#f1f4f4;color:#24363f}.maps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}article{background:white;padding:10px;border:1px solid #ccd5da;border-radius:8px}img{width:100%}@media(max-width:850px){.maps{grid-template-columns:1fr}}</style>',
       paste0('<h1>Monthly SPI through ', end, '</h1>'),
-      paste0('<p>Local pilot only. Gamma MLE with fixed ', policy$calibration_start, '-', policy$calibration_end,
+      paste0('<p>Gamma MLE with fixed ', policy$calibration_start, '-', policy$calibration_end,
         ' calibration and zero-mass correction. Gray cells failed support/fit checks; SPI is precipitation-only and does not measure evaporative demand or actual streamflow. Click maps for full resolution.</p><div class="maps">'),
       cards, '</div></html>'), gallery)
   }

@@ -21,3 +21,10 @@
 .group-map-heading { font-size:1.1rem; }
 .group-unavailable { padding:1rem; background:var(--bs-tertiary-bg,#f2f4f4); border:1px solid #ccd5da; border-radius:5px; }
 @media(max-width:850px) { .group-all-maps #group-maps { grid-template-columns:1fr; } }
+
+.current-group-preview .group-map-caution {
+  border-left: 3px solid #b77c36;
+  background: rgba(183, 124, 54, 0.08);
+  padding: 0.65rem 0.85rem;
+  font-size: 0.95rem;
+}

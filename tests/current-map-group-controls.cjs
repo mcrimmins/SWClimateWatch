@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const siteMode = process.argv.includes('--site');
 const rootDir = siteMode ? 'site/pages' : 'data/diagnostics/temperature-tabs-preview';
-const groups = [...(siteMode ? ['temperature-values','temperature-departures','precipitation-totals','precipitation-ranks'] : []),
+const groups = [...(siteMode ? ['temperature-values','temperature-departures','precipitation-totals','precipitation-ranks','temperature-extremes','freeze-nights','precipitation-percent-normal','precipitation-change','water-year-precipitation','water-year-extremes'] : []),
   'temperature-daily-ranks', 'temperature-rolling-ranks', 'freeze-monitoring', 'dry-spells', 'wet-days', 'snow-conditions'];
 function fixture(group, query = '') {
   const html = fs.readFileSync(`${rootDir}/${group}.qmd`, 'utf8');
@@ -50,6 +50,8 @@ for (const group of groups) {
       combinations++;
     }
   }
+  assert.equal(f.control.hidden, f.variant.children.length === 1);
+  assert.equal(f.tablist.hidden, f.tabs.length === 1);
   const url = f.window.lastUrl;
   const saved = fixture(group, url.search);
   assert.equal(saved.maps.filter(m => !m.hidden)[0].dataset.tab, url.searchParams.get('tab'));

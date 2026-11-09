@@ -1,0 +1,33 @@
+---
+title: "Water-year precipitation"
+page-layout: full
+toc: false
+---
+
+```{=html}
+<div class="current-group-preview" data-group="water-year-precipitation">
+<p>Precipitation accumulated from October 1 through the map date. Percent of normal and percentile rank compare corresponding periods in 1991–2020.</p>
+<div class="temperature-variable-tabs" role="tablist" aria-label="Water-year precipitation">
+<button type="button" id="group-tab-total" role="tab" data-tab="total" aria-controls="group-maps">Total</button>
+<button type="button" id="group-tab-normal" role="tab" data-tab="normal" aria-controls="group-maps">Percent of normal</button>
+<button type="button" id="group-tab-rank" role="tab" data-tab="rank" aria-controls="group-maps">Percentile rank</button>
+</div>
+<div class="temperature-period-control group-variant-control"><label for="group-variant">Display</label><select id="group-variant"></select></div>
+<div id="group-maps" role="tabpanel" aria-live="polite">
+<article class="group-map" data-product="pcpn_water_year_total" data-tab="total" data-variant="map" data-option="Water year to date"><h2 class="group-map-heading">Total precipitation</h2>
+<a href="../maps/generated/prism/precipitation/pcpn-water-year-total-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/precipitation/pcpn-water-year-total-latest.png" alt="Total precipitation" loading="lazy"></a>
+<p>This map sums PRISM daily precipitation from October 1 of the current water year through the latest available day, in inches. Higher values show larger cumulative totals; the companion percentile map shows how unusual those totals are for this point in the water year.</p>
+<p><a href="../maps/generated/prism/precipitation/pcpn-water-year-total-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="pcpn_water_year_percent_normal" data-tab="normal" data-variant="map" data-option="Water year to date"><h2 class="group-map-heading">Percent of normal</h2>
+<a href="../maps/generated/prism/precipitation/pcpn-water-year-percent-normal-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/precipitation/pcpn-water-year-percent-normal-latest.png" alt="Percent of normal" loading="lazy"></a>
+<p>Precipitation since October 1 is divided by the average 1991-2020 water-year total through the same calendar date and expressed as a percentage. Values below 100% are drier than average and values above 100% wetter; cells with a historical average below 0.10 inch are blank.</p>
+<p><a href="../maps/generated/prism/precipitation/pcpn-water-year-percent-normal-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="pcpn_water_year_percentile" data-tab="rank" data-variant="map" data-option="Water year to date"><h2 class="group-map-heading">Percentile rank</h2>
+<a href="../maps/generated/prism/precipitation/pcpn-water-year-percentile-rank-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/precipitation/pcpn-water-year-percentile-rank-latest.png" alt="Percentile rank" loading="lazy"></a>
+<p>Precipitation since October 1 is ranked against water-year 1991-2020 totals accumulated through the same calendar date. Low ranks indicate an unusually dry water year to date and high ranks an unusually wet one.</p>
+<p><a href="../maps/generated/prism/precipitation/pcpn-water-year-percentile-rank-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+</div></div><script src="../assets/current-map-groups/current-map-groups.js"></script>
+```

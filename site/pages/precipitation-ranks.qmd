@@ -6,6 +6,7 @@ toc: false
 
 ```{=html}
 <div class="current-group-preview" data-group="precipitation-ranks">
+<p>Percentile ranks show how unusual precipitation is relative to corresponding 1991–2020 periods. A high percentile means wetter conditions; this is not percent of normal.</p>
 <div class="temperature-variable-tabs" role="tablist" aria-label="Percentile ranks">
 <button type="button" id="group-tab-precipitation" role="tab" data-tab="precipitation" aria-controls="group-maps">Precipitation</button>
 </div>

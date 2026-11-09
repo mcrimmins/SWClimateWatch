@@ -36,63 +36,37 @@ website:
           - section: Temperature
             contents:
               - href: pages/temperature-values.qmd
-                text: Current values
+                text: Current temperatures
               - href: pages/temperature-departures.qmd
-                text: Departures
+                text: Departures from normal
               - href: pages/temperature-daily-ranks.qmd
-                text: Daily temperature percentile ranks
+                text: Daily percentile ranks
               - href: pages/temperature-rolling-ranks.qmd
-                text: Rolling mean temperature ranks
-              - section: Temperature extremes
-                contents:
-                  - href: pages/products/maxt_extreme_warm_count_30day.qmd
-                    text: Extreme warm days in 30 days
-                  - href: pages/products/mint_extreme_cold_count_30day.qmd
-                    text: Extreme cold nights in 30 days
+                text: 7–90-day mean ranks
+              - href: pages/temperature-extremes.qmd
+                text: Temperature extremes
+              - href: pages/freeze-nights.qmd
+                text: Freeze nights
               - href: pages/freeze-monitoring.qmd
-                text: Freeze timing and season length
-              - section: Freeze monitoring
-                contents:
-                  - href: pages/products/mint_freeze_count_30day.qmd
-                    text: Freeze-night count in 30 days
-                  - href: pages/products/mint_freeze_anomaly_30day.qmd
-                    text: Freeze-night anomaly in 30 days
+                text: Freeze dates and season length
           - section: Precipitation
             contents:
               - href: pages/precipitation-totals.qmd
                 text: Recent totals
               - href: pages/precipitation-ranks.qmd
                 text: Percentile ranks
-              - section: Percent of normal
-                contents:
-                  - href: pages/products/pcpn_percent_normal_30day.qmd
-                    text: 30-day percent of normal
-                  - href: pages/products/pcpn_percent_normal_90day.qmd
-                    text: 90-day percent of normal
-              - section: Recent change
-                contents:
-                  - href: pages/products/pcpn_percentile_change_30day_14day.qmd
-                    text: 14-day change in 30-day rank
+              - href: pages/precipitation-percent-normal.qmd
+                text: Percent of normal
+              - href: pages/precipitation-change.qmd
+                text: Recent precipitation change
+              - href: pages/water-year-precipitation.qmd
+                text: Water-year precipitation
+              - href: pages/water-year-extremes.qmd
+                text: Water-year precipitation extremes
               - href: pages/dry-spells.qmd
-                text: Dry-spell conditions
+                text: Dry spells
               - href: pages/wet-days.qmd
                 text: Wet-day characteristics
-              - section: Water year
-                contents:
-                  - href: pages/products/pcpn_water_year_total.qmd
-                    text: Total precipitation
-                  - href: pages/products/pcpn_water_year_percent_normal.qmd
-                    text: Percent of normal
-                  - href: pages/products/pcpn_water_year_percentile.qmd
-                    text: Percentile rank
-              - section: Water-year extremes
-                contents:
-                  - href: pages/products/pcpn_water_year_max_03day.qmd
-                    text: Maximum 3-day precipitation
-                  - href: pages/products/pcpn_water_year_max_percentile_03day.qmd
-                    text: Maximum 3-day percentile
-                  - href: pages/products/pcpn_water_year_concentration_03day.qmd
-                    text: Precipitation concentration
           - href: pages/snow-conditions.qmd
             text: Snow
       # END GENERATED MAP BROWSER
@@ -205,7 +179,8 @@ website:
                 text: 1981-82 (WY1982)
       # END GENERATED HISTORIC YEARS
       - href: pages/methods.qmd
-        text: Methods
+        text: About
+    footer: "This site is under active development. Features and presentation may change."
   page-footer:
     left: "Southwest Climate Watch"
     right: "Built with Quarto and R"

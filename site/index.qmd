@@ -158,29 +158,25 @@ Recent values are provisional; one period does not establish an ENSO episode. [N
 
 :::
 
-::: {.dashboard-note}
-PRISM percentile ranks compare matching periods in 1991–2020. Low precipitation ranks indicate drier conditions. Temperature departure is in °F; positive values mean warmer conditions. A high dry-spell rank means an unusually long ongoing dry spell. These indicators describe conditions, not a combined drought classification.
-
-Water-year precipitation starts October 1. Early-season ranks describe a short period; use the 90-day map for broader context.
-
-Map summaries describe combined Arizona and New Mexico, weighted by grid-cell area within state boundaries. At least 98% valid area is required. Percentile summaries show area below or above the stated thresholds; they do not average pixel percentiles. Rainfall coverage uses the stated accumulation threshold. Each summary follows its map's period and data date.
-
-Very dry/wet: percentage of AZ/NM area below the 10th/above the 90th precipitation percentile by default. Long dry spells uses the high tail. Stronger chip colors indicate a larger affected area, not greater severity; gray indicates a smaller footprint. Temperature colors indicate cooler/warmer departures, not a significance test. Hover over a value for its configured threshold and date. Rainfall amounts remain neutral because amount alone does not establish rarity.
-
-Headline precipitation cards show area below the 33rd/above the 67th percentile by default. Brown/teal indicates widespread below-/above-normal conditions; mixed shading retains both signals. These display cues are not regional percentile ranks or drought classifications. Headline temperature is an area-weighted departure from 1991–2020 normal.
-:::
-
-::: {#historic-seasons .dashboard-history-links}
-## Compare historic seasons
-Browse completed water years:
-[WY2025](pages/archive/wy2025.qmd) · [WY2024](pages/archive/wy2024.qmd) · [WY2023](pages/archive/wy2023.qmd) · [WY2022](pages/archive/wy2022.qmd) · [WY2021](pages/archive/wy2021.qmd)
-
-Additional completed years are listed under Historic Years in the navigation menu.
-:::
-
-::: {.dashboard-explore-more}
-**Explore more:** [Daily Explorer](pages/daily-explorer.qmd) · [Station Conditions](pages/station-conditions.qmd) · [Current Snow](pages/current-snow.qmd) · [Historic Seasons](#historic-seasons)
-:::
+<!-- BEGIN HOME MAP FOOTER -->
+```{=html}
+<details id="home-map-notes" class="dashboard-reading-notes">
+<summary>Reading these maps</summary>
+<ul>
+<li><strong>Reference and dates:</strong> PRISM ranks and departures use seasonally matched 1991&ndash;2020 comparisons. Low precipitation ranks mean drier conditions; high dry-spell ranks mean unusually long dry spells. Positive temperature departures mean warmer conditions, in &deg;F. Recent inputs are preliminary; use each map's data date.</li>
+<li><strong>Water year:</strong> Precipitation starts October 1. Early-season ranks cover a short period; the 90-day map provides broader context.</li>
+<li><strong>Regional values:</strong> Summaries cover Arizona and New Mexico, weighted by grid-cell area within state boundaries, and require at least 98% valid area. Percentile percentages describe affected area, not an average percentile. Each summary follows its map's period and date.</li>
+<li><strong>Headline precipitation cards:</strong> Below-/above-normal area uses below percentile 33 / above percentile 67. Mixed shading retains both dry and wet signals.</li>
+<li><strong>Very dry/wet map summaries:</strong> Affected area uses below percentile 10 / above percentile 90. Dry-spell summaries highlight the unusually long tail. Map-summary tooltips give the thresholds and dates.</li>
+<li><strong>Summary color cues:</strong> Stronger precipitation or dry-spell summary colors highlight a larger affected area, not more extreme grid-cell values. Temperature summary colors show warmer/cooler departures, not statistical significance. Rainfall amounts remain neutral because amount alone does not establish rarity. These cues are not a combined drought classification.</li>
+</ul><p><a href="pages/methods.html">About the data and methods</a></p></details>
+<nav id="historic-seasons" class="dashboard-context-links" aria-label="Historical climate context">
+<span class="dashboard-context-label">Historical context</span>
+<a href="pages/monthly-climate.html">Monthly Climate</a>
+<a href="pages/archive/wy2025.html">Latest completed water year (WY2025)</a>
+</nav>
+```
+<!-- END HOME MAP FOOTER -->
 
 ## Synopsis
 

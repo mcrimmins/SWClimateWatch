@@ -7,7 +7,13 @@ testthat::test_that("hydroclimate home keeps six maps and substitutes only the s
   testthat::expect_true(any(grepl("tmean_departure_30day.qmd",normal,fixed=TRUE)))
   testthat::expect_false(any(grepl("tmean_percentile_07day.qmd",normal,fixed=TRUE)))
   testthat::expect_false(any(grepl("dashboard-tool-link",normal,fixed=TRUE)))
-  testthat::expect_true(any(grepl("**Explore more:**",normal,fixed=TRUE)))
+  testthat::expect_false(any(grepl("Explore more:|Compare historic seasons",normal)))
+  testthat::expect_true(any(grepl('href="pages/monthly-climate.html"',normal,fixed=TRUE)))
+  testthat::expect_true(any(grepl('href="pages/archive/wy2025.html"',normal,fixed=TRUE)))
+  testthat::expect_false(any(grepl('href="pages/archive/wy2024.html"',normal,fixed=TRUE)))
+  note <- normal[grepl('id="home-map-notes"',normal,fixed=TRUE)]
+  testthat::expect_length(note,1L)
+  testthat::expect_false(grepl("\\bopen\\b",note))
   testthat::expect_true(any(grepl("Early-season ranks",normal,fixed=TRUE)))
   testthat::expect_true(any(grepl("**Site updated:**",normal,fixed=TRUE)))
   testthat::expect_true(any(grepl("**PRISM through:**",normal,fixed=TRUE)))
@@ -60,4 +66,25 @@ testthat::test_that("snow card requires verified fresh imagery and meaningful re
   marker$median_swe_md5<-"wrong"; utils::write.csv(marker,file.path(reference,"complete.csv"),row.names=FALSE)
   testthat::expect_false(select()$available)
   testthat::expect_false(map_dashboard_snow_selection(file.path(root,"absent"),today=as.Date("2026-02-16"))$available)
+})
+
+testthat::test_that("collapsed Home notes follow configured thresholds and history stays compact", {
+  dashboard <- read_map_dashboard_config(file.path(project_root,"config/map-products.yml"))
+  settings <- attr(dashboard,"summary_config")
+  for(id in names(settings$headlines$cards)[grepl("^pcpn_",names(settings$headlines$cards))]) {
+    settings$headlines$cards[[id]]$lower_percentile <- 20
+    settings$headlines$cards[[id]]$upper_percentile <- 80
+  }
+  for(id in c("pcpn_percentile_30day","pcpn_percentile_90day","pcpn_water_year_percentile")) {
+    settings$summaries[[id]]$lower_percentile <- 5
+    settings$summaries[[id]]$upper_percentile <- 95
+  }
+  attr(dashboard,"summary_config") <- settings
+  footer <- map_dashboard_footer_text(dashboard,archive_years=c(2023,2025,2024),show_headlines=TRUE)
+  testthat::expect_true(any(grepl("below percentile 20 / above percentile 80",footer,fixed=TRUE)))
+  testthat::expect_true(any(grepl("below percentile 5 / above percentile 95",footer,fixed=TRUE)))
+  testthat::expect_equal(sum(grepl('href="pages/archive/',footer,fixed=TRUE)),1L)
+  testthat::expect_true(any(grepl("WY2025",footer,fixed=TRUE)))
+  testthat::expect_false(any(grepl("WY2024",footer,fixed=TRUE)))
+  testthat::expect_false(any(grepl("Snow percentages",footer,fixed=TRUE)))
 })

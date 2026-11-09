@@ -1,0 +1,27 @@
+---
+title: "Freeze nights"
+page-layout: full
+toc: false
+---
+
+```{=html}
+<div class="current-group-preview" data-group="freeze-nights">
+<p>Freeze nights have a minimum temperature at or below 32°F. Compare the past 30-day count with the 1991–2020 average for the same period.</p>
+<div class="temperature-variable-tabs" role="tablist" aria-label="Freeze nights">
+<button type="button" id="group-tab-count" role="tab" data-tab="count" aria-controls="group-maps">Count</button>
+<button type="button" id="group-tab-departure" role="tab" data-tab="departure" aria-controls="group-maps">Departure from normal</button>
+</div>
+<div class="temperature-period-control group-variant-control"><label for="group-variant">Display</label><select id="group-variant"></select></div>
+<div id="group-maps" role="tabpanel" aria-live="polite">
+<article class="group-map" data-product="mint_freeze_count_30day" data-tab="count" data-variant="map" data-option="Past 30 days"><h2 class="group-map-heading">Freeze-night count in 30 days</h2>
+<a href="../maps/generated/prism/temperature/mint-freeze-day-count-30day-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/mint-freeze-day-count-30day-latest.png" alt="Freeze-night count in 30 days" loading="lazy"></a>
+<p>This map counts nights in the latest 30 with PRISM minimum temperature at or below 32 degrees F. Higher counts mean more freeze nights; the companion anomaly map shows whether that count is unusual for the season.</p>
+<p><a href="../maps/generated/prism/temperature/mint-freeze-day-count-30day-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="mint_freeze_anomaly_30day" data-tab="departure" data-variant="map" data-option="Past 30 days"><h2 class="group-map-heading">Freeze-night anomaly in 30 days</h2>
+<a href="../maps/generated/prism/temperature/mint-freeze-day-anomaly-30day-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/mint-freeze-day-anomaly-30day-latest.png" alt="Freeze-night anomaly in 30 days" loading="lazy"></a>
+<p>The latest 30-day count of nights at or below 32 degrees F is compared with the average count in seasonally matched 1991-2020 periods. Positive values mean more freeze nights than average and negative values mean fewer.</p>
+<p><a href="../maps/generated/prism/temperature/mint-freeze-day-anomaly-30day-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+</div></div><script src="../assets/current-map-groups/current-map-groups.js"></script>
+```

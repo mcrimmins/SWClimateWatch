@@ -562,7 +562,40 @@ the [daily integration](monthly-daily-integration.md); each checkout needs its
 own monthly cache and fit transfer. Stable external
 SPI-12/temperature-rank-12 aliases also remain a separate publication step.
 
-### Remaining development
+### Display-only refreshes and About documentation
+
+The production SPI footer no longer includes "Local pilot". Its display-cache
+version is separate from the scientific fitting policy. Monthly completion
+records now also track product policies: a changed display version reopens a
+completed cycle for map-only rebuilding, including outside days 1–5, with no
+new source requests. Existing SPI fits remain valid and ranking maps reuse
+their checksummed outputs. The daily adapter then stages the refreshed release.
+
+For an explicit refresh before a site-only publication:
+
+```r
+source("scripts/refresh-prism-monthly-display.R")
+```
+
+This requires a completed monthly cycle, forbids source requests, refreshes
+affected products and stages/verifies the resulting monthly page. It does not
+render or publish. The first local footer update rebuilt four SPI maps, reused
+eight rankings and all four fits, and made zero source requests. See the
+[footer/About release steps](spi-footer-about-release.md) for VM checkout and
+staging publication commands.
+
+The navigation and page title are now **About**, while the existing
+`pages/methods.html` URL remains stable for links and bookmarks. That page
+documents monthly inputs, ranking references, SPI gamma-MLE fitting, the fixed
+1895–2020 calibration, zero treatment, support/fit guards and interpretation,
+with a link to the WMO SPI User Guide.
+
+### Development checklist and remaining exports
+
+The cache, current 1-/3-/6-/12-month ranking/SPI products, validation and
+monthly-enabled production daily runner are implemented and have passed the
+VM trials. The original checklist below records the workstream; stable external
+image exports and additional timescales remain follow-ups.
 
 1. Complete the historical regional cache and audit missing months, geometry,
    cross-variable consistency, storage, and retrieval time.
@@ -582,10 +615,10 @@ SPI-12/temperature-rank-12 aliases also remain a separate publication step.
    update at window end. Include bounded preliminary-month revision checks in
    this same monthly run. Manual catch-up remains possible outside the window.
 
-The early-month policy and resumable success marker are implemented in the local
-revision updater above. Production scheduling, staging-site review and stable
-external image URLs remain to be integrated. Availability is not guaranteed by
-the calendar.
+The early-month policy and resumable success marker are implemented in the
+revision updater and opt-in daily runner. Production integration is confirmed;
+stable external image URLs remain a follow-up. Availability is not guaranteed
+by the calendar.
 
 ## Offline tests
 

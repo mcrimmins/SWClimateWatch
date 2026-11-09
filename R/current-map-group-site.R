@@ -19,7 +19,52 @@ current_site_groups <- function() {
     "precipitation-ranks" = group("Percentile ranks", "Precipitation", sprintf("pcpn_percentile_%02dday", c(7,30,90)), "ranks"))
   extras <- current_preview_groups()
   for (key in names(extras)) base[[key]] <- c(extras[[key]], list(ids = extras[[key]]$rows$product, kind = "group"))
-  base
+  for (key in names(current_remaining_groups())) {
+    extra <- current_remaining_groups()[[key]]
+    base[[key]] <- c(extra, list(ids=extra$rows$product, kind="group"))
+  }
+  titles <- c("temperature-values"="Current temperatures", "temperature-departures"="Departures from normal",
+    "temperature-daily-ranks"="Daily percentile ranks", "temperature-rolling-ranks"="7–90-day mean ranks",
+    "freeze-monitoring"="Freeze dates and season length", "dry-spells"="Dry spells")
+  for (key in names(titles)) base[[key]]$title <- unname(titles[[key]])
+  base[["precipitation-ranks"]]$intro <- "Percentile ranks show how unusual precipitation is relative to corresponding 1991–2020 periods. A high percentile means wetter conditions; this is not percent of normal."
+  base[c("temperature-values", "temperature-departures", "temperature-daily-ranks", "temperature-rolling-ranks",
+    "temperature-extremes", "freeze-nights", "freeze-monitoring", "precipitation-totals", "precipitation-ranks",
+    "precipitation-percent-normal", "precipitation-change", "water-year-precipitation", "water-year-extremes",
+    "dry-spells", "wet-days", "snow-conditions")]
+}
+
+current_remaining_groups <- function() {
+  row <- function(tab,label,variant,option,product) data.frame(tab=tab,label=label,variant=variant,option=option,product=product)
+  group <- function(title,section,rows,intro,tab_notes=NULL) list(title=title,section=section,rows=rows,intro=intro,tab_notes=tab_notes)
+  list(
+    "temperature-extremes"=group("Temperature extremes","Temperature",rbind(
+      row("warm","Extreme warm days","map","Past 30 days","maxt_extreme_warm_count_30day"),
+      row("cold","Extreme cold nights","map","Past 30 days","mint_extreme_cold_count_30day")),
+      "Counts over the past 30 days use seasonal 1991–2020 percentile thresholds. These are unusually warm days or cold nights, rather than all-time records."),
+    "freeze-nights"=group("Freeze nights","Temperature",rbind(
+      row("count","Count","map","Past 30 days","mint_freeze_count_30day"),
+      row("departure","Departure from normal","map","Past 30 days","mint_freeze_anomaly_30day")),
+      "Freeze nights have a minimum temperature at or below 32°F. Compare the past 30-day count with the 1991–2020 average for the same period."),
+    "precipitation-percent-normal"=group("Percent of normal","Precipitation",rbind(
+      row("precipitation","Precipitation","30","30 days","pcpn_percent_normal_30day"),
+      row("precipitation","Precipitation","90","90 days","pcpn_percent_normal_90day")),
+      "Precipitation relative to the corresponding 1991–2020 average: 100% is average and 200% is twice average. This measures the amount relative to normal, rather than its percentile rank."),
+    "precipitation-change"=group("Recent precipitation change","Precipitation",
+      row("change","Change in rank","map","14-day change","pcpn_percentile_change_30day_14day"),
+      "Change in the 30-day precipitation percentile rank over the past 14 days, in percentile points. Positive values indicate a shift toward wetter conditions; this is not a precipitation total."),
+    "water-year-precipitation"=group("Water-year precipitation","Precipitation",rbind(
+      row("total","Total","map","Water year to date","pcpn_water_year_total"),
+      row("normal","Percent of normal","map","Water year to date","pcpn_water_year_percent_normal"),
+      row("rank","Percentile rank","map","Water year to date","pcpn_water_year_percentile")),
+      "Precipitation accumulated from October 1 through the map date. Percent of normal and percentile rank compare corresponding periods in 1991–2020."),
+    "water-year-extremes"=group("Water-year precipitation extremes","Precipitation",rbind(
+      row("maximum","Largest 3-day total","map","Water year","pcpn_water_year_max_03day"),
+      row("rank","Event percentile","map","Water year","pcpn_water_year_max_percentile_03day"),
+      row("concentration","Precipitation concentration","map","Water year","pcpn_water_year_concentration_03day")),
+      "The largest three-day precipitation total since October 1, its historical context, and its share of water-year precipitation.",
+      tab_notes=list(rank="Provisional comparison: the current maximum is compared with maxima from completed 1991–2020 water years. This is not a date-matched season-to-date rank; the current water year is incomplete until September 30."))
+  )
 }
 
 current_map_group_key <- function(id) {
@@ -37,8 +82,9 @@ current_map_group_write <- function(text, path) {
   invisible(TRUE)
 }
 
-stage_current_map_groups <- function(site_dir = "site", config_path = "config/map-products.yml") {
-  catalog <- yaml::read_yaml(config_path)$products
+stage_current_map_groups <- function(site_dir = "site", config_path = "config/map-products.yml", expected_data_dates = NULL) {
+  config <- yaml::read_yaml(config_path)
+  catalog <- lapply(config$products, function(p) utils::modifyList(if(is.null(config$defaults)) list() else config$defaults, p))
   products <- c(catalog, current_preview_snow_products())
   groups <- current_site_groups()
   assets <- c("temperature-tabs.js", "precipitation-periods.js", "current-map-groups.js", "temperature-tabs.css")
@@ -62,6 +108,10 @@ stage_current_map_groups <- function(site_dir = "site", config_path = "config/ma
       path <- file.path(site_dir, "maps/generated", products[[id]]$image)
       file.exists(path) && (!startsWith(id, "snow_") || any(grepl(basename(path), snow_text, fixed = TRUE)))
     }, logical(1)), ids)
+    waiting <- map_product_early_water_year_three_day(data.frame(id=ids,enabled=TRUE),expected_data_dates)
+    available[waiting] <- FALSE
+    if (any(waiting)) g$unavailable_notes <- setNames(rep(
+      paste0("A complete three-day period is not available until October 3, ", format(as.Date(expected_data_dates[["Precipitation"]]), "%Y"), "."),sum(waiting)),ids[waiting])
     # The shared renderer receives explicit combinations, including base pages.
     if (g$kind == "values") {
       g$rows <- do.call(rbind, lapply(ids, function(id) data.frame(tab = sub("_value$", "", id),
@@ -88,7 +138,7 @@ stage_current_map_groups <- function(site_dir = "site", config_path = "config/ma
       if (length(status)) text <- append(text, paste0('<p>', temperature_preview_escape(gsub("\\*\\*", "", status)), '</p>'),
         after = grep('class="current-group-preview"', text)[1])
     }
-    if (key %in% c("temperature-departures", "precipitation-totals", "precipitation-ranks", "temperature-rolling-ranks"))
+    if (key %in% c("temperature-departures", "precipitation-totals", "precipitation-ranks", "temperature-rolling-ranks", "precipitation-percent-normal"))
       text <- sub('for="group-variant">Display', 'for="group-variant">Time period', text, fixed = TRUE)
     for (id in ids) {
       text <- gsub(paste0('maps/',basename(products[[id]]$image)), paste0('../maps/generated/',products[[id]]$image), text, fixed = TRUE)

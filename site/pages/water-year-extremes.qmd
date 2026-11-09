@@ -1,0 +1,34 @@
+---
+title: "Water-year precipitation extremes"
+page-layout: full
+toc: false
+---
+
+```{=html}
+<div class="current-group-preview" data-group="water-year-extremes">
+<p>The largest three-day precipitation total since October 1, its historical context, and its share of water-year precipitation.</p>
+<div class="temperature-variable-tabs" role="tablist" aria-label="Water-year precipitation extremes">
+<button type="button" id="group-tab-maximum" role="tab" data-tab="maximum" aria-controls="group-maps">Largest 3-day total</button>
+<button type="button" id="group-tab-rank" role="tab" data-tab="rank" aria-controls="group-maps">Event percentile</button>
+<button type="button" id="group-tab-concentration" role="tab" data-tab="concentration" aria-controls="group-maps">Precipitation concentration</button>
+</div>
+<div class="temperature-period-control group-variant-control"><label for="group-variant">Display</label><select id="group-variant"></select></div>
+<div id="group-maps" role="tabpanel" aria-live="polite">
+<article class="group-map" data-product="pcpn_water_year_max_03day" data-tab="maximum" data-variant="map" data-option="Water year"><h2 class="group-map-heading">Maximum 3-day precipitation</h2>
+<a href="../maps/generated/prism/precipitation/pcpn-water-year-max-03day-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/precipitation/pcpn-water-year-max-03day-latest.png" alt="Maximum 3-day precipitation" loading="lazy"></a>
+<p>This map finds the largest complete three-day precipitation total since October 1 of the current water year, in inches. Higher values locate stronger short-duration events during the year, regardless of the total accumulated over the whole year.</p>
+<p><a href="../maps/generated/prism/precipitation/pcpn-water-year-max-03day-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="pcpn_water_year_max_percentile_03day" data-tab="rank" data-variant="map" data-option="Water year"><h2 class="group-map-heading">Maximum 3-day percentile</h2>
+<p class="group-map-caution">Provisional comparison: the current maximum is compared with maxima from completed 1991–2020 water years. This is not a date-matched season-to-date rank; the current water year is incomplete until September 30.</p>
+<a href="../maps/generated/prism/precipitation/pcpn-water-year-max-percentile-rank-03day-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/precipitation/pcpn-water-year-max-percentile-rank-03day-latest.png" alt="Maximum 3-day percentile" loading="lazy"></a>
+<p>The largest three-day precipitation total so far this water year is ranked against the largest three-day totals from complete water years 1991-2020. High ranks indicate an unusually large event; the current-year rank is provisional until September 30 because another event may raise the maximum.</p>
+<p><a href="../maps/generated/prism/precipitation/pcpn-water-year-max-percentile-rank-03day-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="pcpn_water_year_concentration_03day" data-tab="concentration" data-variant="map" data-option="Water year"><h2 class="group-map-heading">Precipitation concentration</h2>
+<a href="../maps/generated/prism/precipitation/pcpn-water-year-precipitation-concentration-03day-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/precipitation/pcpn-water-year-precipitation-concentration-03day-latest.png" alt="Precipitation concentration" loading="lazy"></a>
+<p>This map divides the water year's largest three-day precipitation total by all precipitation since October 1 and expresses the result as a percentage. Higher values mean one short period supplied more of the year's precipitation; cells with less than 0.10 inch in total are blank.</p>
+<p><a href="../maps/generated/prism/precipitation/pcpn-water-year-precipitation-concentration-03day-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+</div></div><script src="../assets/current-map-groups/current-map-groups.js"></script>
+```

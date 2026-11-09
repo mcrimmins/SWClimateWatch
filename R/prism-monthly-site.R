@@ -45,7 +45,7 @@ monthly_site_page <- function(end, jobs, version) {
     '<p><strong>Records:</strong> Record warm/cold and wet/dry categories identify values matching the historical maximum/minimum, including ties, only with complete comparison support and a varying record. Common zero-precipitation totals are not labeled record dry.</p>',
     '<p><strong>SPI:</strong> Negative values indicate dryness and positive values wetness. Fits use matching windows from the fixed 1895–2020 calibration. Gray indicates that support or fit checks did not permit an estimate. SPI is not a percentile, and its fixed reference differs from the expanding ranking record.</p>',
     '<p>Recent inputs are checked for revisions during the monthly update cycle. A calendar age alone does not confirm that a source file is final. These maps describe completed monthly periods; use Current Maps for daily monitoring.</p>',
-    '<p><a href="methods.html">Site methods</a> · <a href="https://prism.oregonstate.edu/">PRISM Climate Group</a></p></details></div>',
+    '<p><a href="methods.html">About this site</a> · <a href="https://prism.oregonstate.edu/">PRISM Climate Group</a></p></details></div>',
     '<script src="../assets/monthly-climate.js"></script>', '```')
 }
 
@@ -68,7 +68,7 @@ stage_prism_monthly_site <- function(end = prism_monthly_latest_complete(), site
       deps <- if (j$family == "spi") prism_monthly_spi_dependencies("1895-01", end, j$duration) else prism_monthly_ranking_dependencies("1895-01", end, j$duration)
       signature <- prism_monthly_input_signature(audit, variables, deps)
       expected <- if (j$family == "spi") digest::digest(list(policy = prism_monthly_spi_policy(), source = signature,
-        end = end, duration = as.integer(j$duration), maps = TRUE, display = "spi-seven-classes-v1"), algo = "sha256") else
+        end = end, duration = as.integer(j$duration), maps = TRUE, display = prism_monthly_spi_display_policy()), algo = "sha256") else
         digest::digest(list(policy = "monthly-ranking-pilots-v3.1-record-both-zero02", source = signature,
           variable = j$family, duration = as.integer(j$duration), start = "1895-01", end = end,
           min_years = 30L, min_fraction = 0.9, make_maps = TRUE), algo = "sha256")

@@ -1,5 +1,5 @@
 ---
-title: "Freeze timing and season length"
+title: "Freeze dates and season length"
 page-layout: full
 toc: false
 ---
@@ -7,7 +7,7 @@ toc: false
 ```{=html}
 <div class="current-group-preview" data-group="freeze-monitoring">
 <p>First/last freeze maps use August–July cold seasons; freeze-free length uses the displayed calendar year. Check each map’s year before comparing.</p>
-<div class="temperature-variable-tabs" role="tablist" aria-label="Freeze timing and season length">
+<div class="temperature-variable-tabs" role="tablist" aria-label="Freeze dates and season length">
 <button type="button" id="group-tab-first" role="tab" data-tab="first" aria-controls="group-maps">First freeze</button>
 <button type="button" id="group-tab-last" role="tab" data-tab="last" aria-controls="group-maps">Last freeze</button>
 <button type="button" id="group-tab-length" role="tab" data-tab="length" aria-controls="group-maps">Freeze-free season</button>
