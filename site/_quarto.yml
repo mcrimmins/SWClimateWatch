@@ -2,6 +2,7 @@ project:
   type: website
   output-dir: _site
   resources:
+    - synopsis-evidence/**
     - assets/site-analytics.js
     - assets/monthly-climate.js
     - assets/current-map-groups/**

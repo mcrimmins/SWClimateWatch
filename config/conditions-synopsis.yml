@@ -56,3 +56,15 @@ seasons:
   early_summer: {start: '06-01', end: '06-14', emphasis: 'Dryness/warmth and completed-season snow context'}
   summer: {start: '06-15', end: '09-30', emphasis: 'Localized rainfall, dry intervals and heat; monsoon context'}
   fall: {start: '10-01', end: '11-30', emphasis: 'Early water-year precipitation, first freezes and initial snow'}
+
+# Snow support and salience; separate from whole-state precipitation coverage.
+snow:
+  minimum_median_inches: 1
+  minimum_reference_years: 18
+  snow_threshold_inches: 0.1
+  change_threshold_inches: 0.25
+  minimum_area_km2: 500
+  minimum_signal_percent: 20
+  low_percent_median: 75
+  high_percent_median: 125
+  maximum_age_days: 2

@@ -17,6 +17,7 @@ data/processed/*
 site/maps/generated/*
 site/stations/
 site/daily-explorer/
+site/synopsis-evidence/
 site/assets/current-map-groups/manifest.json
 site/assets/current-map-groups/assets.json
 data/diagnostics/

@@ -37,6 +37,31 @@ stage_conditions_synopsis <- function(root = ".", destination = "local-preview",
       output_dir = file.path(paths$directory, "draft"), track_preview = FALSE, show_review_candidates = FALSE,
       publication_snapshot = prior, comparison_origin = "successful_publication")
   }, error = function(e) {status <<- "WAITING"; note <<- conditionMessage(e)})
+  site_base <- if(grepl("^s3://",destination)) sub("^s3://[^/]+/","https://cales.arizona.edu/",destination) else
+    "https://cales.arizona.edu/climate/watch/"
+  support_manifest <- data.frame()
+  support_base <- ""
+  if(status=="READY") {
+    support_dir <- file.path(paths$directory,"draft/support")
+    files <- sort(list.files(support_dir,pattern="\\.html$",full.names=TRUE))
+    if(length(files)&&any(vapply(files,function(p)any(grepl('src="temperature-7day.png"',readLines(p,warn=FALSE),fixed=TRUE)),logical(1))))
+      files <- c(files,file.path(support_dir,"temperature-7day.png"))
+    if(length(files)) {
+      key <- paste0(date,"-",substr(digest::digest(list(destination=destination,names=basename(files),md5=unname(tools::md5sum(files)))),1L,12L))
+      target <- file.path(root,"site/synopsis-evidence",key)
+      dir.create(target,recursive=TRUE,showWarnings=FALSE)
+      if(!all(file.copy(files,target,overwrite=TRUE)))stop("Could not stage synopsis supporting evidence.")
+      for(file in files[grepl("[.]html$",files)]) {
+        html <- readLines(file,warn=FALSE,encoding="UTF-8")
+        html <- gsub("https://cales.arizona.edu/climate/watch/",site_base,html,fixed=TRUE)
+        writeLines(html,file.path(target,basename(file)),useBytes=TRUE)
+      }
+      support_manifest <- data.frame(path=file.path("synopsis-evidence",key,basename(files)),md5=unname(tools::md5sum(file.path(target,basename(files)))))
+      support_base <- paste0("synopsis-evidence/",key,"/")
+    }
+  }
+  for(i in seq_along(draft$blocks)) if(!is.null(draft$blocks[[i]]$support_link))
+    draft$blocks[[i]]$links <- c(paste0(support_base,basename(draft$blocks[[i]]$support_link)),draft$blocks[[i]]$links)
   escape <- context$synopsis_escape_html
   settings <- context$synopsis_format_settings(if (is.null(evidence)) list(unusual_station_percentile = 90) else evidence$configuration)
   css <- if (settings$enabled) paste0('.synopsis-content .signal-', names(settings$colors), '{color:', unlist(settings$colors), ';}', collapse = '') else ''
@@ -48,8 +73,8 @@ stage_conditions_synopsis <- function(root = ".", destination = "local-preview",
       blocks <- Filter(function(b) b$section == section, draft$blocks)
       content <- c(content, paste0('<h3>', section, '</h3><ul>'), vapply(blocks, function(b) paste0('<li>',
         context$synopsis_format_text(b$text, b$emphasis),
-        if (length(b$links)) paste0('<br><small>', paste0('<a href="https://cales.arizona.edu/climate/watch/', escape(b$links), '">',
-          ifelse(grepl('station-conditions', b$links), 'Station Conditions', 'Supporting map'), '</a>', collapse = ' \u00b7 '), '</small>') else '', '</li>'), character(1)), '</ul>')
+        if (length(b$links)) paste0('<br><small>', paste0('<a href="',site_base, escape(b$links), '">',
+          ifelse(grepl('synopsis-evidence/',b$links,fixed=TRUE),'Evidence and matching dates',ifelse(grepl('station-conditions', b$links), 'Station Conditions', 'Related map')), '</a>', collapse = ' \u00b7 '), '</small>') else '', '</li>'), character(1)), '</ul>')
     }
     details <- jsonlite::read_json(file.path(paths$directory, "draft/draft-evidence.json"))
     limits <- unlist(details$limitations)
@@ -63,6 +88,7 @@ stage_conditions_synopsis <- function(root = ".", destination = "local-preview",
   writeLines(c('---', 'title: "Conditions synopsis"', 'toc: false', '---', '',
     '[Home dashboard](../index.qmd)', '', '{{< include _synopsis-content.qmd >}}'), file.path(pages, "synopsis.qmd"), useBytes = TRUE)
   payload <- list(status = status, date = date, destination = destination, note = note,
+    support_manifest=support_manifest,
     fragment_md5 = unname(tools::md5sum(file.path(pages, "_synopsis-content.qmd"))))
   if (status == "READY") {
     snapshot <- context$synopsis_comparison_context(evidence, NULL)$state$latest
@@ -81,6 +107,12 @@ validate_conditions_synopsis_publication <- function(output_dir, destination, ro
   fragment <- file.path(root, "site/pages/_synopsis-content.qmd")
   if (!identical(payload$destination, destination) || !file.exists(fragment) ||
       !identical(payload$fragment_md5, unname(tools::md5sum(fragment)))) stop("Synopsis staging evidence changed; S3 sync stopped.")
+  support <- payload$support_manifest
+  if(is.data.frame(support)&&nrow(support)) {
+    paths <- file.path(output_dir,support$path)
+    if(!all(file.exists(paths))||!identical(unname(tools::md5sum(paths)),support$md5))
+      stop("Rendered synopsis supporting evidence is missing or changed; S3 sync stopped.")
+  }
   for (file in c("index.html", "pages/synopsis.html")) {
     path <- file.path(output_dir, file)
     if (!file.exists(path)) stop("Rendered synopsis/home page is missing; S3 sync stopped.")

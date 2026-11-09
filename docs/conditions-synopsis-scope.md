@@ -4,6 +4,65 @@ Scoped November 4, 2026. This is a local development plan, not an enabled daily
 product or authorization to begin paid API calls. See the prioritized
 [development roadmap](development-roadmap.md#priority-order-and-working-sequence).
 
+## November 9 local increment: linked evidence and snow context
+
+Implemented locally for review; not yet staged or promoted. The template now
+writes a human-readable supporting page for every quantitative selected bullet.
+These pages retain the exact periods, values, denominators, references and
+station comparison support used in the prose. Related current-product links are
+separate and explicitly may show newer dates. Publication copies the supporting
+pages into a dated, content-addressed `synopsis-evidence` resource directory and
+validates their checksums before sync. Synthetic review cases remain excluded
+from publication.
+
+The seven-day temperature departure is calculated from existing cached daily
+PRISM inputs. Its supporting page includes a matching seven-day departure map;
+it no longer relies on a generic Daily Explorer link to substantiate a weekly
+mean. The map is reused when its source and rendering signature are unchanged.
+If the map cannot be generated, the weekly temperature claim is withheld.
+A diagnostic `highlight-link-audit.csv` records supported and withheld bullets.
+
+Snow is summarized over AZ/NM only, using paired SWE/depth screening and verified
+source/reference checksums. A current endpoint must be on or before the synopsis
+cutoff and at most two days older. Storage comparisons use date-specific
+WY2005–WY2025 centered-five-day medians of at least 1 inch and at least 18
+reference years. They describe the fraction of eligible terrain below 75% or
+above 125% of median; current zero SWE remains eligible so deficits are retained.
+Desert cells with low typical SWE do not dilute these fractions.
+
+Seven-day changes require exact endpoints. Their footprint includes normally
+snowy cells or cells with at least 0.1 inch at either endpoint; gains/losses use
+0.25 inch. Both summaries require at least 500 km² of eligible terrain and 98%
+valid area. Missing endpoints are not zero. Contrasting gains/losses or deficits/
+surpluses are disclosed when both cover at least 20% of the eligible area.
+Thresholds are configurable in `config/conditions-synopsis.yml`.
+
+Winter storage gets a regular opportunity even without a strong tail signal.
+Other seasons require a supported spatial signal; change highlights require at
+least 20% of eligible area. June–September remain inactive. Early-season change
+can appear while storage ratios are withheld. At most three bullets per section
+are selected; snow competes with existing temperature/station context. New data
+and source revisions update evidence; unchanged data are not forced into a new
+story. Previous-publication comparisons retain their existing success-only
+anchor, and the supporting page includes the prior values when a change is
+claimed. AI remains deferred.
+
+Local review commands:
+
+```r
+source("scripts/build-conditions-synopsis-draft.R")
+browseURL(normalizePath("data/diagnostics/conditions-synopsis/synopsis.html"))
+source("scripts/review-conditions-synopsis-snow.R")
+source("scripts/review-conditions-synopsis-seasons.R")
+browseURL(normalizePath("data/diagnostics/conditions-synopsis/seasonal-review/index.html"))
+```
+
+The existing 24 fictional weather cases are complemented by seven snow cases:
+winter deficit/surplus, spring loss, initial fall snow, missing data, small
+reference area and inactive summer. No downloads, API calls or publishing are
+performed by these review scripts. Real cached examples retain their actual
+cutoff date, which may be older than today's production data.
+
 ## Current decision — November 5, 2026
 
 Proceed with the deterministic template synopsis. AI interpretation, selection

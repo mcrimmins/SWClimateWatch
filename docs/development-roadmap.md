@@ -1,6 +1,6 @@
 # Development roadmap
 
-Planning review: November 4, 2026. This is the consolidated backlog, not a
+Planning review: November 8, 2026. This is the consolidated backlog, not a
 commitment to enable every candidate product. No production settings change
 when this document is edited.
 
@@ -47,12 +47,55 @@ November 4 production run. Record the production cumulative/cache timing when
 available. Production changes still require local checks, a committed release,
 VM staging review and explicit promotion.
 
-Release `ea5d88157d7df10e672cf302a8f10f8b552f8463` passed staging review,
-including Analytics and station annual precipitation bars with a hatched,
-incomplete current-year bar. Its site-only publication took 3m 09s and passed
-51/51 current and 352/352 historic map checks. The user reports production
-promotion is running; successful completion and GA4 Realtime collection still
-need confirmation. Do not treat these additions as confirmed live yet.
+### November 8 release review
+
+The user confirmed successful production publication of monthly integration
+release `e78825a46737b7adff7f999032f3ffa9fcc2834c` in the project conversation
+**Design PRISM RCC-ACIS downloads**. This release includes the earlier Analytics,
+station annual precipitation bars and deterministic template synopsis commits.
+The previous production-promotion wait is closed; GA4 Realtime collection still
+needs separate confirmation. Regional snow narrative remains a synopsis follow-up,
+and AI synthesis remains deferred.
+
+The reported production run finished successfully in **12m 50s** (runner elapsed
+771 seconds). It validated **51/51 current and 352/352 historic maps**, updated
+62 station records (51 mapped), and reused all 68 Daily Explorer dates/476 maps.
+Weather reached November 7 with **30/30 recent and 68/68 Explorer dates**, zero
+pending dates and no withheld/unknown wind overlays. This resolves the previously
+reported weather coverage gaps at this snapshot; continue monitoring freshness.
+
+**Monthly Climate is live through October 2026:** temperature rankings,
+precipitation rankings and SPI at 1-/3-/6-/12-month durations. The completed cycle
+made zero new requests and took about one second in the production daily run.
+`SWC_MONTHLY_MAPS=true` enables updates within the existing daily cron, with
+days 1–5 availability/revision checks, no further requests after cycle success,
+retained verified maps on failure and overdue warnings/manual catch-up after
+the window. No second cron is needed. The next automatic cycle targets November
+2026 during December 1–5. External Drought and Grazing hotlink exports and link
+replacement are not confirmed complete by this production report.
+
+**Latest patch: staging approved, production completion unconfirmed.** Commit
+`7fbd6e47526ef0dd186662108c108057d492201d` simplifies Current Maps navigation,
+finishes grouped temperature/precipitation pages, cleans up Home with collapsed
+reading notes and a compact Historical context bar, renames Methods to About
+while retaining `methods.html`, documents SPI methods, and removes “Local pilot”
+from SPI image footers. The user reported that everything looks good on staging
+and requested production promotion commands; those commands were supplied.
+Record successful production publication and review before marking this patch
+live. The local SPI display refresh rebuilt four maps, reused eight ranking maps
+and all four fits, and made zero source requests. See the
+[patch release guide](spi-footer-about-release.md).
+
+### November 9 local synopsis follow-up
+
+At the user's request, regional snow highlights and a full supporting-link review
+are now implemented locally for review. Each quantitative bullet has a dated
+supporting page; a selected seven-day temperature claim has its own matching
+map. Snow storage and exact seven-day net SWE change use explicit AZ/NM area,
+reference and coverage guards, with configurable seasonal selection. Local
+weather/snow galleries and publication resource-integrity checks accompany the
+increment. Staging and production are still pending; do not mark this live.
+See [synopsis increment details and review commands](conditions-synopsis-scope.md#november-9-local-increment-linked-evidence-and-snow-context).
 
 ## Priority order and working sequence
 
@@ -63,9 +106,9 @@ that work ahead of discretionary features.
 
 | Priority | Work | Next bounded step and completion evidence |
 | --- | --- | --- |
-| P0 — close the release | Confirm the current production promotion | Check successful publication, annual bars and GA4 Realtime. Record runtime; inspect the two reported weather gaps without making broad optimization a release prerequisite. A real publication/data failure takes precedence over new features. |
-| P1 — work now | Template conditions synopsis | November 5: Home Maps/Synopsis tabs and a standalone template page are implemented locally, with rendered validation and destination-specific successful-publication comparisons. Targeted tests and local renders pass. Next run the [staging release](synopsis-staging.md), collect VM timing and review before production promotion. Regional snow narrative remains pending and is explicitly disclosed; Current Snow is linked. AI experiments and the proposed daily AI page remain deferred. See [scope](conditions-synopsis-scope.md). |
-| P2 — next project 1 | Monthly PRISM external deliverable | Verify access/record coverage and scope hotlinkable SPI-12 and 12-month temperature-ranking images for Drought and Grazing. Validate SPI methods before publishing; use a monthly update cycle. |
+| P0 — close the release | Confirm latest navigation/About/SPI-footer patch promotion | Monthly integration production publication is confirmed. Latest patch 7fbd6e4 passed user staging review; promotion commands supplied, completion pending. Confirm live layout and corrected SPI footers, and separately verify GA4 Realtime. November 8 weather coverage is complete. A real publication/data failure takes precedence over new features. |
+| P1 — existing follow-up | Template conditions synopsis | Template integration is included in the confirmed production release. Regional snow narrative remains pending and explicitly disclosed; Current Snow is linked. Retain seasonal/evidence review and publication-comparison safeguards. AI experiments and the proposed daily AI page remain deferred. See [scope](conditions-synopsis-scope.md). |
+| P2 — next project 1 | Monthly PRISM external deliverable | Monthly Climate and automatic daily-runner integration are live through October 2026. Remaining external deliverable: review hotlinkable SPI-12 and 12-month temperature-ranking exports for Drought and Grazing, verify stable URLs/embedding and confirm link replacement. Monitor the first automatic new-month cycle; keep broader SPI validation separate. |
 | P2 — next project 2 | Station seasonal precipitation histories | Extend the reviewed annual chart to explicitly defined cool-season and monsoon totals, reusing station caches and completeness rules. Keep regional historical maps separate. |
 | P2 — next project 3 | Recent-period weather means | Inventory retained numeric CORe fields; prototype a small 7-/30-day 500-mb/PWAT mean set with completeness checks and measured cost. Anomaly baselines follow separately. |
 | P2 — next project 4 | Historic seasonal snow anomalies | Validate existing peak-SWE departure/percent-of-median pilots and stage eligible years with support guards. Reorder within P2 if cool-season monitoring makes this more useful sooner. |
@@ -75,11 +118,14 @@ that work ahead of discretionary features.
 | Deferred until spring 2027 | Station heat metrics | Scope station-appropriate temperature thresholds, counts and departures; reuse existing hot-day/warm-night screening. No implementation before spring 2027. |
 | Alongside increments | Operational maintenance | Track freshness and source revisions, station audit age, raster warnings and measured cache/runtime behavior. Address specific failures promptly; schedule broader profiling as its own bounded task. |
 | Later — scope before building | New sources and statistical extensions | Local storm reports/hazard polygons, gauge conditions, historical odds, completed-year Explorer/historic-season integration, custom station dates, ENSO composites and further SPI products. Each needs its own source/method/performance assessment. |
+| Later — feasibility exploration | Interactive raster map page | Explore selectable existing raster products over a basemap, adjustable transparency, zoom/pan and pixel-value queries. Benchmark a small static-site pilot before selecting delivery methods or scheduling implementation. See [scope](#new-exploration-interactive-raster-map-page). Existing commitments and agreed climatology order remain unchanged. |
 | Later — polish | Consistency and optional interactions | Shared city-label styling, historic RONI labels at the next archive refresh, custom Analytics events and remaining documentation reconciliation. |
 
-Selected work for November 4: reconcile and prioritize this roadmap, close the
-current release when results arrive, and scope the synopsis. Local synopsis
-planning does not depend on waiting for the production run or weather-gap repair.
+November 8 working sequence: close the latest patch's production confirmation,
+retain synopsis follow-ups and finish the external monthly-map deliverable.
+Keep station seasonal precipitation histories, recent-period weather means and
+historic snow anomalies in their existing order ahead of the November 6
+climatology additions. Heat metrics remain deferred until spring 2027.
 
 ## Agreed additions and enhancements
 
@@ -96,12 +142,12 @@ those pages are next refreshed.
 
 | Workstream | Next bounded step | Relative effort |
 | --- | --- | --- |
-| Conditions synopsis / daily text summary (requested November 4, 2026) | P1: finish and stage the deterministic template. AI comparisons were explored locally and deferred November 5; retain their findings for future consideration. See the [first-increment scope](conditions-synopsis-scope.md) and overview below. | Moderate for remaining template integration; AI deferred |
+| Conditions synopsis / daily text summary (requested November 4, 2026) | Template integration is included in the confirmed production release. Regional snow narrative and remaining seasonal/evidence review are follow-ups. AI remains deferred. See the [first-increment scope](conditions-synopsis-scope.md). | Integrated; follow-ups remain |
 | Recent-period weather means and anomalies (requested November 2, 2026) | Scope trailing 7- and 30-day circulation/moisture means using cached CORe fields; separately assess calendar-matched anomaly baselines, missing-day guards, interpretation and update costs. Prototype means before committing to historical baseline acquisition. | Moderate for means; larger for validated anomalies |
 | Station water-year precipitation curves (requested November 1, 2026) | Live November 4 for 62 records: current cumulative precipitation, historical-year selection, WY1991-2020 mean and middle-50% band, record bounds, closest progression and interactive inspection. Historical/reference caches support daily builds. Review production cache timing; optional background curves remain deferred. | Live; monitor |
-| Historical seasonal and water-year time series (requested November 1, 2026) | Annual station bars passed staging in ea5d881; production promotion is underway. Completed-year totals and a supported normal line reuse the cumulative-history catalog; a hatched current season-to-date bar is excluded from full-year comparisons. Seasonal and regional summaries follow separately. | Annual release verification; seasonal extension moderate |
+| Historical seasonal and water-year time series (requested November 1, 2026) | Annual station bars are included in the confirmed production release. Completed-year totals and a supported normal line reuse the cumulative-history catalog; a hatched current season-to-date bar is excluded from full-year comparisons. Seasonal and regional summaries follow separately. | Annual integrated; seasonal extension moderate |
 | Historical odds of reaching precipitation thresholds (requested November 1, 2026) | Pilot CW3E-style climatological probabilities of reaching fractions of full water-year normal given precipitation already observed. Validate Southwest seasonality, historical samples and uncertainty; benchmark cached historical remainder distributions before selecting monthly or daily updates and maps. | Moderate-large; methods validation first |
-| Google Analytics (requested November 1, 2026) | Tag G-XS7RFBPW01 passed staging in ea5d881, gated to the production hostname/path and top-level views. Local/staging exclusions and embedded deduplication tested; verify GA4 Realtime after production promotion completes. See site-analytics.md. Custom interaction events remain deferred. | Production verification pending |
+| Google Analytics (requested November 1, 2026) | Tag G-XS7RFBPW01 is included in the confirmed production release, gated to the production hostname/path and top-level views. Local/staging exclusions and embedded deduplication tested; GA4 Realtime collection still needs confirmation. See site-analytics.md. Custom interaction events remain deferred. | Collection verification pending |
 | Historical snow anomaly companions | Validate seasonal peak-SWE departure and percent-of-median pilots, then stage all eligible WY2005-WY2025 years. Retain coverage and support guards and existing archive cautions. | Moderate |
 | Raster plotting warnings | Locate affected builders and correct the rendering geometry without altering climate statistics. Compare before/after maps. | Small-moderate |
 | Daily-update speed | Profile several consecutive new-date runs, cache-hit/miss behavior, costly PRISM reference work, and station processing. Benchmark before removing products or changing cadence. | Moderate |
@@ -109,19 +155,123 @@ those pages are next refreshed.
 | Completed-year Daily Explorer | Decide what remains public at water-year rollover, then test dated manifests, navigation, retention, storage and rebuild costs before historical backfill. | Moderate-large |
 | Station metadata and additional extremes | Scope station/component history and historical extremes comparisons. Calendar-date plot records and the station climatology section are now bounded increments in the [November 6 scope](#station-and-regional-climatology-agreed-november-6-2026); heat metrics are deferred until spring 2027. Any additional formal indices need explicit periods, thresholds, completeness, ties and baseline definitions. | Variable |
 | Station custom date periods | Assess a start/end-date selector alongside presets, initially bounded to the recent daily data already published. Separate basic summaries from historical comparisons; benchmark map/table recalculation, lazy loading, payload size and browser responsiveness before implementation. | Moderate; full historical comparisons substantially larger |
+| Interactive raster map page (requested November 8, 2026) | Explore existing numerical map rasters on a basemap with product selection, opacity control, zoom/pan and pixel queries. Reuse current caches, map definitions and static publishing; measure payload, interaction speed and build/storage costs before committing to implementation. See [scope](#new-exploration-interactive-raster-map-page). | Feasibility first; effort depends on raster delivery |
 | Shared city-label styling | Consider the smaller Daily Explorer labels for other maps; review representative precipitation, temperature and snow backgrounds before a site-wide rebuild. | Small-moderate |
 | Station audit maintenance | Establish a repeatable full-record audit refresh cadence, visible audit age and automatic cautions; avoid a manual station-by-station approval requirement. | Moderate |
-| Product freshness visibility | Weather activation/coverage audit is live, including recent/full date coverage and withheld/unknown overlays. Investigate the two gaps reported November 3; extend source-specific freshness reporting to PRISM, snow and stations later. | Small-moderate |
+| Product freshness visibility | Weather activation/coverage audit is live. November 8 production reports 30/30 recent and 68/68 Explorer dates with no pending dates or withheld/unknown wind overlays, closing the earlier coverage-gap follow-up at this snapshot. Monitor recurrence; extend source-specific freshness reporting to PRISM, snow and stations later. | Small-moderate |
 | Internal documentation reconciliation | Replace obsolete manual/unpublished/two-snow-map descriptions or clearly mark them as historical pilot instructions. Preserve useful reproducibility details. | Small |
 | ENSO/RONI composites and analogs | Define season, variable, reference and sample membership before implementing configurable comparisons. | Large |
 | Validated SPI module | Separately validate fitting, zero precipitation, reference period and SPI-1/3/6/12 behavior; do not substitute raw standardized precipitation anomalies. | Large |
 | Daily weather and circulation diagnostics | Three-map CORe integration, retained backfill and publication checks are live. Monitor date gaps, source availability, recovery and cache reuse. Recent-period means, anomaly baselines and additional fields remain separate; IVT remains deferred. | Live; monitor |
 | Archived forecast discussions in Daily Explorer | Date-bound AFD/WPC links and the fixed-size embedded reader are live and user-tested. Metadata indexing and optional SPC/report sources remain future work. | Indexing effort pending |
-| Long-term monthly PRISM maps | Scope selected monthly/seasonal climate products using the proposed 1895-present monthly record, with a once-monthly update cycle. Verify coverage, reference periods and source revisions before choosing maps. | Longer-term; scope first |
+| Long-term monthly PRISM maps | Monthly Climate rankings and SPI plus automatic revision-aware updates are live. January 1895–October 2026 inputs are verified. External hotlink exports remain to close; the requested monthly-based Historic Years rebuild and regional climate normals page remain separate future work. | Core release live; extensions scoped separately |
 | Local storm reports and watch/warning polygons | Scope archived reports and NWS hazard polygons alongside Daily Explorer and/or seasonal summaries, including event-time matching, deduplication, data availability and efficient caching. | Longer-term; scope first |
 | Historic-season station and Daily Explorer content | Decide which station summaries, extreme-event views and daily-map navigation belong in historic seasons; define retention, completeness and storage limits. | Longer-term; scope first |
 | Hydrological observations and gauge-condition maps | Assess gauge data access, station coverage and useful streamflow/stage condition metrics, with historical context and bounded update costs. | Longer-term; scope first |
 | Hydroclimate home dashboard | Dashboard layout, map-matched summaries, linked condition cards and RONI/CPC context are live. Separately scope regional cumulative precipitation versus normal with cached calculations and a runtime benchmark. | Live layout; regional evolution chart moderate |
+
+## New exploration: interactive raster map page
+
+Requested November 8, 2026: explore a dedicated interactive map page where users
+select existing map-data rasters, display them semi-transparently over a basemap,
+zoom/pan and query pixel values. It must be fast and efficient within the current
+project framework and complement Current Maps, Daily Explorer, Monthly Climate
+and Station Conditions. Record this as feasibility work; preserve existing
+commitments, the agreed climatology sequence and the spring 2027 heat deferral.
+No implementation or production dependency is enabled by this entry.
+
+### User experience and data meaning
+
+Scope an initial single active raster with product/available-period selection,
+opacity control, a matching legend, reset-to-region control and click/tap value
+readout. Retain selected map extent when changing compatible layers. Show units,
+data-through date, exact period, source, reference period and native resolution;
+link to the corresponding existing product/methods page. Keep static maps for
+quick comparisons and sharing, Daily Explorer for time-based browsing and
+Station Conditions for observations at stations. Additional simultaneous layers,
+animation, arbitrary calculations and full historical browsing need separate
+scope after the basic interaction is proven.
+
+Inventory retained numerical rasters for existing products first: published
+plot PNGs alone cannot supply exact climate values. Query the source-grid cell,
+not a color or a smoothed display value. Preserve missing/withheld-data masks,
+supported precision and percentile/rank/SPI distinctions. Show categorical
+labels separately from numerical values; zooming must not imply finer source
+resolution. Validate map alignment/reprojection and queries at known cells,
+grid edges and missing-data boundaries.
+
+### Framework fit and performance assessment
+
+Prefer a static Quarto/JavaScript page and the existing S3 publication workflow,
+reusing the station map's Leaflet experience where suitable. Compare compact
+regional raster delivery with transparent georeferenced display assets plus
+numeric query data; assess tiled/overview GeoTIFF delivery only if measurements
+justify it. A plotted PNG with axes/legend is not a georeferenced overlay.
+Verify actual hosting support for range requests, cross-origin access and
+browser caching where required. Select a production-appropriate basemap with
+attribution and documented usage terms; retain clear behavior if it is unavailable.
+Do not introduce a live R/Shiny service or browser-triggered climate downloads
+as the default approach.
+
+Lazy-load only the selected product/period, bound browser memory/cache growth
+and reuse unchanged versioned assets. Rebuild only affected derivatives from
+existing validated caches; do not duplicate source acquisition or publish the
+entire history for one view. Measure cold/cached first display, layer switching,
+pixel-query latency, pan/zoom responsiveness, transferred bytes, browser memory,
+published storage and incremental build/upload time on desktop and mobile-class
+devices. Use the agreed initial products and acceptance targets below; compare
+queries against their numerical sources, then review the local pilot and cost
+report before choosing architecture or expanding scope.
+Monthly PRISM implementation files remain outside this roadmap task.
+
+### Initial pilot scope and acceptance targets: agreed November 8, 2026
+
+Use existing saved numerical rasters from the completed October 2026 release,
+with one active layer at a time and the map position retained on layer changes.
+Reuse cached products without new climate calculations or source downloads.
+
+| Pilot product | Purpose | Pixel readout |
+| --- | --- | --- |
+| October 2026 precipitation total | Intuitive amounts, dry cells and spatial rainfall variation | Total inches; matching percentile if included |
+| 12-month temperature ranking ending October 2026 | Ranked colors and distinct record categories | Mean temperature, percentile, rank and comparison-year count |
+| SPI-12 ending October 2026 | Continuous negative/positive index values and withheld cells | SPI value, exact period and unavailable-data explanation |
+
+These are acceptance targets to measure, not achieved performance results.
+
+| Measure | Initial pilot target |
+| --- | --- |
+| First usable map, including first queryable layer | At most 3 seconds on desktop; 5 seconds on mobile |
+| Switch to an uncached layer | At most 2 seconds |
+| Switch back to a cached layer | At most 300 milliseconds |
+| Click/tap value readout after the layer loads | At most 100 milliseconds |
+| Opacity adjustment | Visible feedback within 100 milliseconds |
+| Pan/zoom | Aim for 60 frames/second; sustain at least 30 on the mobile test device |
+| Initial transfer, excluding basemap tiles | At most 2 MiB for the page, libraries and first layer |
+| Additional product transfer | At most 1 MiB per selected product, including query fields |
+| Added browser memory | At most 100 MiB, with no continuing growth after repeated switches |
+| Unchanged publication run | Zero raster rebuilds/uploads; manifest checks at most 5 seconds |
+| Changed three-layer release | Added preparation at most 30 seconds; published pilot assets at most 10 MiB |
+
+Test on the laptop and a representative phone with empty and warm caches.
+Include a reproducible simulated mobile connection of 10 Mbps and 100 ms
+latency; record basemap traffic separately. Report slower results as well as
+averages and distinguish map readiness from completion of background loading.
+
+Correctness is a separate pass/fail requirement: sampled query values must
+match saved source cells within stored precision, missing/withheld cells must
+remain missing, record display codes must never be presented as percentiles,
+and zooming must preserve alignment without implying finer source resolution.
+The framework-fit decision requires the agreed performance and correctness
+targets using the existing static website/publication workflow, browser-side
+queries and no new live service. Test compact raster delivery first; introduce
+tiles only if measurements justify the added work.
+
+Snow SWE is a possible subsequent stress test for a different grid,
+higher-resolution delivery and snow-specific masks, after the initial pilot
+passes; it is outside this three-product increment. Existing implementation
+priorities, the agreed climatology order and the spring 2027 heat deferral
+remain unchanged. This entry authorizes the pilot scope for future work, not
+implementation or production integration in this roadmap task.
 
 ## Station and regional climatology: agreed November 6, 2026
 
@@ -194,8 +344,9 @@ This is a deferred planning item, not an active implementation commitment.
 
 ## New exploration: Google Analytics
 
-Requested November 1; tag `G-XS7RFBPW01` passed staging November 4, 2026.
-Production promotion is underway; collection awaits verification in GA4 Realtime. See
+Requested November 1; tag `G-XS7RFBPW01` passed staging November 4, 2026
+and is included in the confirmed November 8 production release. Collection
+still awaits verification in GA4 Realtime. See
 [Analytics setup and validation](site-analytics.md). Add Google Analytics
 to understand which SW Climate Watch pages and tools are useful to visitors.
 Start with page views and referral sources; separately choose a small set of
@@ -283,11 +434,20 @@ do not publish full station histories or precompute every possible date range.
 
 ## Longer-term scope additions: October 27, 2026
 
-These four ideas are recorded for future scoping, not authorized implementation
-or additions to the current daily production workload. Estimate source access,
-runtime, local/public storage and browser costs before selecting a pilot.
+These entries began as future scoping. Monthly PRISM has since advanced to
+production as recorded below; other extensions remain subject to their own
+scope and review. Estimate source access, runtime, local/public storage and
+browser costs before selecting another pilot.
 
 ### Monthly PRISM: long-term climate record
+
+**Current status, November 8:** Monthly Climate and the revision-aware daily-runner
+integration are confirmed live through October 2026. The latest navigation/About/
+SPI-footer patch passed staging review; production completion is unconfirmed.
+See the [current release review](#november-8-release-review) for production timing,
+coverage, scheduling and remaining external-deliverable work. The dated pilot
+and staging notes below preserve development history; their earlier “not enabled”
+and “next integration” statements are superseded by this status.
 
 November 6: the [monthly access/cache pilot](prism-monthly.md) is implemented
 locally. The user has now verified all 4,746 inputs for January 1895-October
@@ -634,6 +794,11 @@ these products to the operational daily cycle.
 
 ## New exploration: conditions synopsis and daily change summary
 
+**November 8 status:** deterministic template integration is included in the
+confirmed production release. Earlier local-pilot and first-task descriptions
+below are development history, not instructions to restart implementation.
+Regional snow narrative remains pending; AI synthesis remains deferred.
+
 **Active decision, November 5:** move forward with the template synopsis.
 AI interpretation and an unlisted daily AI review page are deferred. The optional
 API approaches below remain historical scoping notes, not scheduled work.
@@ -766,11 +931,12 @@ and [production guidance](https://developers.openai.com/api/docs/guides/producti
 ## Suggested sequence
 
 Follow the [priority order above](#priority-order-and-working-sequence).
-The immediate development deliverable is a cached-data synopsis evidence report
-and short template draft, while the current release finishes production checks.
-Review that draft before selecting a model or enabling API calls. Move one
-bounded increment through local review, staging and explicit promotion before
-adding another daily-publication dependency.
+Confirm production completion of the staging-approved navigation/About/SPI-footer
+patch, retain synopsis follow-ups and finish the external monthly-map deliverable.
+Then follow the existing project order before the agreed station/regional
+climatology additions; defer heat metrics until spring 2027. Move one bounded
+increment through local review, staging and explicit promotion before adding
+another daily-publication dependency. AI synthesis remains deferred.
 
 Keep the operational daily publisher stable while experiments run locally.
 Retain the VM staging cache for development. The earlier report of 192 GB free

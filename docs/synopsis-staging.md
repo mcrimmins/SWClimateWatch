@@ -1,5 +1,47 @@
 # Template synopsis: staging release
 
+## November 9: snow and directly linked evidence
+
+This increment is locally approved and ready for VM staging testing. It adds
+seasonal snow storage/change highlights, dated supporting pages for every
+quantitative bullet, and a matching map for selected seven-day temperature
+departures. No new input downloads are required. The old release instructions
+below describe the initial template integration; use this increment first.
+
+After committing/pushing the new source modules, config, review/test scripts,
+tests, resource configuration and documentation, check out that exact commit in
+the staging worktree under its staging lock. Stash only generated source pages
+and stop if other tracked edits remain. Load and export `staging.env`; verify
+the staging destination and state directory before running:
+
+```bash
+TZ=America/Phoenix Rscript scripts/test-synopsis-staging.R
+TZ=America/Phoenix Rscript scripts/publish-site-s3.R
+```
+
+Keep the staging lock held around these direct Rscript calls. The two-pass test
+requires READY, verifies supporting-file checksums and selected weekly
+temperature maps, and checks identical-output and snow-cache reuse on pass two.
+It stages local files/pending metadata but makes no source requests, uploads or
+success-marker changes. Its report is
+`data/diagnostics/synopsis-staging-smoke/summary.csv`. If cached staging inputs
+are incomplete, release the manual lock and run the existing full staging daily
+runner before repeating the test. Do not weaken freshness gates.
+
+Check Home → Synopsis and the standalone synopsis page. Every numerical bullet
+should open Evidence and matching dates within watch-staging. A selected weekly
+temperature claim must include its exact seven-day map. Related product links
+may show newer dates. Snow ratios may legitimately be absent when the supported
+reference area is too small; this is not a failure or a snow-free claim.
+Production validation requires all staged support files to survive rendering
+with matching checksums. Neither fictional cases nor review candidates appear.
+
+Do not copy laptop daily grids, maps, generated synopsis fragments, or success
+markers to the VM. Existing VM caches supply the inputs; the publisher rebuilds
+the current fragment. Production promotion remains a separate approval.
+
+## Original integration instructions (historical)
+
 The release adds Home Maps/Synopsis tabs (Maps first/default) and the directly
 linkable `pages/synopsis.html`. AI is excluded from publication. Review
 candidates remain local/diagnostic only. Regional snow narrative is pending;

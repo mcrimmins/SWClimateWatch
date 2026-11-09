@@ -1,4 +1,10 @@
-# Deterministic, local-only draft. All climate claims carry evidence identifiers.
+# Deterministic synopsis. Claims carry evidence identifiers and dated support.
+.synopsis_source_files <- Filter(function(x)is.character(x)&&length(x)==1L&&grepl("conditions-synopsis-template[.]R$",x),
+  lapply(sys.frames(),function(frame)if(!is.null(frame$ofile))frame$ofile else frame$file))
+.synopsis_module_dir <- dirname(tail(.synopsis_source_files,1)[[1]])
+source(file.path(.synopsis_module_dir,"conditions-synopsis-snow.R"),local=TRUE)
+source(file.path(.synopsis_module_dir,"conditions-synopsis-support.R"),local=TRUE)
+rm(.synopsis_source_files,.synopsis_module_dir)
 
 synopsis_format_settings <- function(config) {
   defaults <- list(enabled = TRUE, temperature_color_f = 3, temperature_strong_f = 6,
@@ -31,7 +37,7 @@ synopsis_emphasis <- function(block, evidence, stations, settings) {
       spans[[length(spans) + 1L]] <<- list(text = text, tone = tone, strong = strong)
   }
   if (!settings$enabled) return(spans)
-  if (!is.null(block$kind) && block$kind %in% c("persistence", "transition", "corroboration")) return(block$emphasis)
+  if (!is.null(block$kind) && (block$kind %in% c("persistence", "transition", "corroboration") || startsWith(block$kind,"snow_"))) return(block$emphasis)
   station <- stations[stations$fact_id %in% block$fact_ids, , drop = FALSE]
   if (nrow(station)) {
     x <- station[1L, ]
@@ -430,6 +436,7 @@ synopsis_template_blocks <- function(evidence, extremes, comparison = NULL, regi
         idx <- which(vapply(blocks, function(b) b$section == "Past 30 days", logical(1)))[1L]
         blocks[[idx]]$text <- paste0(blocks[[idx]]$text, " The regional percentile-area and temperature indicators changed little since the local comparison dated ", synopsis_date_text(comparison$snapshot_date, short = TRUE), ".")
         blocks[[idx]]$fact_ids <- unique(c(blocks[[idx]]$fact_ids, current$fact_id))
+        blocks[[idx]]$comparison_facts <- previous
       }
     }
   }
@@ -472,6 +479,36 @@ synopsis_template_blocks <- function(evidence, extremes, comparison = NULL, regi
     }
     attr(blocks, "regional_candidates") <- candidates
   }
+  if (!is.null(evidence$snow_context)) {
+    snow_blocks <- synopsis_snow_blocks(evidence)
+    for (b in snow_blocks) {
+      indices <- which(vapply(blocks,function(x)x$section==b$section,logical(1)))
+      after <- if(length(indices)) indices[1L] else length(blocks)
+      blocks <- append(blocks,list(b),after=after)
+    }
+  }
+  limit <- evidence$configuration$maximum_section_bullets %||synopsis% 3L
+  keep <- unlist(lapply(c("Past 7 days","Past 30 days","Water year so far"),function(section) {
+    indices <- which(vapply(blocks,function(b)b$section==section,logical(1)))
+    if(section=="Past 7 days" && length(indices)>limit && any(vapply(blocks[indices],function(b)identical(b$kind,"snow_change"),logical(1)))) {
+      lead <- indices[1L]
+      snow <- indices[vapply(blocks[indices],function(b)identical(b$kind,"snow_change"),logical(1))][1L]
+      others <- setdiff(indices,c(lead,snow))
+      candidates <- rbind(highlights$week,highlights$seasonal)
+      score <- vapply(others,function(i) {
+        b<-blocks[[i]];stations<-candidates[candidates$fact_id %in% b$fact_ids,,drop=FALSE]
+        if(nrow(stations)&&any(is.finite(stations$unusual_percentile)))return(max(stations$unusual_percentile,na.rm=TRUE)/50)
+        temps<-facts[facts$fact_id %in% b$fact_ids & facts$metric=="mean_departure",,drop=FALSE]
+        if(nrow(temps))return(max(abs(temps$value),na.rm=TRUE)/evidence$configuration$active_week_temperature_departure_f)
+        0
+      },numeric(1))
+      return(head(c(lead,snow,others[order(-score)]),limit))
+    }
+    head(indices,limit)
+  }))
+  candidates <- attr(blocks,"regional_candidates")
+  blocks <- blocks[sort(keep)]
+  attr(blocks,"regional_candidates") <- candidates
   attr(blocks, "highlights") <- highlights
   blocks
 }
@@ -505,8 +542,16 @@ build_conditions_synopsis_draft <- function(evidence, root = ".",
   blocks <- synopsis_template_blocks(evidence, extremes, comparison$previous, regional_candidates)
   if (comparison_origin == "successful_publication") for (i in seq_along(blocks))
     blocks[[i]]$text <- gsub("local comparison dated", "last successful publication dated", blocks[[i]]$text, fixed = TRUE)
+  blocks <- synopsis_attach_support(blocks,evidence,root,output_dir)
   highlights <- attr(blocks, "highlights")
+  regional_options <- attr(blocks,"regional_candidates")
+  for(section in c("Past 7 days","Past 30 days","Water year so far")) if(!any(vapply(blocks,function(b)b$section==section,logical(1))))
+    blocks[[length(blocks)+1L]] <- list(section=section,text="Matching supported highlights are unavailable for this period; use the dated source products for current conditions.",fact_ids=character(),links=character())
+  attr(blocks,"highlights") <- highlights
+  attr(blocks,"regional_candidates") <- regional_options
   extremes$selected <- rbind(highlights$week, highlights$seasonal)
+  shown_ids <- unlist(lapply(blocks,function(b)b$fact_ids))
+  extremes$selected <- extremes$selected[extremes$selected$fact_id %in% shown_ids,,drop=FALSE]
   formatting <- synopsis_format_settings(evidence$configuration)
   for (i in seq_along(blocks)) blocks[[i]]$emphasis <- synopsis_emphasis(blocks[[i]], evidence, extremes$selected, formatting)
   extremes$candidates <- extremes$candidates[extremes$candidates$metric %in% c("freeze_nights_anomaly", "longest_dry_spell"), , drop = FALSE]
@@ -519,7 +564,9 @@ build_conditions_synopsis_draft <- function(evidence, root = ".",
   if (nrow(extremes$selected) && any(nzchar(extremes$selected$caution_codes)))
     limitations <- c(limitations, "Some selected stations carry historical-record cautions. Current extremes require complete, usable daily observations; historical cautions remain attached in the evidence file.")
   limitations <- c(limitations, if (evidence$snow$active)
-    "Regional snow interpretation is pending mountain/reference-area metrics; verified files alone do not establish a regional snow anomaly."
+    if(!is.null(evidence$snow_context)&&nrow(evidence$snow_context$facts))
+      "Snow statistics cover eligible AZ/NM cells, not the padded surrounding states. Storage ratios require a date-specific median of at least 1 inch and 18 reference years. Changes require exact seven-day endpoints and describe net modeled SWE change, not snowfall or melt alone." else
+      "Regional snow context is unavailable at this cutoff or lacks sufficient reference area and coverage; this is not evidence of snow-free conditions."
     else "Current snow monitoring is inactive for this snapshot's season; a retained winter map is not a current snow observation.")
   limitations <- c(limitations, if (comparison_origin == "successful_publication") {
     if (is.null(comparison$previous)) "No compatible prior successful publication is available for comparison; no change since the previous publication is claimed."
@@ -540,8 +587,9 @@ build_conditions_synopsis_draft <- function(evidence, root = ".",
     selected <- Filter(function(x) x$section == section, blocks)
     if (!length(selected)) next
     markdown <- c(markdown, paste0("## ", section), "", unlist(lapply(selected, function(x) {
-      links <- if (length(x$links)) paste0("[", ifelse(grepl("station-conditions", x$links), "Station Conditions", "Supporting map"),
-        "](https://cales.arizona.edu/climate/watch/", x$links, ")", collapse = " \u00b7 ") else ""
+      if(!is.null(x$support_link)) x$links <- c(x$support_link,x$links)
+      links <- if (length(x$links)) paste0("[", vapply(x$links,synopsis_support_label,character(1)),
+        "](", vapply(x$links,synopsis_support_href,character(1)), ")", collapse = " \u00b7 ") else ""
       c(paste0("- ", synopsis_format_text(x$text, x$emphasis, html = FALSE), if (nzchar(links)) paste0(" ", links) else ""), "")
     })))
   }
@@ -563,10 +611,11 @@ build_conditions_synopsis_draft <- function(evidence, root = ".",
   for (section in sections) {
     selected <- Filter(function(x) x$section == section, blocks)
     if (!length(selected)) next
+    selected <- lapply(selected,function(x){if(!is.null(x$support_link))x$links<-c(x$support_link,x$links);x})
     html <- c(html, paste0("<h2>", escape(section), "</h2><ul>"), unlist(lapply(selected, function(x) c(
       paste0("<li>", synopsis_format_text(x$text, x$emphasis)),
-      if (length(x$links)) paste0('<br><small>', paste0('<a href="https://cales.arizona.edu/climate/watch/', escape(x$links), '">',
-        ifelse(grepl("station-conditions", x$links), "Station Conditions", "Supporting map"), '</a>', collapse = " \u00b7 "), '</small>') else character(), "</li>"))), "</ul>")
+      if (length(x$links)) paste0('<br><small>', paste0('<a href="', escape(vapply(x$links,synopsis_support_href,character(1))), '">',
+        vapply(x$links,synopsis_support_label,character(1)), '</a>', collapse = " \u00b7 "), '</small>') else character(), "</li>"))), "</ul>")
   }
   candidates <- attr(blocks, "regional_candidates")
   if (isTRUE(show_review_candidates) && length(candidates)) {

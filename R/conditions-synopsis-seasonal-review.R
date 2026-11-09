@@ -214,7 +214,7 @@ review_conditions_synopsis_seasons <- function(root = ".", output_dir = file.pat
       actual_focus = highlights$profile$mode, selected_metric = paste(selected$metric, collapse = ";"), monthly_highlight = selected_kind,
       status = if (all(checks)) "PASS_TEMPLATE" else "FAIL",
       failed_checks = paste(names(checks)[!checks], collapse = ";"),
-      snow_interpretation = if (evidence$snow$active) "PENDING" else "INACTIVE", stringsAsFactors = FALSE)
+      snow_interpretation = if (evidence$snow$active) "SEPARATE_SNOW_REVIEW" else "INACTIVE", stringsAsFactors = FALSE)
   })
   summary <- do.call(rbind, results)
   utils::write.csv(summary, file.path(output_dir, "summary.csv"), row.names = FALSE)
@@ -230,6 +230,47 @@ review_conditions_synopsis_seasons <- function(root = ".", output_dir = file.pat
       if (nzchar(summary$failed_checks[i])) paste0(": ", summary$failed_checks[i]) else "", '</td><td>', summary$snow_interpretation[i], '</td></tr>'), character(1)),
     '</tbody></table></html>')
   writeLines(html, file.path(output_dir, "index.html"), useBytes = TRUE)
-  message(sum(summary$status == "PASS_TEMPLATE"), "/", nrow(summary), " seasonal template cases passed; snow interpretation remains pending.")
+  message(sum(summary$status == "PASS_TEMPLATE"), "/", nrow(summary), " seasonal template cases passed; snow-specific cases have a separate review gallery.")
   invisible(list(summary = summary, path = file.path(output_dir, "index.html")))
+}
+
+
+# Snow-specific fictional review cases complement the existing 24 weather cases.
+review_conditions_synopsis_snow <- function(root=".",output_dir=file.path(root,"data/diagnostics/conditions-synopsis/snow-review")) {
+  config<-synopsis_config(file.path(root,"config/conditions-synopsis.yml"))
+  cases<-data.frame(id=c("winter-deficit","winter-surplus","spring-loss","fall-new-snow","winter-missing","small-reference","summer-inactive"),
+    date=c("2026-02-15","2026-02-15","2026-04-15","2026-10-15","2026-02-15","2026-04-15","2026-07-15"),
+    observed=c(.1,4,1,1,NA,.1,1),median=c(2,2,2,0,2,2,2),previous=c(.1,2,3,0,2,.1,0),
+    area=c(3000,3000,3000,3000,3000,300,3000),expected=c("storage","change;storage","change;storage","change","","",""))
+  dir.create(output_dir,recursive=TRUE,showWarnings=FALSE)
+  results<-lapply(seq_len(nrow(cases)),function(i) {
+    case<-cases[i,]; d<-as.Date(case$date)
+    base<-synopsis_seasonal_cases()[if(format(d,"%m") %in% c("02"))2L else if(format(d,"%m")=="04")4L else if(format(d,"%m")=="10")10L else 14L,]
+    base$date<-case$date; base$id<-case$id;base$label<-paste("Fictional snow review:",case$id)
+    e<-synopsis_seasonal_fixture(base,config)
+    stats<-synopsis_snow_stats(rep(case$observed,3),rep(case$median,3),rep(21,3),rep(case$previous,3),rep(case$area/3,3),config)
+    rows<-list()
+    for(kind in names(stats)) {
+      z<-stats[[kind]]
+      for(metric in names(z$values))rows[[length(rows)+1L]]<-data.frame(fact_id=paste("snow",kind,metric,sep=":"),product=paste0("snow_",kind),
+        region="AZNM",metric=metric,value=unname(z$values[[metric]]),units=if(grepl("percent",metric))"percent" else "inches SWE",
+        period_start=as.character(if(kind=="change")d-7L else d),period_end=as.character(d),reference="Fictional WY2005–WY2025 reference",
+        denominator=if(kind=="storage")"Normally snowy cells; median >=1 inch, >=18 years" else "Normally snowy or snow at either endpoint",
+        eligible_area_km2=z$area_km2,coverage=z$coverage,status=z$status,link="pages/snow-conditions.html")
+    }
+    e$snow_context<-list(active=e$snow$active,facts=if(length(rows))do.call(rbind,rows) else data.frame())
+    snow<-synopsis_snow_blocks(e)
+    kinds<-sort(vapply(snow,function(b)sub("snow_","",b$kind,fixed=TRUE),character(1)))
+    expected<-if(nzchar(case$expected))sort(strsplit(case$expected,";",fixed=TRUE)[[1L]]) else character()
+    draft<-build_conditions_synopsis_draft(e,root,file.path(output_dir,case$id))
+    shown<-Filter(function(b)!is.null(b$kind)&&startsWith(b$kind,"snow_"),draft$blocks)
+    data.frame(case=case$id,status=if(identical(kinds,expected))"PASS" else "FAIL",available_snow=paste(kinds,collapse=";"),
+      selected_snow=length(shown),page=paste0(case$id,"/synopsis.html"))
+  })
+  summary<-do.call(rbind,results)
+  write.csv(summary,file.path(output_dir,"summary.csv"),row.names=FALSE)
+  html<-c('<!doctype html><html><head><meta charset="utf-8"><title>Snow synopsis review</title></head><body><h1>Snow synopsis review</h1><p>Fictional validation cases, not observations. Each bullet links to dated supporting values.</p><ul>',
+    paste0('<li><a href="',summary$page,'">',summary$case,'</a> — ',summary$status,'</li>'),'</ul></body></html>')
+  writeLines(html,file.path(output_dir,"index.html"),useBytes=TRUE)
+  invisible(list(summary=summary,path=file.path(output_dir,"index.html")))
 }

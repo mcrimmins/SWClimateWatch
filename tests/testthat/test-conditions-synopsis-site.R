@@ -11,6 +11,10 @@ synopsis_site_test_context <- function(root) {
 }
 
 synopsis_site_render_fixture <- function(root) {
+  if(dir.exists(file.path(root,"site/synopsis-evidence"))) {
+    dir.create(file.path(root,"site/_site"),recursive=TRUE,showWarnings=FALSE)
+    file.copy(file.path(root,"site/synopsis-evidence"),file.path(root,"site/_site"),recursive=TRUE)
+  }
   content <- readLines(file.path(root, "site/pages/_synopsis-content.qmd"))
   content <- content[-c(1L, length(content))]
   dir.create(file.path(root, "site/_site/pages"), recursive = TRUE, showWarnings = FALSE)
@@ -32,6 +36,13 @@ testthat::test_that("template staging is destination-specific and success state 
   testthat::expect_false(identical(paths$success, synopsis_publication_paths(live, root)$success))
   synopsis_site_render_fixture(root)
   testthat::expect_invisible(validate_conditions_synopsis_publication(file.path(root, "site/_site"), destination, root))
+  testthat::expect_true(nrow(staged$support_manifest)>0)
+  proof <- file.path(root,"site/_site",staged$support_manifest$path[1L])
+  original <- readBin(proof,"raw",n=file.info(proof)$size)
+  writeLines("changed supporting evidence",proof)
+  testthat::expect_error(validate_conditions_synopsis_publication(file.path(root,"site/_site"),destination,root),"supporting evidence")
+  writeBin(original,proof)
+
   commit_conditions_synopsis_publication(destination, root, dry_run = TRUE)
   testthat::expect_false(file.exists(paths$success))
   commit_conditions_synopsis_publication(destination, root)
@@ -80,4 +91,11 @@ testthat::test_that("all deploy paths stage and validate synopsis before upload 
   commit <- regexpr('commit_conditions_synopsis_publication(destination)', script, fixed = TRUE)[[1L]]
   testthat::expect_true(stage > 0 && stage < render && render < validate && validate < upload && upload < commit)
   testthat::expect_false(grepl("OPENAI|conditions-synopsis-ai", paste(readLines(file.path(project_root, "R/conditions-synopsis-site.R")), collapse = "\n")))
+})
+
+
+testthat::test_that("the real synopsis module loader includes snow and support helpers", {
+  context <- synopsis_site_context(project_root)
+  testthat::expect_true(is.function(context$synopsis_snow_evidence))
+  testthat::expect_true(is.function(context$synopsis_attach_support))
 })

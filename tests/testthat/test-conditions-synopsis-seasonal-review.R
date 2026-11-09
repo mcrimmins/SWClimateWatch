@@ -14,7 +14,7 @@ testthat::test_that("seasonal editorial cases pass without touching preview hist
   testthat::expect_true(all(gallery$summary$status == "PASS_TEMPLATE"))
   testthat::expect_identical(tools::md5sum(state), before)
   testthat::expect_true(file.exists(gallery$path))
-  testthat::expect_true(all(gallery$summary$snow_interpretation %in% c("PENDING", "INACTIVE")))
+  testthat::expect_true(all(gallery$summary$snow_interpretation %in% c("SEPARATE_SNOW_REVIEW", "INACTIVE")))
   for (id in gallery$summary$id) {
     folder <- file.path(dirname(gallery$path), id)
     testthat::expect_match(paste(readLines(file.path(folder, "synopsis.md")), collapse = " "), "SYNTHETIC VALIDATION")

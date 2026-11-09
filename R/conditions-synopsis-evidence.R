@@ -1,4 +1,8 @@
 # Read-only local evidence inventory. No source requests or publication hooks.
+.synopsis_evidence_files <- Filter(function(x)is.character(x)&&length(x)==1L&&grepl("conditions-synopsis-evidence[.]R$",x),
+  lapply(sys.frames(),function(frame)if(!is.null(frame$ofile))frame$ofile else frame$file))
+source(file.path(dirname(tail(.synopsis_evidence_files,1)[[1]]),"conditions-synopsis-snow.R"),local=TRUE)
+rm(.synopsis_evidence_files)
 
 synopsis_date <- function(x) {
   date <- tryCatch(as.Date(x), error = function(e) as.Date(NA))
@@ -575,6 +579,8 @@ build_conditions_synopsis_evidence <- function(snapshot_date = NULL, root = ".",
     utils::write.csv(evidence$regional_highlights$stations$facts, file.path(output_dir, "station-network-counts.csv"), row.names = FALSE, na = "")
     utils::write.csv(evidence$regional_highlights$stations$members, file.path(output_dir, "station-network-members.csv"), row.names = FALSE, na = "")
   }
+  evidence$snow_context <- synopsis_snow_evidence(root,date,config,output_dir)
+  utils::write.csv(evidence$snow_context$facts,file.path(output_dir,"snow-facts.csv"),row.names=FALSE)
   evidence$elapsed_seconds <- unname(proc.time()[["elapsed"]] - started)
   jsonlite::write_json(evidence, file.path(output_dir, "evidence.json"), dataframe = "rows", auto_unbox = TRUE, na = "null", pretty = TRUE, digits = 12)
   utils::write.csv(facts, file.path(output_dir, "facts.csv"), row.names = FALSE, na = "")
