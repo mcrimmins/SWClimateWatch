@@ -32,3 +32,5 @@ source(file.path(project_root, "R", "prism-seasonal-archive.R"))
 source(file.path(project_root, "R", "validate-prism-seasonal-archive.R"))
 
 source(file.path(project_root, "R", "acis-station-cumulative-pilot.R"))
+
+source(file.path(project_root,"R","prism-water-year-temperature.R"))

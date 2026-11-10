@@ -1,11 +1,11 @@
 testthat::test_that("complete map catalog covers every published current map", {
   products <- read_map_product_config(file.path(project_root, "config", "map-products.yml"))
 
-  testthat::expect_equal(nrow(products), 51L)
-  testthat::expect_equal(sum(products$enabled), 51L)
+  testthat::expect_equal(nrow(products), 54L)
+  testthat::expect_equal(sum(products$enabled), 54L)
   testthat::expect_setequal(unique(products$section), c("Temperature", "Precipitation"))
-  testthat::expect_equal(length(unique(products$id)), 51L)
-  testthat::expect_equal(length(unique(products$image)), 51L)
+  testthat::expect_equal(length(unique(products$id)), 54L)
+  testthat::expect_equal(length(unique(products$image)), 54L)
   testthat::expect_true(all(grepl("-latest\\.png$", products$image)))
   testthat::expect_true(all(nzchar(products$description)))
   sentence_count <- lengths(regmatches(

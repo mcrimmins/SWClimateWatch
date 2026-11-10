@@ -44,6 +44,8 @@ website:
                 text: Daily percentile ranks
               - href: pages/temperature-rolling-ranks.qmd
                 text: 7–90-day mean ranks
+              - href: pages/water-year-temperature.qmd
+                text: Water-year temperature
               - href: pages/temperature-extremes.qmd
                 text: Temperature extremes
               - href: pages/freeze-nights.qmd

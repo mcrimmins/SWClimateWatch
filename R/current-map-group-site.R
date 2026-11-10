@@ -28,7 +28,7 @@ current_site_groups <- function() {
     "freeze-monitoring"="Freeze dates and season length", "dry-spells"="Dry spells")
   for (key in names(titles)) base[[key]]$title <- unname(titles[[key]])
   base[["precipitation-ranks"]]$intro <- "Percentile ranks show how unusual precipitation is relative to corresponding 1991–2020 periods. A high percentile means wetter conditions; this is not percent of normal."
-  base[c("temperature-values", "temperature-departures", "temperature-daily-ranks", "temperature-rolling-ranks",
+  base[c("temperature-values", "temperature-departures", "temperature-daily-ranks", "temperature-rolling-ranks", "water-year-temperature",
     "temperature-extremes", "freeze-nights", "freeze-monitoring", "precipitation-totals", "precipitation-ranks",
     "precipitation-percent-normal", "precipitation-change", "water-year-precipitation", "water-year-extremes",
     "dry-spells", "wet-days", "snow-conditions")]
@@ -53,6 +53,11 @@ current_remaining_groups <- function() {
     "precipitation-change"=group("Recent precipitation change","Precipitation",
       row("change","Change in rank","map","14-day change","pcpn_percentile_change_30day_14day"),
       "Change in the 30-day precipitation percentile rank over the past 14 days, in percentile points. Positive values indicate a shift toward wetter conditions; this is not a precipitation total."),
+    "water-year-temperature"=group("Water-year temperature","Temperature",rbind(
+      row("mean","Mean temperature","map","Water year to date","tmean_water_year_mean"),
+      row("departure","Departure from normal","map","Water year to date","tmean_water_year_departure"),
+      row("rank","Percentile rank","map","Water year to date","tmean_water_year_percentile")),
+      "Mean temperature from October 1 through the map date. Departures and percentile ranks compare matching calendar-date periods in water years 1991–2020. Each daily mean is (maximum + minimum)/2; days receive equal weight. This is season-to-date context, not a completed-year rank. February 29 references interpolate the February 28 and March 1 cumulative means; missing daily pairs are not filled."),
     "water-year-precipitation"=group("Water-year precipitation","Precipitation",rbind(
       row("total","Total","map","Water year to date","pcpn_water_year_total"),
       row("normal","Percent of normal","map","Water year to date","pcpn_water_year_percent_normal"),

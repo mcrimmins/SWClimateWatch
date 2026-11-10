@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const siteMode = process.argv.includes('--site');
 const rootDir = siteMode ? 'site/pages' : 'data/diagnostics/temperature-tabs-preview';
-const groups = [...(siteMode ? ['temperature-values','temperature-departures','precipitation-totals','precipitation-ranks','temperature-extremes','freeze-nights','precipitation-percent-normal','precipitation-change','water-year-precipitation','water-year-extremes'] : []),
+const groups = [...(siteMode ? ['temperature-values','temperature-departures','precipitation-totals','precipitation-ranks','temperature-extremes','freeze-nights','precipitation-percent-normal','precipitation-change','water-year-temperature','water-year-precipitation','water-year-extremes'] : []),
   'temperature-daily-ranks', 'temperature-rolling-ranks', 'freeze-monitoring', 'dry-spells', 'wet-days', 'snow-conditions'];
 function fixture(group, query = '') {
   const html = fs.readFileSync(`${rootDir}/${group}.qmd`, 'utf8');

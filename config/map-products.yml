@@ -117,6 +117,32 @@ products:
       This map shows the latest PRISM daily minimum temperature at each grid cell in degrees F.
       Lower values mark colder overnight conditions; use the departure or percentile maps to judge whether they are unusual for the date.
 
+  tmean_water_year_mean:
+    section: Temperature
+    group: Water year
+    label: Water-year mean temperature
+    image: prism/temperature/tmean-water-year-mean-latest.png
+    description: >-
+      Mean daily temperature from October 1 through the map date, in degrees F.
+      Each day contributes equally with daily mean calculated as (maximum + minimum)/2; missing or invalid daily pairs remain unavailable.
+  tmean_water_year_departure:
+    section: Temperature
+    group: Water year
+    label: Water-year temperature departure
+    image: prism/temperature/tmean-water-year-departure-latest.png
+    description: >-
+      Water-year-to-date mean temperature minus the average of corresponding October 1-to-date means in water years 1991-2020, in degrees F.
+      Positive values are warmer and negative values cooler than the date-matched reference, not a completed-year comparison.
+  tmean_water_year_percentile:
+    section: Temperature
+    group: Water year
+    label: Water-year temperature percentile rank
+    scale: categorical
+    image: prism/temperature/tmean-water-year-percentile-latest.png
+    description: >-
+      Mean temperature since October 1 ranked against corresponding calendar-date periods in water years 1991-2020.
+      Higher percentiles indicate warmer conditions within the 30-year reference; this is not a full-record ranking.
+
   maxt_departure_daily:
     section: Temperature
     group: Daily departures

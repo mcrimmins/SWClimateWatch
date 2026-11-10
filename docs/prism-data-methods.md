@@ -731,6 +731,31 @@ previous calendar-day cache exists, a normal daily update reads only the newly
 required historical daily layers, while still checking the parent's source
 signature and file checksum.
 
+### `R/prism-water-year-temperature.R`
+
+The temperature companion uses daily `(maxt + mint)/2`, averaged from October 1
+through the latest common maximum/minimum-temperature date. Departures subtract
+the mean of matching water-year-to-date averages for WY1991–WY2020; ranks use
+the same type-8 empirical-percentile helper as the existing temperature maps.
+Each reference year is divided by its own actual day count. Missing daily
+values or inverted maximum/minimum pairs withhold the affected cell; no missing
+days are filled. February 29 references interpolate the February 28 and March 1
+cumulative means, rather than interpolating raw temperature sums.
+
+A single FLT8S reference-sum raster and checksum-verified state file are retained
+under the AOI's climatology directory in `water-year-temperature/`. Unchanged
+references are reused; later cutoffs can add the intervening daily layers,
+including gaps between update runs. Earlier source revisions, October rollover,
+or a February 29 interpolation transition cause a direct rebuild. This avoids
+retaining a separate thirty-layer cache for every calendar day.
+
+For a local build and page review, with no downloads or publication:
+
+```r
+source("scripts/build-water-year-temperature.R")
+source("scripts/preview-water-year-temperature.R")
+```
+
 ### `R/build-current-prism-water-year-maps.R`
 
 - `prism_current_water_year_total()` accumulates the current processed daily

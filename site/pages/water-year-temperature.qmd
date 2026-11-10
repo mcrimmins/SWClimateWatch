@@ -1,0 +1,33 @@
+---
+title: "Water-year temperature"
+page-layout: full
+toc: false
+---
+
+```{=html}
+<div class="current-group-preview" data-group="water-year-temperature">
+<p>Mean temperature from October 1 through the map date. Departures and percentile ranks compare matching calendar-date periods in water years 1991–2020. Each daily mean is (maximum + minimum)/2; days receive equal weight. This is season-to-date context, not a completed-year rank. February 29 references interpolate the February 28 and March 1 cumulative means; missing daily pairs are not filled.</p>
+<div class="temperature-variable-tabs" role="tablist" aria-label="Water-year temperature">
+<button type="button" id="group-tab-mean" role="tab" data-tab="mean" aria-controls="group-maps">Mean temperature</button>
+<button type="button" id="group-tab-departure" role="tab" data-tab="departure" aria-controls="group-maps">Departure from normal</button>
+<button type="button" id="group-tab-rank" role="tab" data-tab="rank" aria-controls="group-maps">Percentile rank</button>
+</div>
+<div class="temperature-period-control group-variant-control"><label for="group-variant">Display</label><select id="group-variant"></select></div>
+<div id="group-maps" role="tabpanel" aria-live="polite">
+<article class="group-map" data-product="tmean_water_year_mean" data-tab="mean" data-variant="map" data-option="Water year to date"><h2 class="group-map-heading">Water-year mean temperature</h2>
+<a href="../maps/generated/prism/temperature/tmean-water-year-mean-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/tmean-water-year-mean-latest.png" alt="Water-year mean temperature" loading="lazy"></a>
+<p>Mean daily temperature from October 1 through the map date, in degrees F. Each day contributes equally with daily mean calculated as (maximum + minimum)/2; missing or invalid daily pairs remain unavailable.</p>
+<p><a href="../maps/generated/prism/temperature/tmean-water-year-mean-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="tmean_water_year_departure" data-tab="departure" data-variant="map" data-option="Water year to date"><h2 class="group-map-heading">Water-year temperature departure</h2>
+<a href="../maps/generated/prism/temperature/tmean-water-year-departure-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/tmean-water-year-departure-latest.png" alt="Water-year temperature departure" loading="lazy"></a>
+<p>Water-year-to-date mean temperature minus the average of corresponding October 1-to-date means in water years 1991-2020, in degrees F. Positive values are warmer and negative values cooler than the date-matched reference, not a completed-year comparison.</p>
+<p><a href="../maps/generated/prism/temperature/tmean-water-year-departure-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="tmean_water_year_percentile" data-tab="rank" data-variant="map" data-option="Water year to date"><h2 class="group-map-heading">Water-year temperature percentile rank</h2>
+<a href="../maps/generated/prism/temperature/tmean-water-year-percentile-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/tmean-water-year-percentile-latest.png" alt="Water-year temperature percentile rank" loading="lazy"></a>
+<p>Mean temperature since October 1 ranked against corresponding calendar-date periods in water years 1991-2020. Higher percentiles indicate warmer conditions within the 30-year reference; this is not a full-record ranking.</p>
+<p><a href="../maps/generated/prism/temperature/tmean-water-year-percentile-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+</div></div><script src="../assets/current-map-groups/current-map-groups.js"></script>
+```

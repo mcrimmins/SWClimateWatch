@@ -108,6 +108,9 @@ map_product_categorical_classes <- function(
   } else if (grepl("percentile_change", product_id)) {
     boundaries <- c(-100, -50, -25, -10, 10, 25, 50, 100)
     labels <- c("<=-50", "-50--25", "-25--10", "-10-10", "10-25", "25-50", ">50")
+  } else if (identical(product_id, "tmean_water_year_departure")) {
+    boundaries <- c(-20,-5,-2,-1,1,2,5,20)
+    labels <- c("<=-5","-5--2","-2--1","-1-1","1-2","2-5",">5")
   } else if (grepl("departure_daily$", product_id)) {
     boundaries <- c(-30, -10, -5, 5, 10, 30)
     labels <- c("<=-10", "-10--5", "-5-5", "5-10", ">10")

@@ -3,6 +3,7 @@ testthat::test_that("default update plan includes every configured map", {
   plan <- plan_enabled_prism_map_updates(products)
   testthat::expect_equal(plan$temperature_values, c("maxt", "mint", "tmean"))
   testthat::expect_equal(plan$temperature_rolling_percentiles, c(7L, 30L, 90L))
+  testthat::expect_equal(plan$water_year_temperature,c("mean","departure","percentile"))
   testthat::expect_equal(plan$precipitation_totals, c(1L, 7L, 30L, 90L))
   testthat::expect_equal(plan$precipitation_accumulations, c(1L, 7L, 30L, 90L))
   testthat::expect_equal(
