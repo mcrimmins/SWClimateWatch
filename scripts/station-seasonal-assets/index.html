@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Station seasonal precipitation · Southwest Climate Watch</title>
+  <link rel="stylesheet" href="cumulative.css?v=annual-history"><script src="cumulative.js?v=annual-history" defer></script></head>
+<body><main>
+  <header><div><p class="eyebrow">Southwest Climate Watch · Local prototype</p>
+    <h1>Seasonal precipitation</h1><p id="snapshot">Loading cached station records…</p></div>
+    <span class="badge">Local review · Not published</span></header>
+  <p id="error" role="alert" hidden></p>
+  <section class="card controls">
+    <label>Station<select id="station" aria-label="Station"></select></label>
+    <label>Season<select id="season"><option value="water">Water year · Oct–Sep</option><option value="cool">Cool season · Oct–Mar</option><option value="monsoon">Monsoon · Jun 15–Sep 30</option></select></label>
+    <label>Plot period<select id="period"><option value="to-date">Season to date</option>
+      <option value="full">Full season</option></select></label>
+    <label>Comparison year<select id="comparison-year" disabled><option value="none">None</option></select></label>
+  </section>
+  <section id="station-card" class="card" aria-labelledby="station-title" hidden>
+    <h2 id="station-title">Cumulative precipitation</h2><p id="station-note" class="muted"></p>
+    <div id="stats" class="stats"></div><p id="matched" class="quality"></p>
+    <p id="history-status" class="history-status" role="status"></p>
+    <ul class="legend" aria-label="Plot lines"><li class="current" id="current-label">Current water year</li>
+      <li class="previous" id="previous-label">Comparison water year</li><li class="normal" id="normal-label">Climatological average</li>
+      <li id="band-label" class="band">Typical range (middle 50%)</li>
+      <li id="records-label" class="records">Historical high / low</li></ul>
+    <p id="comparison-status" class="muted small" role="status" aria-live="polite"></p>
+    <svg id="plot" viewBox="0 0 960 360" role="img" aria-label="Cumulative seasonal precipitation in inches"></svg>
+    <label class="inspect">Inspect date<input id="inspect" type="range" min="0" max="364" value="0"></label>
+    <div id="readout" class="readout" aria-live="polite"></div>
+    <p id="quality" class="quality"></p>
+    <p class="muted small">Hover or tap the plot, or use the date slider and arrow keys, to compare accumulation on the same calendar date.</p>
+  </section>
+  <section id="annual-history" class="card annual-history" aria-labelledby="annual-title" hidden>
+    <h2 id="annual-title">Historical seasonal precipitation</h2>
+    <p id="annual-note" class="muted small"></p>
+    <ul class="legend annual-legend" aria-label="Historical totals legend">
+      <li class="annual-wet" id="annual-wet-label">Above average</li><li class="annual-dry" id="annual-dry-label">Below average</li>
+      <li class="annual-total" id="annual-neutral-label">At average</li>
+      <li class="normal" id="annual-normal-label">1991–2020 average</li>
+      <li class="annual-gap">Incomplete / unavailable year</li>
+      <li class="annual-current-key">Current year* · hatched, season to date</li>
+    </ul>
+    <svg id="annual-plot" viewBox="0 0 960 300" role="img" aria-label="Historical seasonal precipitation totals and hatched current season-to-date amount in inches"></svg>
+    <label class="inspect">Inspect season year<input id="annual-inspect" type="range" min="0" max="0" value="0"></label>
+    <div id="annual-readout" class="readout" aria-live="polite"></div>
+    <p id="annual-current" class="quality"></p>
+    <p class="muted small">Hover or tap a year, or use the slider and arrow keys. Gaps are incomplete or unavailable years, not zero rainfall. Water years run October 1–September 30.</p>
+  </section>
+  <details class="card methods"><summary>How to read these plots</summary>
+<p>Water years run October 1–September 30; cool seasons October 1–March 31; monsoons June 15–September 30. Cross-year seasons are named for their ending year. The latest started season is shown; after it ends, its completed totals remain until the next season starts.</p>
+<p>Daily QC is identical to the existing cumulative plot: trace is zero, missing or flagged reports are not filled, and cumulative lines stop at the first unusable day. A later observed subtotal is only a lower bound. Unsupported comparisons are withheld.</p>
+<p>Rank and percentile compare the same start and calendar cutoff in earlier seasons. At least 30 complete matching historical periods are required. Wet rank includes the current season; ties share the best rank. Percentiles use midpoint ties against earlier seasons. Departures and percent of average require at least 20 usable matching periods in 1991–2020; percent of average is withheld for a zero average. These samples can include seasons with gaps after the cutoff.</p>
+<p>The cumulative average and middle-50% band use at least 20 complete full seasons from 1991–2020. Historical bounds and closest progression use at least 30 complete earlier seasons, excluding the current season. These may have a smaller sample than the matching-period statistics. Closest progression minimizes cumulative RMSE through the cutoff, breaks ties with the latest year, and is not a forecast.</p>
+<p>Historical bars show completed full-season totals. The separate hatched latest-season bar is labeled complete or season to date; a partial bar is never ranked against completed totals. Gaps are unavailable, not zero. February 29 is omitted as a separate plotted point; its precipitation enters March 1 and later totals. On February 29, matching comparisons explicitly stop at February 28 for all years.</p>
+<p>Source: cached RCC-ACIS station observations. Fixed stations and ThreadEx series retain their own identities. Local prototype only; no production changes or new data requests.</p>
+</details>
+</main></body></html>

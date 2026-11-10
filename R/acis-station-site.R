@@ -38,6 +38,11 @@ swc_station_beta_snapshot <- function(directory) {
   if (grepl("cumulative/index.html", explorer_js, fixed = TRUE))
     validate_acis_station_cumulative_site(file.path(directory, "cumulative"),
       unique(rows$uid), rows$as_of[[1L]])
+  if (grepl("seasonal/index.html", explorer_js, fixed = TRUE)) {
+    context <- new.env(parent=environment())
+    sys.source(file.path("R","acis-station-seasonal-pilot.R"),envir=context)
+    context$validate_station_seasonal_integration(directory)
+  }
   list(date = as.Date(rows$as_of[[1L]]), rows = rows,
        stations = length(unique(rows$uid)),
        mapped = length(unique(rows$uid[rows$role == "fixed"])),
@@ -78,6 +83,9 @@ swc_station_beta_stage <- function(
   if (dir.exists(file.path(source_dir, "cumulative")) &&
       !file.copy(file.path(source_dir, "cumulative"), stage, recursive = TRUE))
     stop("Could not copy cumulative station resources; last good page retained.")
+  if (dir.exists(file.path(source_dir, "seasonal")) &&
+      !file.copy(file.path(source_dir, "seasonal"), stage, recursive = TRUE))
+    stop("Could not copy seasonal station resources; last good page retained.")
   swc_station_beta_snapshot(stage)
   had_previous <- dir.exists(destination)
   if (had_previous && !file.rename(destination, backup))

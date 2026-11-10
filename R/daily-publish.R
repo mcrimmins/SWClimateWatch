@@ -424,6 +424,11 @@ swc_daily_publish_validate_stations <- function(output_dir) {
     get("validate_acis_station_cumulative_site", envir = context)(file.path(station_dir, "cumulative"),
       unique(rows$uid), rows$as_of[[1L]])
   }
+  if (grepl("seasonal/index.html", explorer_js, fixed = TRUE)) {
+    context <- new.env(parent=environment())
+    sys.source(file.path("R","acis-station-seasonal-pilot.R"),envir=context)
+    context$validate_station_seasonal_integration(station_dir)
+  }
   invisible(TRUE)
 }
 
