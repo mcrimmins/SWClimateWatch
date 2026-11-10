@@ -1,6 +1,6 @@
 # Development roadmap
 
-Planning review: November 8, 2026. This is the consolidated backlog, not a
+Planning review: November 9, 2026. This is the consolidated backlog, not a
 commitment to enable every candidate product. No production settings change
 when this document is edited.
 
@@ -35,6 +35,10 @@ Live features include:
 - Current Snow observed SWE, absolute departure, supported percent of median,
   and exact seven-day net change. Historic peak SWE and snow-covered-day maps
   are published; seasonal snow anomaly companions remain local pilots.
+- Home Maps/Synopsis tabs and the standalone template synopsis, including
+  seasonal snow storage/change highlights, dated supporting evidence for every
+  quantitative selected bullet, and matching maps for selected seven-day
+  temperature departures. AI synthesis remains deferred.
 - PRISM attempts yesterday's complete maximum/minimum/precipitation set and
   falls back when it cannot validate the complete set.
 
@@ -54,8 +58,8 @@ release `e78825a46737b7adff7f999032f3ffa9fcc2834c` in the project conversation
 **Design PRISM RCC-ACIS downloads**. This release includes the earlier Analytics,
 station annual precipitation bars and deterministic template synopsis commits.
 The previous production-promotion wait is closed; GA4 Realtime collection still
-needs separate confirmation. Regional snow narrative remains a synopsis follow-up,
-and AI synthesis remains deferred.
+needs separate confirmation. Regional snow narrative was still a follow-up at
+that review; its production completion is recorded below. AI remains deferred.
 
 The reported production run finished successfully in **12m 50s** (runner elapsed
 771 seconds). It validated **51/51 current and 352/352 historic maps**, updated
@@ -74,28 +78,54 @@ the window. No second cron is needed. The next automatic cycle targets November
 2026 during December 1–5. External Drought and Grazing hotlink exports and link
 replacement are not confirmed complete by this production report.
 
-**Latest patch: staging approved, production completion unconfirmed.** Commit
-`7fbd6e47526ef0dd186662108c108057d492201d` simplifies Current Maps navigation,
-finishes grouped temperature/precipitation pages, cleans up Home with collapsed
-reading notes and a compact Historical context bar, renames Methods to About
-while retaining `methods.html`, documents SPI methods, and removes “Local pilot”
-from SPI image footers. The user reported that everything looks good on staging
-and requested production promotion commands; those commands were supplied.
-Record successful production publication and review before marking this patch
-live. The local SPI display refresh rebuilt four maps, reused eight ranking maps
-and all four fits, and made zero source requests. See the
+**Navigation/About/SPI-footer patch: now live.** The subsequent production
+promotion includes the earlier `7fbd6e4` navigation/grouping, Home cleanup,
+About-page/SPI-method documentation and SPI-footer changes. The user confirmed
+that the resulting production site looks good on November 9. The original
+local SPI display refresh rebuilt four maps, reused eight ranking maps and all
+four fits, and made zero source requests. See the
 [patch release guide](spi-footer-about-release.md).
 
-### November 9 local synopsis follow-up
+### November 9 production synopsis follow-up — complete
 
-At the user's request, regional snow highlights and a full supporting-link review
-are now implemented locally for review. Each quantitative bullet has a dated
-supporting page; a selected seven-day temperature claim has its own matching
-map. Snow storage and exact seven-day net SWE change use explicit AZ/NM area,
-reference and coverage guards, with configurable seasonal selection. Local
-weather/snow galleries and publication resource-integrity checks accompany the
-increment. Staging and production are still pending; do not mark this live.
-See [synopsis increment details and review commands](conditions-synopsis-scope.md#november-9-local-increment-linked-evidence-and-snow-context).
+The user confirmed successful production publication and review after staging.
+This closes the regional snow narrative and supporting-link work:
+
+- Seasonal snow storage and exact seven-day net SWE-change highlights use
+  explicit AZ/NM area, reference, coverage and recency guards.
+- Every selected quantitative bullet has a dated supporting page; a selected
+  seven-day temperature claim has its own matching departure map.
+- Seasonal selection, a maximum of three bullets per section, source-specific
+  dates, unsupported-claim withholding and success-only comparison snapshots
+  remain in place. Fictional cases and review candidates remain unpublished.
+- The site-only publisher now reconciles Monthly Climate from verified local
+  cached releases before rendering, repairing page/asset mismatches after
+  checkout. An already matching release uses the fast checksum-only path.
+
+Local tests and all 31 fictional seasonal review cases passed. A local cached
+two-pass staging check passed in 17.03 and 9.52 seconds, with identical supporting
+outputs and snow-cache reuse. These are laptop smoke-test timings, not a new
+production-run benchmark. The exact final VM commit hash and production elapsed
+time were not supplied with this confirmation; do not infer them from local HEAD.
+No downloads or AI calls were added for the synopsis increment. Continue routine
+monitoring of source freshness, reference support, storage and daily timing.
+
+See [implemented synopsis scope](conditions-synopsis-scope.md#november-9-production-increment-linked-evidence-and-snow-context).
+
+### November 9 expanded hotlink scope — local implementation
+
+The user expanded stable image URLs from the two Drought and Grazing products
+to **all published map images** for reuse by other projects. A local increment
+adds predictable `maps/latest/` endpoints for rolling products and a searchable
+HTML/CSV/JSON catalog covering both rolling and dated maps. Current PRISM, snow,
+all twelve monthly products, daily PRISM maps, CORe maps, historic-season maps
+and selected weekly-temperature support maps are included. Original URLs remain
+available. Missing/disabled latest products use notice images; integrity checks
+run after normal publication validation and optional weather quarantine. Aliases
+reuse existing PNGs, with short requested caching and no new source downloads.
+Local review and then VM staging/production promotion are pending. This does not
+complete external dashboard embedding or an Arizona-only export. See
+[stable map link contract and review steps](map-hotlinks.md).
 
 ## Priority order and working sequence
 
@@ -106,9 +136,9 @@ that work ahead of discretionary features.
 
 | Priority | Work | Next bounded step and completion evidence |
 | --- | --- | --- |
-| P0 — close the release | Confirm latest navigation/About/SPI-footer patch promotion | Monthly integration production publication is confirmed. Latest patch 7fbd6e4 passed user staging review; promotion commands supplied, completion pending. Confirm live layout and corrected SPI footers, and separately verify GA4 Realtime. November 8 weather coverage is complete. A real publication/data failure takes precedence over new features. |
-| P1 — existing follow-up | Template conditions synopsis | Template integration is included in the confirmed production release. Regional snow narrative remains pending and explicitly disclosed; Current Snow is linked. Retain seasonal/evidence review and publication-comparison safeguards. AI experiments and the proposed daily AI page remain deferred. See [scope](conditions-synopsis-scope.md). |
-| P2 — next project 1 | Monthly PRISM external deliverable | Monthly Climate and automatic daily-runner integration are live through October 2026. Remaining external deliverable: review hotlinkable SPI-12 and 12-month temperature-ranking exports for Drought and Grazing, verify stable URLs/embedding and confirm link replacement. Monitor the first automatic new-month cycle; keep broader SPI validation separate. |
+| P0 — ongoing operations | Monitor the confirmed production release | Navigation/About/SPI-footer and snow/evidence synopsis releases are confirmed live November 9. Check the next scheduled run and source freshness; address actual failures before adding features. GA4 Realtime collection still needs separate confirmation. |
+| Complete — monitor | Template conditions synopsis | Seasonal snow narrative, dated supporting evidence and matching weekly-temperature maps are confirmed live November 9. Retain seasonal tests, reference/coverage guards and successful-publication comparisons. AI and the daily AI page remain deferred. See [scope](conditions-synopsis-scope.md). |
+| P1 — active local increment | Stable URLs for all map images and monthly external deliverable | Review/stage the all-map hotlink catalog and latest endpoints described in [map-hotlinks.md](map-hotlinks.md). Then complete external embedding of SPI-12 and 12-month temperature-ranking image exports for Drought and Grazing. First verify whether any exports/links already exist, then agree Arizona extent, dimensions and standalone labels. Reuse existing monthly products; test stable and dated URLs, embedding and cache refresh before replacing external links. Monitor the first automatic new-month cycle; broader SPI validation remains separate. |
 | P2 — next project 2 | Station seasonal precipitation histories | Extend the reviewed annual chart to explicitly defined cool-season and monsoon totals, reusing station caches and completeness rules. Keep regional historical maps separate. |
 | P2 — next project 3 | Recent-period weather means | Inventory retained numeric CORe fields; prototype a small 7-/30-day 500-mb/PWAT mean set with completeness checks and measured cost. Anomaly baselines follow separately. |
 | P2 — next project 4 | Historic seasonal snow anomalies | Validate existing peak-SWE departure/percent-of-median pilots and stage eligible years with support guards. Reorder within P2 if cool-season monitoring makes this more useful sooner. |
@@ -121,8 +151,10 @@ that work ahead of discretionary features.
 | Later — feasibility exploration | Interactive raster map page | Explore selectable existing raster products over a basemap, adjustable transparency, zoom/pan and pixel-value queries. Benchmark a small static-site pilot before selecting delivery methods or scheduling implementation. See [scope](#new-exploration-interactive-raster-map-page). Existing commitments and agreed climatology order remain unchanged. |
 | Later — polish | Consistency and optional interactions | Shared city-label styling, historic RONI labels at the next archive refresh, custom Analytics events and remaining documentation reconciliation. |
 
-November 8 working sequence: close the latest patch's production confirmation,
-retain synopsis follow-ups and finish the external monthly-map deliverable.
+November 9 proposed working sequence: the latest production promotion is
+confirmed and the synopsis follow-up is complete. Next, close the external
+monthly-map deliverable, beginning with an inventory of existing exports and
+an agreed standalone image layout.
 Keep station seasonal precipitation histories, recent-period weather means and
 historic snow anomalies in their existing order ahead of the November 6
 climatology additions. Heat metrics remain deferred until spring 2027.
@@ -142,7 +174,7 @@ those pages are next refreshed.
 
 | Workstream | Next bounded step | Relative effort |
 | --- | --- | --- |
-| Conditions synopsis / daily text summary (requested November 4, 2026) | Template integration is included in the confirmed production release. Regional snow narrative and remaining seasonal/evidence review are follow-ups. AI remains deferred. See the [first-increment scope](conditions-synopsis-scope.md). | Integrated; follow-ups remain |
+| Conditions synopsis / daily text summary (requested November 4, 2026) | Confirmed live November 9, including seasonal snow highlights and dated evidence links for quantitative selected bullets. Matching seven-day temperature maps and resource-integrity checks are included. Retain routine seasonal/source monitoring; AI remains deferred. See [implemented scope](conditions-synopsis-scope.md). | Complete; monitor |
 | Recent-period weather means and anomalies (requested November 2, 2026) | Scope trailing 7- and 30-day circulation/moisture means using cached CORe fields; separately assess calendar-matched anomaly baselines, missing-day guards, interpretation and update costs. Prototype means before committing to historical baseline acquisition. | Moderate for means; larger for validated anomalies |
 | Station water-year precipitation curves (requested November 1, 2026) | Live November 4 for 62 records: current cumulative precipitation, historical-year selection, WY1991-2020 mean and middle-50% band, record bounds, closest progression and interactive inspection. Historical/reference caches support daily builds. Review production cache timing; optional background curves remain deferred. | Live; monitor |
 | Historical seasonal and water-year time series (requested November 1, 2026) | Annual station bars are included in the confirmed production release. Completed-year totals and a supported normal line reuse the cumulative-history catalog; a hatched current season-to-date bar is excluded from full-year comparisons. Seasonal and regional summaries follow separately. | Annual integrated; seasonal extension moderate |
@@ -794,10 +826,11 @@ these products to the operational daily cycle.
 
 ## New exploration: conditions synopsis and daily change summary
 
-**November 8 status:** deterministic template integration is included in the
-confirmed production release. Earlier local-pilot and first-task descriptions
+**November 9 status:** the deterministic template and its regional snow/evidence
+follow-up are confirmed live. Earlier local-pilot and first-task descriptions
 below are development history, not instructions to restart implementation.
-Regional snow narrative remains pending; AI synthesis remains deferred.
+The current scope includes supported seasonal snow context and direct dated
+evidence for quantitative selected bullets. AI synthesis remains deferred.
 
 **Active decision, November 5:** move forward with the template synopsis.
 AI interpretation and an unlisted daily AI review page are deferred. The optional
@@ -931,8 +964,10 @@ and [production guidance](https://developers.openai.com/api/docs/guides/producti
 ## Suggested sequence
 
 Follow the [priority order above](#priority-order-and-working-sequence).
-Confirm production completion of the staging-approved navigation/About/SPI-footer
-patch, retain synopsis follow-ups and finish the external monthly-map deliverable.
+Production completion of the navigation/About/SPI-footer patch and the snow/
+evidence synopsis follow-up is confirmed. The next recommended increment is
+the external monthly-map deliverable: stable SPI-12 and 12-month temperature
+ranking images for Drought and Grazing, using existing monthly caches.
 Then follow the existing project order before the agreed station/regional
 climatology additions; defer heat metrics until spring 2027. Move one bounded
 increment through local review, staging and explicit promotion before adding

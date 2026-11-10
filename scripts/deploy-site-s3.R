@@ -45,6 +45,12 @@ swc_deploy_sync_args <- function(output_dir, destination, region, dry_run, delet
   )
 }
 
+swc_deploy_hotlink_sync_args <- function(output_dir,destination,region,dry_run) {
+  destination<-swc_deploy_destination(destination)
+  c(swc_deploy_sync_args(file.path(output_dir,"maps/latest"),paste0(destination,"maps/latest/"),region,dry_run,FALSE),
+    "--cache-control",shQuote("public,max-age=300,must-revalidate"))
+}
+
 swc_deploy_run <- function(command, args, label) {
   message(label, "...")
   status <- system2(command, args = args, stdout = "", stderr = "")
@@ -147,9 +153,18 @@ deploy_swc_site <- function(
   validate_conditions_synopsis_publication(output_dir, destination)
   output_dir <- normalizePath(output_dir, winslash = "/", mustWork = TRUE)
   if (!is.null(extra_validation)) extra_validation(output_dir)
+  # Derive hotlinks from the fully validated rendered output, including any
+  # optional weather quarantine applied above. No climate processing occurs.
+  for(file in c("config.R","acis-prism.R","process-prism.R","map-product-site.R","map-hotlinks.R"))
+    source(file.path("R",file),local=TRUE)
+  map_hotlinks <- stage_map_hotlinks(output_dir,destination)
+  validate_map_hotlinks(output_dir)
+  swc_deploy_run(aws,
+    swc_deploy_hotlink_sync_args(output_dir,destination,region,dry_run),
+    if(dry_run)"Preview stable map links" else "Upload stable map links")
   swc_deploy_run(
     aws,
-    swc_deploy_sync_args(output_dir, destination, region, dry_run, delete),
+    c(swc_deploy_sync_args(output_dir, destination, region, dry_run, delete),"--exclude",shQuote("maps/latest/*")),
     if (dry_run) "Preview S3 sync" else "Upload site to S3"
   )
   if (dry_run) {
@@ -159,5 +174,5 @@ deploy_swc_site <- function(
     message("Site sync complete: ", destination)
   }
   invisible(list(destination = destination, dry_run = dry_run, delete = delete,
-                 validation = validation))
+                 validation = validation,hotlinks=nrow(map_hotlinks)))
 }

@@ -46,3 +46,19 @@ testthat::test_that("site renders reconcile monthly pages from cached local rele
   helper<-paste(readLines(file.path(project_root,"scripts/stage-cached-prism-monthly-site.R")),collapse="\n")
   testthat::expect_false(grepl("run_prism_monthly_update(",helper,fixed=TRUE))
 })
+
+
+testthat::test_that("stable images are uploaded separately with short caching and without deletion", {
+  args<-swc_deploy_hotlink_sync_args("/tmp/site","s3://bucket/climate/watch/","us-west-2",TRUE)
+  testthat::expect_true("--dryrun" %in% args)
+  testthat::expect_false("--delete" %in% args)
+  testthat::expect_true("--cache-control" %in% args)
+  testthat::expect_true(any(grepl("public,max-age=300,must-revalidate",args,fixed=TRUE)))
+  testthat::expect_true(any(grepl("s3://bucket/climate/watch/maps/latest/",args,fixed=TRUE)))
+  script<-readLines(file.path(project_root,"scripts/deploy-site-s3.R"))
+  create<-grep("map_hotlinks <- stage_map_hotlinks",script,fixed=TRUE)
+  optional<-grep("extra_validation(output_dir)",script,fixed=TRUE)
+  upload<-grep("Upload stable map links",script,fixed=TRUE)
+  testthat::expect_true(optional<create&&create<upload)
+  testthat::expect_true(any(grepl('shQuote("maps/latest/*")',script,fixed=TRUE)))
+})

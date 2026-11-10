@@ -1,12 +1,13 @@
-# Conditions synopsis: first increment
+# Conditions synopsis: implemented scope and development history
 
-Scoped November 4, 2026. This is a local development plan, not an enabled daily
-product or authorization to begin paid API calls. See the prioritized
+Scoped November 4, 2026; production completion confirmed November 9. The
+template and snow/evidence follow-up are live. Historical pilot notes below
+do not authorize paid API calls. See the prioritized
 [development roadmap](development-roadmap.md#priority-order-and-working-sequence).
 
-## November 9 local increment: linked evidence and snow context
+## November 9 production increment: linked evidence and snow context
 
-Implemented locally for review; not yet staged or promoted. The template now
+Staging review and production publication are confirmed by the user. The template now
 writes a human-readable supporting page for every quantitative selected bullet.
 These pages retain the exact periods, values, denominators, references and
 station comparison support used in the prose. Related current-product links are
@@ -78,15 +79,17 @@ formatting, station eligibility rules and regional highlight candidates.
 Relationship-led explanatory text may be revisited as deterministic wording;
 the AI introduction remains an experiment, not part of the active template.
 
-Next template milestones, in order:
+Completed template milestones:
 
-1. Add supported regional snow context with reference-area and coverage guards.
-2. Compare changes and event novelty with the last **successful publication**,
-   rather than the current local-preview history.
-3. Prepare the standalone template page, publication validation and fallback,
-   then benchmark the added work on VM staging before production promotion.
+1. Supported regional snow context with reference-area and coverage guards.
+2. Changes and event novelty compared with the last **successful publication**.
+3. Home/standalone publication, fallback and validation, followed by staging and
+   user-confirmed production promotion.
 
-**Staging implementation:** Home now has Maps (default) and Synopsis tabs, with
+Continue source/seasonal monitoring. A new production runtime benchmark remains
+separate from the recorded local smoke-test timings.
+
+**Production implementation:** Home has Maps (default) and Synopsis tabs, with
 the same selected template content at `pages/synopsis.html`. The common deploy
 path stages cached evidence before rendering, validates both rendered copies
 and their dates/status, and advances a destination-specific synopsis comparison
@@ -96,11 +99,11 @@ the comparison. A failed evidence build publishes an explicit waiting notice
 rather than unmarked older prose and does not advance the climate baseline.
 The production display excludes review candidates, synthetic cases and AI prose.
 
-Initial staging is intentionally limited to the reviewed precipitation,
-temperature and station template, with a link to Current Snow and an explicit
-note that regional snow narrative is pending. Staging performance measurements
-and actual VM publication still need to be collected. Deployment commands are
-in [Synopsis staging release](synopsis-staging.md).
+The initial staging release was limited to precipitation, temperature and
+stations. That limitation is superseded by the November 9 snow/evidence
+increment. User review confirms production publication; exact production timing
+has not been supplied. Deployment/retest commands are retained in
+[Synopsis staging release](synopsis-staging.md).
 
 The AI sections later in this document record historical experiments and possible
 future work; they do not override this active decision.

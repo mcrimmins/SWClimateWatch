@@ -114,3 +114,11 @@ Each available Historic Years page summarizes a water year without labeling the 
 - **Completed snow season:** Where SNODAS is available, peak SWE is the maximum screened daily SWE during October–May, and snow-covered days count valid days with SWE of at least **0.1 inch**. Each cell needs valid observations on at least **90% of all calendar days** in that season, including source-missing dates; otherwise both values are withheld. Snow-day counts are not expanded to fill gaps, and peak values can miss events on unavailable days. Documented suspect peak cells are masked separately from the unchanged source grids. These maps describe peak water storage and snow persistence, not accumulated snowfall. Seasonal peak-SWE anomaly and percent-of-median products remain development pilots and are not yet part of Historic Years.
 
 The data-processing and map-generation methods are available in the [Southwest Climate Watch GitHub repository](https://github.com/mcrimmins/SWClimateWatch).
+
+## Map images for other websites
+
+The searchable map-link catalog provides direct image URLs for use in other projects. **Latest** links follow the most recent accepted publication; **Dated** links identify an observation day or historic season. Different sources can have different data-through dates. Unavailable latest products display a notice image.
+
+```{=html}
+<p><a href="../maps/catalog.html">Browse and copy map image URLs</a> · <a href="../maps/catalog.csv">Download the URL catalog</a></p>
+```

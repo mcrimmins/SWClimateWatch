@@ -2,7 +2,8 @@
 
 ## November 9: snow and directly linked evidence
 
-This increment is locally approved and ready for VM staging testing. It adds
+Production publication and user review are confirmed November 9. The commands
+below are retained for retesting and future releases. This increment adds
 seasonal snow storage/change highlights, dated supporting pages for every
 quantitative bullet, and a matching map for selected seven-day temperature
 departures. No new input downloads are required. The old release instructions
