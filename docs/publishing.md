@@ -111,6 +111,20 @@ deleted. It is safe to rerun: existing downloads and processed data are reused,
 and the site sync is skipped if its source content has not changed since the
 last successful daily publication. This is a manual command, not a scheduler.
 
+Station Conditions now refreshes water-year (October–September), cool-season
+(October–March), and monsoon (June 15–September 30) precipitation plots during
+the normal station update. Matching-date ranks, percentiles and departures
+refresh with the station cache date. Missing or flagged precipitation continues
+to withhold unsupported comparisons.
+
+Historical screening caches live in
+`data/processed/acis-stations/seasonal-history/`. New current-season reports
+reuse those references; revisions to earlier observations or a season rollover
+rebuild the affected references. The first run on each VM checkout must create
+them. Generated browser files live under `site/stations/seasonal/` after staging
+and are validated again after rendering. No separate cron entry, extra station
+download, or manual seasonal staging script is required for daily operation.
+
 ## Which command should I use?
 
 | Purpose | RStudio Console command | Changes the live site? |

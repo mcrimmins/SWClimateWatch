@@ -7,6 +7,7 @@ source(file.path("R", "map-southwest.R"))
 source(file.path("R", "acis-station-current-prototype.R"))
 source(file.path("R", "acis-station-explorer-prototype.R"))
 source(file.path("R", "acis-station-cumulative-pilot.R"))
+source(file.path("R", "acis-station-seasonal-pilot.R"))
 
 as_of_text <- Sys.getenv("SWC_ACIS_EXPLORER_AS_OF", "")
 as_of <- if (nzchar(as_of_text)) as.Date(as_of_text) else NULL

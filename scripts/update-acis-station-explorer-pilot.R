@@ -8,6 +8,7 @@ source(file.path("R", "map-southwest.R"))
 source(file.path("R", "acis-station-current-prototype.R"))
 source(file.path("R", "acis-station-explorer-prototype.R"))
 source(file.path("R", "acis-station-cumulative-pilot.R"))
+source(file.path("R", "acis-station-seasonal-pilot.R"))
 source(file.path("R", "acis-station-explorer-update-pilot.R"))
 
 as_of_text <- Sys.getenv("SWC_ACIS_EXPLORER_AS_OF",

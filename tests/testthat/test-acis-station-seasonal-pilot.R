@@ -8,6 +8,28 @@ seasonal_fixture <- function() {
 }
 seasonal_station <- data.frame(uid=1L,sid="test",name="Test",state="AZ",role="fixed")
 
+testthat::test_that("daily seasonal writer reuses history and detects revisions and rollovers", {
+  root <- tempfile("seasonal-daily-");dir.create(root)
+  on.exit(unlink(root,recursive=TRUE),add=TRUE)
+  cache <- seasonal_fixture()
+  build <- function(cache,date="2026-11-03") write_acis_station_seasonal_site(
+    seasonal_station,list(cache),as.Date(date),root,file.path(root,"references"),
+    file.path(project_root,"scripts","station-seasonal-assets"))
+  first <- build(cache)
+  testthat::expect_false(any(first$history_reused))
+  testthat::expect_true(all(build(cache)$history_reused))
+  cache$daily$numeric_value[cache$daily$date==as.Date("2026-11-04")] <- .5
+  testthat::expect_true(all(build(cache,"2026-11-04")$history_reused))
+  p <- jsonlite::read_json(file.path(root,"seasonal","water","1.json"))
+  testthat::expect_equal(p$snapshot_date,"2026-11-04")
+  testthat::expect_equal(p$current$total,3.9,tolerance=1e-8)
+  cache$daily$numeric_value[cache$daily$date==as.Date("1995-11-04")] <- 2
+  testthat::expect_false(any(build(cache,"2026-11-04")$history_reused))
+  rollover <- build(cache,"2027-06-15")
+  testthat::expect_false(rollover$history_reused[rollover$season=="monsoon"])
+  testthat::expect_true(all(rollover$history_reused[rollover$season!="monsoon"]))
+})
+
 testthat::test_that("seasons reset independently and use the latest started season", {
   cache <- seasonal_fixture()
   cache$daily$observed[cache$daily$date==as.Date("2025-12-01")] <- FALSE

@@ -1,4 +1,4 @@
-# Local seasonal prototype. Uses only cached observations; production is unchanged.
+# Seasonal precipitation plots, using the station updater's cached observations.
 acis_precipitation_seasons <- list(
   water = list(label = "Water year", start = "10-01", end = "09-30", cross = TRUE),
   cool = list(label = "Cool season", start = "10-01", end = "03-31", cross = TRUE),
@@ -32,7 +32,8 @@ acis_precipitation_season <- function(daily, season, year, through = NULL) {
 }
 
 acis_station_seasonal_payload <- function(station, cache, season, as_of,
-    baseline_years = 1991:2020, minimum_baseline = 20L, minimum_history = 30L) {
+    baseline_years = 1991:2020, minimum_baseline = 20L, minimum_history = 30L,
+    historical = NULL) {
   snapshot <- as.Date(as_of)
   s <- acis_precipitation_seasons[[season]]
   year <- as.integer(format(snapshot, "%Y"))
@@ -50,11 +51,18 @@ acis_station_seasonal_payload <- function(station, cache, season, as_of,
   n <- nrow(points)
   last <- max(which(points$date <= cutoff))
   daily <- cache$daily[cache$daily$variable == "pcpn", ]
-  years <- if (nrow(daily)) seq.int(as.integer(format(min(daily$date), "%Y")), year - 1L) else integer()
-  years <- years[years < year]
-  curves <- lapply(years, function(y) acis_precipitation_season(daily, season, y))
-  samples <- if (length(curves)) vapply(curves, aligned, numeric(n)) else matrix(numeric(), n, 0L)
-  complete <- if (length(curves)) vapply(curves, function(x) all(is.finite(x$cumulative_inches)), logical(1)) else logical()
+  if (is.null(historical)) {
+    years <- if (nrow(daily)) seq.int(as.integer(format(min(daily$date), "%Y")), year - 1L) else integer()
+    years <- years[years < year]
+    curves <- lapply(years, function(y) acis_precipitation_season(daily, season, y))
+    samples <- if (length(curves)) vapply(curves, aligned, numeric(n)) else matrix(numeric(), n, 0L)
+    complete <- if (length(curves)) vapply(curves, function(x) all(is.finite(x$cumulative_inches)), logical(1)) else logical()
+    historical <- list(years=years,samples=samples,complete=complete,season=season,year=year)
+  } else {
+    stopifnot(identical(historical$season,season),historical$year==year,
+      nrow(historical$samples)==n,ncol(historical$samples)==length(historical$years))
+    years <- historical$years; samples <- historical$samples; complete <- historical$complete
+  }
   eligible <- complete & years %in% baseline_years
   normal <- lower <- upper <- rep(NA_real_, n)
   if (sum(eligible) >= minimum_baseline) {
@@ -65,7 +73,7 @@ acis_station_seasonal_payload <- function(station, cache, season, as_of,
   # Prefix-complete historical seasons may contribute even if later dates have gaps.
   matched <- if (length(years)) apply(samples[seq_len(last), , drop = FALSE], 2L,
                                     function(x) all(is.finite(x))) else logical()
-  historical <- samples[last, matched]
+  historical_values <- samples[last, matched]
   base <- matched & years %in% baseline_years
   average <- if (sum(base) >= minimum_baseline) mean(samples[last, base]) else NA_real_
   value <- points$cumulative_inches[last]
@@ -75,11 +83,11 @@ acis_station_seasonal_payload <- function(station, cache, season, as_of,
     baseline_years = sum(base), available = supported, average_inches = average,
     departure_inches = if (is.finite(value)) value - average else NA_real_,
     percent_average = if (is.finite(value) && is.finite(average) && average > 0) 100 * value/average else NA_real_,
-    wet_rank = if (supported) 1L + sum(historical > value + tolerance) else NA_integer_,
-    rank_sample = if (supported) length(historical) + 1L else NA_integer_,
-    tied_years = if (supported) sum(abs(historical - value) <= tolerance) else NA_integer_,
-    percentile = if (supported) 100 * (sum(historical < value - tolerance) +
-      .5 * sum(abs(historical - value) <= tolerance))/length(historical) else NA_real_,
+    wet_rank = if (supported) 1L + sum(historical_values > value + tolerance) else NA_integer_,
+    rank_sample = if (supported) length(historical_values) + 1L else NA_integer_,
+    tied_years = if (supported) sum(abs(historical_values - value) <= tolerance) else NA_integer_,
+    percentile = if (supported) 100 * (sum(historical_values < value - tolerance) +
+      .5 * sum(abs(historical_values - value) <= tolerance))/length(historical_values) else NA_real_,
     note = paste("Matching calendar dates; rank includes current season, percentile compares earlier seasons.",
       "At least 30 complete historical prefixes and 20 baseline prefixes for departures.",
       if (leap_cutoff) "February 29 comparisons use February 28 for every year." else ""))
@@ -134,7 +142,63 @@ acis_station_seasonal_payload <- function(station, cache, season, as_of,
       lower = round(lower,4), upper = round(upper,4), subtotal = round(points$observed_subtotal,4),
       status = points$status, missing_days = points$missing_days, flagged_days = points$flagged_days,
       record_low = round(record_low,4), record_high = round(record_high,4), low_years, high_years))
-  list(payload = payload, history = history)
+  list(payload = payload, history = history, historical = historical)
+}
+
+# Historical screening is independent of today's observations and cutoff. A
+# past-data revision or season rollover invalidates the affected reference.
+write_acis_station_seasonal_site <- function(stations,caches,as_of,output_dir,
+    history_cache_dir="data/processed/acis-stations/seasonal-history",
+    asset_dir="scripts/station-seasonal-assets") {
+  stopifnot(nrow(stations)==length(caches),!anyDuplicated(stations$uid))
+  started <- proc.time()[["elapsed"]]
+  directory <- file.path(output_dir,"seasonal")
+  dir.create(directory,recursive=TRUE,showWarnings=FALSE)
+  dir.create(history_cache_dir,recursive=TRUE,showWarnings=FALSE)
+  report <- list()
+  for (i in seq_len(nrow(stations))) for (season in names(acis_precipitation_seasons)) {
+    uid <- as.integer(stations$uid[i]); cache <- caches[[i]]
+    path <- file.path(directory,season,paste0(uid,".json"))
+    if (is.null(cache)) {
+      acis_cumulative_write_json(list(available=FALSE,note="No cached daily observations are available for this station."),path)
+      next
+    }
+    stopifnot(as.integer(cache$uid)==uid)
+    s <- acis_precipitation_seasons[[season]]
+    year <- as.integer(format(as.Date(as_of),"%Y"))
+    md <- format(as.Date(as_of),"%m-%d")
+    year <- if (s$cross) year+(md>=s$start) else year-(md<s$start)
+    start <- acis_season_bounds(season,year)[1]
+    prior <- cache$daily[cache$daily$variable=="pcpn" & cache$daily$date<start,
+      c("date","numeric_value","observed","flag","trace","accumulated"),drop=FALSE]
+    prior <- prior[order(prior$date),,drop=FALSE]
+    rownames(prior) <- NULL
+    key <- digest::digest(list(version=1L,uid=uid,season=season,year=year,prior=prior),algo="sha256")
+    reference_path <- file.path(history_cache_dir,paste0(uid,"-",season,".rds"))
+    saved <- if(file.exists(reference_path)) tryCatch(readRDS(reference_path),error=function(e) NULL) else NULL
+    reused <- identical(saved$key,key) && is.list(saved$historical)
+    result <- acis_station_seasonal_payload(stations[i,],cache,season,as_of,
+      historical=if(reused) saved$historical else NULL)
+    if (!reused) saveRDS(list(key=key,historical=result$historical),reference_path)
+    acis_cumulative_write_json(result$payload,path)
+    for(entry in result$history$catalog) acis_cumulative_write_json(
+      result$history$curves[[as.character(entry$water_year)]],file.path(directory,season,entry$file))
+    report[[length(report)+1L]] <- data.frame(uid,season,history_reused=reused,
+      cutoff=result$payload$as_of,missing_days=result$payload$current$missing_days,
+      flagged_days=result$payload$current$flagged_days)
+    if (!reused) message("Screened seasonal history: ",uid," ",season)
+  }
+  acis_cumulative_write_json(list(schema_version=1L,as_of=as.character(as.Date(as_of)),
+    stations=lapply(seq_len(nrow(stations)),function(i) list(uid=as.integer(stations$uid[i]),
+      name=stations$name[i],state=stations$state[i],file=paste0(stations$uid[i],".json")))),
+    file.path(directory,"stations.json"))
+  if(!all(file.copy(file.path(asset_dir,c("index.html","cumulative.js","cumulative.css")),directory,overwrite=TRUE)))
+    stop("Could not copy seasonal plot assets.")
+  report <- if(length(report)) do.call(rbind,report) else data.frame()
+  write.csv(report,file.path(directory,"update-summary.csv"),row.names=FALSE)
+  message(sprintf("Seasonal station plots: %d records; %d/%d historical references reused; %.1fs; no requests.",
+    nrow(stations),sum(report$history_reused),nrow(report),proc.time()[["elapsed"]]-started))
+  invisible(report)
 }
 
 build_acis_station_seasonal_pilot <- function(uids = c(29687L,1403L,19376L), as_of = NULL,

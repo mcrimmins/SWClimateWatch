@@ -20,13 +20,14 @@ build_station_seasonal_integration <- function(
   if (length(dates)!=1L || is.na(as.Date(dates))) stop("Invalid station explorer date.")
   # Copy only browser assets, summaries and detail records; omit old cumulative files.
   items <- list.files(source_dir,full.names=TRUE)
-  items <- items[basename(items)!="cumulative"]
+  items <- items[!basename(items) %in% c("cumulative","seasonal")]
   for (item in items) if (!file.copy(item,output_dir,recursive=TRUE,overwrite=TRUE))
     stop("Could not copy preview asset: ",item)
   js_path <- file.path(output_dir,"explorer.js")
   js <- paste(readLines(js_path,warn=FALSE,encoding="UTF-8"),collapse="\n")
   old <- "Water-year cumulative precipitation"
-  if (!grepl(old,js,fixed=TRUE) || !grepl("cumulative/index.html?",js,fixed=TRUE))
+  if (!grepl("seasonal/index.html?",js,fixed=TRUE) &&
+      (!grepl(old,js,fixed=TRUE) || !grepl("cumulative/index.html?",js,fixed=TRUE)))
     stop("Station detail integration point changed; review before replacing.")
   js <- gsub(old,"Seasonal precipitation and historical comparisons",js,fixed=TRUE)
   js <- gsub("October 1\u2013September 30; independent of the summary period above.",

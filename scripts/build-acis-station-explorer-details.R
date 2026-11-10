@@ -7,6 +7,7 @@ source(file.path("R", "map-southwest.R"))
 source(file.path("R", "acis-station-current-prototype.R"))
 source(file.path("R", "acis-station-explorer-prototype.R"))
 source(file.path("R", "acis-station-cumulative-pilot.R"))
+source(file.path("R", "acis-station-seasonal-pilot.R"))
 
 detail_preview_dir <- file.path(swc_acis_station_dir, "station-explorer-prototype")
 detail_rows_path <- file.path(detail_preview_dir, "station-explorer-data.csv")
@@ -27,4 +28,4 @@ detail_paths <- write_acis_station_explorer_details(
 message(length(detail_paths), " unpublished station detail files ready for ",
         detail_date, ".")
 
-write_acis_station_cumulative_site(detail_stations, detail_caches, as.Date(detail_date), detail_preview_dir)
+write_acis_station_seasonal_site(detail_stations, detail_caches, as.Date(detail_date), detail_preview_dir)

@@ -724,11 +724,11 @@
       `<p class="detail-chart-note">Daily bars are observations, not a cumulative total. ` +
       `Trace precipitation counts as zero; missing and flagged days are not filled. ` +
       `Use the day buttons or left and right arrow keys to move between chart dates.</p>` +
-      `<section class="station-cumulative"><h3>Water-year cumulative precipitation</h3>` +
-      `<p class="detail-chart-note">October 1–September 30; independent of the summary period above. ` +
-      `Historical comparisons use complete water years.</p>` +
-      `<iframe title="Water-year cumulative precipitation for ${escapeHtml(station.name)}" ` +
-      `src="cumulative/index.html?embedded=1&amp;uid=${encodeURIComponent(station.uid)}&amp;as_of=${encodeURIComponent(station.as_of)}" ` +
+      `<section class="station-cumulative"><h3>Seasonal precipitation and historical comparisons</h3>` +
+      `<p class="detail-chart-note">Choose water year, cool season or monsoon below; independent of the summary period above. ` +
+      `Rankings compare matching dates; full-season bars and cumulative curves use their labeled samples.</p>` +
+      `<iframe title="Seasonal precipitation and historical comparisons for ${escapeHtml(station.name)}" ` +
+      `src="seasonal/index.html?embedded=1&amp;uid=${encodeURIComponent(station.uid)}&amp;as_of=${encodeURIComponent(station.as_of)}" ` +
       `loading="lazy" class="cumulative-frame"></iframe></section>` +
       selectedExtremeSummary(station) +
       `<div class="detail-lower"><section><h3>Historical standing</h3>` +

@@ -298,6 +298,7 @@ swc_daily_publish_update_stations <- function(today = Sys.Date()) {
                  "R/acis-station-current-prototype.R",
                  "R/acis-station-explorer-prototype.R",
                  "R/acis-station-cumulative-pilot.R",
+                 "R/acis-station-seasonal-pilot.R",
                  "R/acis-station-explorer-update-pilot.R",
                  "R/acis-station-publication-audit.R",
                  "R/acis-station-site.R"))

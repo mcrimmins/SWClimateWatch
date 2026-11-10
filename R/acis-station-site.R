@@ -80,10 +80,13 @@ swc_station_beta_stage <- function(
   if (!all(copied) || !length(details) || !all(detail_copied))
     stop("Could not copy the full station snapshot; last good page retained.",
          call. = FALSE)
-  if (dir.exists(file.path(source_dir, "cumulative")) &&
+  linked_js <- paste(readLines(file.path(source_dir,"explorer.js"),warn=FALSE),collapse="\n")
+  if (grepl("cumulative/index.html",linked_js,fixed=TRUE) &&
+      dir.exists(file.path(source_dir, "cumulative")) &&
       !file.copy(file.path(source_dir, "cumulative"), stage, recursive = TRUE))
     stop("Could not copy cumulative station resources; last good page retained.")
-  if (dir.exists(file.path(source_dir, "seasonal")) &&
+  if (grepl("seasonal/index.html",linked_js,fixed=TRUE) &&
+      dir.exists(file.path(source_dir, "seasonal")) &&
       !file.copy(file.path(source_dir, "seasonal"), stage, recursive = TRUE))
     stop("Could not copy seasonal station resources; last good page retained.")
   swc_station_beta_snapshot(stage)
