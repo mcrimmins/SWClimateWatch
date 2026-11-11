@@ -775,7 +775,7 @@ write_acis_station_explorer_prototype <- function(
     }
   }
   dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
-  for (name in c("explorer.css", "explorer.js", "temperature-normals.js", "temperature-normals.css")) {
+  for (name in c("explorer.css", "explorer.js", "temperature-normals.js", "temperature-normals.css", "station-chart-tools.js")) {
     if (!file.copy(file.path(asset_dir, name), file.path(output_dir, name),
                    overwrite = TRUE)) stop("Could not copy explorer asset: ", name)
   }

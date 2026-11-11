@@ -2,7 +2,7 @@
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Station seasonal precipitation · Southwest Climate Watch</title>
-  <link rel="stylesheet" href="cumulative.css?v=annual-history"><script src="cumulative.js?v=annual-history" defer></script><style>.station-history-toggle>summary{cursor:pointer;font-weight:600;padding:.4rem}.station-history-toggle>section.card{border:0;box-shadow:none;margin:0}</style></head>
+  <link rel="stylesheet" href="cumulative.css?v=annual-history"><script src="cumulative.js?v=annual-history" defer></script></head>
 <body><main>
   <header><div><p class="eyebrow">Southwest Climate Watch · Station observations</p>
     <h1>Seasonal precipitation</h1><p id="snapshot">Loading cached station records…</p></div>
@@ -15,7 +15,7 @@
       <option value="full">Full season</option></select></label>
     <label>Comparison year<select id="comparison-year" disabled><option value="none">None</option></select></label>
   </section>
-  <details class="card station-history-toggle"><summary>Seasonal cumulative precipitation</summary><section id="station-card" class="card" aria-labelledby="station-title" hidden>
+  <section id="station-card" class="card" aria-labelledby="station-title" hidden>
     <h2 id="station-title">Cumulative precipitation</h2><p id="station-note" class="muted"></p>
     <div id="stats" class="stats"></div><p id="matched" class="quality"></p>
     <p id="history-status" class="history-status" role="status"></p>
@@ -30,7 +30,7 @@
     <p id="quality" class="quality"></p>
     <p class="muted small">Hover or tap the plot, or use the date slider and arrow keys, to compare accumulation on the same calendar date.</p>
   </section>
-  </details><details class="card station-history-toggle"><summary>Historical seasonal and water-year totals</summary><section id="annual-history" class="card annual-history" aria-labelledby="annual-title" hidden>
+  <section id="annual-history" class="card annual-history" aria-labelledby="annual-title" hidden>
     <h2 id="annual-title">Historical seasonal precipitation</h2>
     <p id="annual-note" class="muted small"></p>
     <ul class="legend annual-legend" aria-label="Historical totals legend">
@@ -46,7 +46,7 @@
     <p id="annual-current" class="quality"></p>
     <p class="muted small">Hover or tap a year, or use the slider and arrow keys. Gaps are incomplete or unavailable years, not zero rainfall. Water years run October 1–September 30.</p>
   </section>
-  </details><details class="card methods"><summary>How to read these plots</summary>
+  <details class="card methods"><summary>How to read these plots</summary>
 <p>Water years run October 1–September 30; cool seasons October 1–March 31; monsoons June 15–September 30. Cross-year seasons are named for their ending year. The latest started season is shown; after it ends, its completed totals remain until the next season starts.</p>
 <p>Daily QC is identical to the existing cumulative plot: trace is zero, missing or flagged reports are not filled, and cumulative lines stop at the first unusable day. A later observed subtotal is only a lower bound. Unsupported comparisons are withheld.</p>
 <p>Rank and percentile compare the same start and calendar cutoff in earlier seasons. At least 30 complete matching historical periods are required. Wet rank includes the current season; ties share the best rank. Percentiles use midpoint ties against earlier seasons. Departures and percent of average require at least 20 usable matching periods in 1991–2020; percent of average is withheld for a zero average. These samples can include seasons with gaps after the cutoff.</p>

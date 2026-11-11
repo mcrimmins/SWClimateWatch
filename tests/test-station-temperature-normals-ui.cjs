@@ -6,11 +6,14 @@ assert.equal(fs.readFileSync('scripts/station-explorer-assets/temperature-normal
 const integrated=fs.readFileSync('scripts/station-explorer-assets/explorer.js','utf8');
 assert.match(integrated,/Normals.precipitationBarStyle\(day\)/);
 assert.match(integrated,/Normals.renderReadout\(hit,readout\)/);
-assert.match(integrated,/selectedExtremeSummary\(station\) \+ `<section class="station-cumulative"/);
+assert.match(integrated,/selectedExtremeSummary\(station\) \+ `<details class="station-cumulative"><summary>Seasonal precipitation and historical comparisons<\/summary>/);
+assert.doesNotMatch(integrated,/<details class="station-cumulative"[^>]* open/);
 assert.doesNotMatch(integrated,/station-seasonal-integration/);
 const integratedSeasonal=fs.readFileSync('scripts/station-seasonal-assets/index.html','utf8');
-assert.equal((integratedSeasonal.match(/class="card station-history-toggle"/g)||[]).length,2);
-assert.doesNotMatch(integratedSeasonal,/<details[^>]*station-history-toggle[^>]* open/);
+assert.doesNotMatch(integratedSeasonal,/station-history-toggle/);
+assert.match(integratedSeasonal,/<section id="station-card"/);
+assert.match(integratedSeasonal,/<section id="annual-history"/);
+assert.match(integratedSeasonal,/<details class="card methods"><summary>How to read these plots<\/summary>/);
 const adapter=context.window.SWCStationTemperatureNormals;
 const days=[{normal_maxt:80,normal_mint:50,normal_years:30,maxt:90,mint:45},
   {normal_maxt:null,normal_mint:null,normal_years:19,maxt:null,mint:null},

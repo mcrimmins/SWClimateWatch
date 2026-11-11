@@ -26,6 +26,7 @@
   const detailSubtitleEl = document.getElementById("detail-subtitle");
   const detailContentEl = document.getElementById("detail-content");
   const detailCache = new Map();
+  let exportSelection = null;
   window.addEventListener("message", event => {
     const frame = detailContentEl.querySelector(".cumulative-frame");
     if (!frame || event.source !== frame.contentWindow || event.origin !== window.location.origin ||
@@ -718,6 +719,7 @@
     return stale +
       `<div class="detail-stats"><p><strong>Precipitation:</strong> ${coverage("pcpn")}</p>` +
       `<p><strong>Mean temperature:</strong> ${coverage("tmean")}</p></div>` +
+      `<p class="station-export"><button type="button" data-station-export>Download daily data (CSV)</button> <small>Selected period · blank values are unavailable; quality labels included.</small></p>` +
       `<div class="detail-charts"><figure><figcaption>Daily precipitation</figcaption>` +
       window.SWCStationTemperatureNormals.precipitationLegend() + precipitationChart(days, station) + chartControls() +
       `<div class="chart-readout temperature-readout precipitation-readout" aria-live="polite">Hover, focus, or tap a day to compare precipitation.</div></figure>` +
@@ -727,12 +729,12 @@
       `<p class="detail-chart-note">Daily bars are observations, not a cumulative total. ` +
       `Trace precipitation counts as zero; missing and flagged days are not filled. ` +
       `Use the day buttons or left and right arrow keys to move between chart dates.</p>` +
-      selectedExtremeSummary(station) + `<section class="station-cumulative"><h3>Seasonal precipitation and historical comparisons</h3>` +
+      selectedExtremeSummary(station) + `<details class="station-cumulative"><summary>Seasonal precipitation and historical comparisons</summary>` +
       `<p class="detail-chart-note">Choose water year, cool season or monsoon below; independent of the summary period above. ` +
       `Rankings compare matching dates; full-season bars and cumulative curves use their labeled samples.</p>` +
       `<iframe title="Seasonal precipitation and historical comparisons for ${escapeHtml(station.name)}" ` +
       `src="seasonal/index.html?embedded=1&amp;uid=${encodeURIComponent(station.uid)}&amp;as_of=${encodeURIComponent(station.as_of)}" ` +
-      `loading="lazy" class="cumulative-frame"></iframe></section>` +
+      `loading="lazy" class="cumulative-frame"></iframe></details>` +
       `<div class="detail-lower"><section><h3>Usable daily record</h3><ul>` +
       recordLine(detail.record.pcpn, "Precipitation") +
       recordLine(detail.record.maxt, "Maximum temperature") +
@@ -746,6 +748,7 @@
     detailSubtitleEl.textContent = `${station.sid} · ${periodLabels[station.period]} period · ` +
       `${date(station.period_start)}–${date(station.as_of)}` +
       (station.role === "fixed" ? "" : " · ThreadEx area series");
+    exportSelection = null;
     detailContentEl.textContent = "Loading station detail…";
     const uid = String(station.uid);
     if (!/^https?:$/.test(window.location.protocol)) {
@@ -767,6 +770,7 @@
         throw new Error("Station detail does not match the preview date.");
       }
       detailContentEl.innerHTML = detailContent(current, detail);
+      exportSelection = {station:current,detail};
     } catch (error) {
       detailCache.delete(uid);
       if (selectedUid === uid) detailContentEl.textContent =
@@ -980,17 +984,21 @@
   function showChartDay(target, makeTabStop = false) {
     const hit = target.closest?.(".chart-day");
     if (!hit || !detailContentEl.contains(hit)) return;
-    const figure = hit.closest("figure");
-    const readout = figure?.querySelector(".chart-readout");
-    if (readout && !window.SWCStationTemperatureNormals.renderReadout(hit,readout)) readout.textContent = hit.dataset.chartReadout;
-    if (makeTabStop) {
-      figure.querySelectorAll(".chart-day").forEach(day => day.tabIndex = -1);
-      hit.tabIndex = 0;
-    }
+    window.SWCStationChartTools.selectDay(detailContentEl,hit,(hit,readout)=>{
+      if (!window.SWCStationTemperatureNormals.renderReadout(hit,readout))
+        readout.textContent = hit.dataset.chartReadout;
+    });
   }
   detailContentEl.addEventListener("pointerover", event => showChartDay(event.target));
   detailContentEl.addEventListener("focusin", event => showChartDay(event.target, true));
   detailContentEl.addEventListener("click", event => {
+    if (event.target.closest?.('[data-station-export]')) {
+      if (exportSelection && selectedUid===String(exportSelection.station.uid) &&
+          exportSelection.station.period===periodEl.value) {
+        window.SWCStationChartTools.download(exportSelection.station,exportSelection.detail);
+      }
+      return;
+    }
     const step = event.target.closest?.("[data-chart-step]");
     if (step && detailContentEl.contains(step)) {
       const figure = step.closest("figure");
@@ -1016,6 +1024,7 @@
   });
   document.getElementById("detail-close").addEventListener("click", () => {
     selectedUid = null;
+    exportSelection = null;
     detailEl.hidden = true;
     map.closePopup();
     selectedEl.textContent = "Select a station on the map or in a table.";

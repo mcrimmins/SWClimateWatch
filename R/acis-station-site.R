@@ -13,6 +13,8 @@ swc_station_beta_snapshot <- function(directory) {
   integrated_charts <- grepl("SWCStationTemperatureNormals",explorer_js,fixed=TRUE)
   required_files <- if(integrated_charts) swc_station_beta_files else
     setdiff(swc_station_beta_files,c("temperature-normals.js","temperature-normals.css"))
+  if(grepl("SWCStationChartTools",explorer_js,fixed=TRUE))
+    required_files <- c(required_files,"station-chart-tools.js")
   paths <- file.path(directory, required_files)
   if (!all(file.exists(paths)) || any(file.info(paths)$size <= 0))
     stop("Station snapshot is missing a required nonempty file.", call. = FALSE)
@@ -92,6 +94,9 @@ swc_station_beta_stage <- function(
   dir.create(stage)
   on.exit(if (dir.exists(stage)) unlink(stage, recursive = TRUE), add = TRUE)
   copied <- file.copy(file.path(source_dir, swc_station_beta_files), stage)
+  if(file.exists(file.path(source_dir,"station-chart-tools.js")) &&
+     !file.copy(file.path(source_dir,"station-chart-tools.js"),stage))
+    stop("Could not copy station chart controls; last good page retained.")
   dir.create(file.path(stage, "station-details"))
   details <- list.files(file.path(source_dir, "station-details"),
                         pattern = "^[0-9]+\\.json$", full.names = TRUE)

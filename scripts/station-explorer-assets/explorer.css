@@ -131,3 +131,6 @@ td button.station-link{background:none;border:0;padding:0;font:inherit;color:#14
 .methods p{margin:.35rem 0}
 .station-cumulative{margin:1.2rem 0;border-top:1px solid #dce5e8;padding-top:.6rem}.cumulative-frame{display:block;width:100%;height:1040px;border:0;background:white}@media(max-width:720px){.cumulative-frame{height:1240px}}
 @media(max-width:720px){main{padding:.6rem}.page-head{display:block}.prototype-note{max-width:none;margin-top:.6rem}#map{height:480px}.map-count{margin-left:0}.tabs button{font-size:.9rem}}
+.station-cumulative>summary{cursor:pointer;font-size:1.1rem;font-weight:700;padding:.6rem 0;color:#253941}
+.detail-charts .chart-day.chart-selected{fill:#426e85;fill-opacity:.09}
+.station-export{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}.station-export small{color:#536b79}

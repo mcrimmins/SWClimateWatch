@@ -418,6 +418,13 @@ swc_daily_publish_validate_stations <- function(output_dir) {
     stop("Rendered station details are missing; S3 sync stopped.",
          call. = FALSE)
   explorer_js <- paste(readLines(file.path(station_dir, "explorer.js"), warn = FALSE), collapse = "\n")
+  chart_assets <- c(
+    if(grepl("SWCStationChartTools",explorer_js,fixed=TRUE)) "station-chart-tools.js",
+    if(grepl("SWCStationTemperatureNormals",explorer_js,fixed=TRUE))
+      c("temperature-normals.js","temperature-normals.css"))
+  chart_paths <- file.path(station_dir,chart_assets)
+  if(length(chart_paths) && (!all(file.exists(chart_paths)) || any(file.info(chart_paths)$size<=0)))
+    stop("Rendered station chart assets are missing; S3 sync stopped.",call.=FALSE)
   if (grepl("cumulative/index.html", explorer_js, fixed = TRUE)) {
     context <- new.env(parent = environment())
     if (!exists("validate_acis_station_cumulative_site", mode = "function"))

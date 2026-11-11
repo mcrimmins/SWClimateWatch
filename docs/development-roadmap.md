@@ -142,10 +142,10 @@ that work ahead of discretionary features.
 | P0 — ongoing operations | Monitor the confirmed production release | Navigation/About/SPI-footer and snow/evidence synopsis releases are confirmed live November 9. Check the next scheduled run and source freshness; address actual failures before adding features. GA4 Realtime collection still needs separate confirmation. |
 | Complete — monitor | Template conditions synopsis | Seasonal snow narrative, dated supporting evidence and matching weekly-temperature maps are confirmed live November 9. Retain seasonal tests, reference/coverage guards and successful-publication comparisons. AI and the daily AI page remain deferred. See [scope](conditions-synopsis-scope.md). |
 | Complete — monitor | Stable URLs for all published map images | User confirmed production promotion November 10. Predictable latest endpoints, dated links, searchable HTML/CSV/JSON catalog and publication integrity checks are live. External project embedding and any Arizona-only export remain separate follow-ups. See [contract](map-hotlinks.md). |
-| P1 — next recommended feature | Station seasonal precipitation histories | Extend the existing annual precipitation bars with cool-season and monsoon views. First agree exact season dates/year labels, then prototype a small cached station set with completeness checks, matching season-to-date comparisons and an explicitly incomplete current bar. Reuse station histories and measure cache/payload costs before network rollout. Regional historical maps remain separate. |
+| Complete — monitor | Station seasonal precipitation histories | Water-year, cool-season and monsoon comparisons are confirmed live. Retain completeness guards, matching-date comparisons and the hatched incomplete current-season bar. Regional historical maps remain separate. |
 | P2 — next project 3 | Recent-period weather means | Inventory retained numeric CORe fields; prototype a small 7-/30-day 500-mb/PWAT mean set with completeness checks and measured cost. Anomaly baselines follow separately. |
 | P2 — next project 4 | Historic seasonal snow anomalies | Validate existing peak-SWE departure/percent-of-median pilots and stage eligible years with support guards. Reorder within P2 if cool-season monitoring makes this more useful sooner. |
-| After existing commitments — 1 | Station daily-chart normals and records | Add temperature normals and calendar-date temperature/precipitation records to existing daily plots. Establish shared station reference calculations before expanding the climatology section. See [agreed scope](#station-and-regional-climatology-agreed-november-6-2026). |
+| Complete — monitor | Station daily-chart normals and records | Confirmed production November 10 at 9db345c. Smoothed 1991–2020 normals, eligible earlier daily records, compact tables and record markers are live. November 11 linked chart dates, selected-period CSV and disclosure refinements are local, awaiting review/deployment. |
 | After existing commitments — 2 | Station climatology section | Build a collapsible selected-station view using the same reference calculations, with calendar-year/water-year ordering and monthly summaries. Coordinate with existing seasonal precipitation histories. |
 | After existing commitments — 3 | Climate of the region page | Start with 1991–2020 annual and seasonal precipitation normals and temperature averages when the required PRISM inputs are available. Historical extremes follow separately. |
 | Deferred until spring 2027 | Station heat metrics | Scope station-appropriate temperature thresholds, counts and departures; reuse existing hot-day/warm-night screening. No implementation before spring 2027. |
@@ -154,15 +154,14 @@ that work ahead of discretionary features.
 | Later — feasibility exploration | Interactive raster map page | Explore selectable existing raster products over a basemap, adjustable transparency, zoom/pan and pixel-value queries. Benchmark a small static-site pilot before selecting delivery methods or scheduling implementation. See [scope](#new-exploration-interactive-raster-map-page). Existing commitments and agreed climatology order remain unchanged. |
 | Later — polish | Consistency and optional interactions | Shared city-label styling, historic RONI labels at the next archive refresh, custom Analytics events and remaining documentation reconciliation. |
 
-November 10 proposed working sequence: stable map URLs and the synopsis follow-up
-are confirmed promoted. The next feature is station seasonal precipitation
-histories, beginning with definitions and a small cached-data chart prototype.
-Keep external dashboard link replacement and any Arizona-specific crop on the
-follow-up list; the URL release alone does not establish their completion.
-Then pursue recent-period weather means and historic snow anomalies in their
-existing order before the November 6 climatology additions. Heat metrics remain
-deferred until spring 2027. Check GA4 Realtime and the first automatic December
-monthly cycle as operational follow-ups.
+November 11 working sequence: station seasonal histories and daily-chart normals/
+records are confirmed live. Finish local review of linked precipitation/temperature
+dates, selected-period CSV exports and the single collapsed seasonal comparison
+group before staging. Then scope the selected-station climatology section; keep
+recent-period weather means and historic snow anomalies on the list. Heat metrics
+remain deferred until spring 2027. External dashboard links/Arizona-only exports,
+GA4 Realtime verification and the first automatic December monthly cycle remain
+separate follow-ups.
 
 ## Agreed additions and enhancements
 
@@ -182,7 +181,7 @@ those pages are next refreshed.
 | Conditions synopsis / daily text summary (requested November 4, 2026) | Confirmed live November 9, including seasonal snow highlights and dated evidence links for quantitative selected bullets. Matching seven-day temperature maps and resource-integrity checks are included. Retain routine seasonal/source monitoring; AI remains deferred. See [implemented scope](conditions-synopsis-scope.md). | Complete; monitor |
 | Recent-period weather means and anomalies (requested November 2, 2026) | Scope trailing 7- and 30-day circulation/moisture means using cached CORe fields; separately assess calendar-matched anomaly baselines, missing-day guards, interpretation and update costs. Prototype means before committing to historical baseline acquisition. | Moderate for means; larger for validated anomalies |
 | Station water-year precipitation curves (requested November 1, 2026) | Live November 4 for 62 records: current cumulative precipitation, historical-year selection, WY1991-2020 mean and middle-50% band, record bounds, closest progression and interactive inspection. Historical/reference caches support daily builds. Review production cache timing; optional background curves remain deferred. | Live; monitor |
-| Historical seasonal and water-year time series (requested November 1, 2026) | Annual station bars are included in the confirmed production release. Completed-year totals and a supported normal line reuse the cumulative-history catalog; a hatched current season-to-date bar is excluded from full-year comparisons. Seasonal and regional summaries follow separately. | Annual integrated; seasonal extension moderate |
+| Historical seasonal and water-year time series (requested November 1, 2026) | Water-year, cool-season and monsoon station histories are confirmed live. Completed-year totals and a supported normal line reuse the cumulative-history catalog; the hatched current season-to-date bar is excluded from full-year comparisons. Regional summaries remain separate. | Station histories complete; monitor |
 | Historical odds of reaching precipitation thresholds (requested November 1, 2026) | Pilot CW3E-style climatological probabilities of reaching fractions of full water-year normal given precipitation already observed. Validate Southwest seasonality, historical samples and uncertainty; benchmark cached historical remainder distributions before selecting monthly or daily updates and maps. | Moderate-large; methods validation first |
 | Google Analytics (requested November 1, 2026) | Tag G-XS7RFBPW01 is included in the confirmed production release, gated to the production hostname/path and top-level views. Local/staging exclusions and embedded deduplication tested; GA4 Realtime collection still needs confirmation. See site-analytics.md. Custom interaction events remain deferred. | Collection verification pending |
 | Historical snow anomaly companions | Validate seasonal peak-SWE departure and percent-of-median pilots, then stage all eligible WY2005-WY2025 years. Retain coverage and support guards and existing archive cautions. | Moderate |
@@ -322,16 +321,19 @@ implementation files in this roadmap conversation.
 
 ### 1. Station daily-chart normals and records
 
-November 10: approved local charts and layout are integrated into the standard
-Station Conditions builder, ready for local build/preview and staging testing.
-Temperature plots include project-calculated smoothed 1991–2020 normals,
-earlier calendar-date records, filled new/tied markers at every period length,
-and compact daily comparison tables. Precipitation uses an earlier-record
-table and colored/striped record bars; no background record curve is added.
-Period extremes and historical standing precede the independently collapsed
-cumulative and historical-total plots. The staging file list includes both
-new chart assets; the normal reference cache is revision-aware. This release
-is not yet confirmed on staging or production.
+Confirmed live November 10, 2026, commit `9db345c182d98fa7fb30a962c6bbe85fb62253dc`.
+Temperature charts show smoothed project-calculated 1991–2020 normals and earlier
+calendar-date records, filled new/tied markers and daily comparison tables.
+Precipitation shows observed/earlier-record tables and colored/striped record bars.
+Historical standing is grouped with period extremes. Production publication passed
+54 current and 352 historical maps.
+
+November 11 local follow-up, not yet deployed: one collapsed seasonal comparison
+group opens both plots, with the methods note separately collapsed inside. Daily
+precipitation and temperature selections are linked, including day buttons and
+keyboard controls. A selected-station/period CSV includes observations, quality
+labels, normals and earlier-record references from already loaded data. No new
+source requests or scheduled calculation step is added by these interactions.
 
 Enhance existing Station Conditions daily plots with normal high/low temperature
 lines and calendar-date record high/low values, plus historical maximum daily

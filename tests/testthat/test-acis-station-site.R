@@ -62,6 +62,10 @@ testthat::test_that("render validation requires the page and every station detai
   writeLines('<iframe src="../stations/index.html?embedded=1"></iframe>',
              file.path(root, "pages", "station-conditions.html"))
   testthat::expect_invisible(swc_daily_publish_validate_stations(root))
+  writeLines("window.SWCStationChartTools",file.path(root,"stations","explorer.js"))
+  testthat::expect_error(swc_daily_publish_validate_stations(root),"chart assets are missing")
+  writeLines("fixture",file.path(root,"stations","station-chart-tools.js"))
+  testthat::expect_invisible(swc_daily_publish_validate_stations(root))
   unlink(file.path(root, "stations", "station-details", "123.json"))
   testthat::expect_error(swc_daily_publish_validate_stations(root),
                          "details are missing")
