@@ -3,11 +3,17 @@
 
 swc_station_beta_files <- c(
   "index.html", "explorer.js", "explorer.css", "leaflet.js", "leaflet.css",
+  "temperature-normals.js", "temperature-normals.css",
   "leaflet-package-LICENSE", "station-explorer-data.csv",
   "coverage-by-station.csv", "coverage-summary.csv")
 
 swc_station_beta_snapshot <- function(directory) {
-  paths <- file.path(directory, swc_station_beta_files)
+  js_path <- file.path(directory,"explorer.js")
+  explorer_js <- if(file.exists(js_path)) paste(readLines(js_path,warn=FALSE),collapse="\n") else ""
+  integrated_charts <- grepl("SWCStationTemperatureNormals",explorer_js,fixed=TRUE)
+  required_files <- if(integrated_charts) swc_station_beta_files else
+    setdiff(swc_station_beta_files,c("temperature-normals.js","temperature-normals.css"))
+  paths <- file.path(directory, required_files)
   if (!all(file.exists(paths)) || any(file.info(paths)$size <= 0))
     stop("Station snapshot is missing a required nonempty file.", call. = FALSE)
   rows <- read.csv(file.path(directory, "station-explorer-data.csv"),
@@ -34,7 +40,20 @@ swc_station_beta_snapshot <- function(directory) {
           (is.finite(rows$pcpn_anomaly) | is.finite(rows$pcpn_percentile))))
     stop("A provisional precipitation total has a comparison value.",
          call. = FALSE)
-  explorer_js <- paste(readLines(file.path(directory, "explorer.js"), warn = FALSE), collapse = "\n")
+  if (integrated_charts) {
+    for (path in details) {
+      detail <- jsonlite::read_json(path,simplifyVector=TRUE)
+      required_daily <- c("normal_maxt","normal_mint","normal_years",
+                          "record_high","record_low","record_pcpn","record_pcpn_status")
+      if (!identical(as.character(detail$as_of),rows$as_of[[1L]]) ||
+          !identical(paste0(detail$uid,".json"),basename(path)) ||
+          !all(required_daily %in% names(detail$daily)) ||
+          is.null(detail$temperature_reference) || is.null(detail$temperature_records) ||
+          is.null(detail$precipitation_records))
+        stop("Rebuild station details with daily normals and records before staging: ",path,
+             call.=FALSE)
+    }
+  }
   if (grepl("cumulative/index.html", explorer_js, fixed = TRUE))
     validate_acis_station_cumulative_site(file.path(directory, "cumulative"),
       unique(rows$uid), rows$as_of[[1L]])

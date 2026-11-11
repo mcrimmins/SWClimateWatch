@@ -30,6 +30,11 @@ testthat::test_that("staging rejects invalid or older source without losing the 
   source <- file.path(root, "source")
   destination <- file.path(site, "stations")
   station_beta_fixture(source, "2026-09-30")
+  # The previously deployed page predates the new daily chart assets.
+  unlink(file.path(source,c("temperature-normals.js","temperature-normals.css")))
+  testthat::expect_equal(swc_station_beta_snapshot(source)$stations,1L)
+  for(name in c("temperature-normals.js","temperature-normals.css"))
+    writeLines("fixture",file.path(source,name))
   first <- swc_station_beta_stage(source, destination)
   testthat::expect_identical(first$stations, 1L)
   testthat::expect_identical(swc_station_beta_snapshot(destination)$date,
@@ -60,6 +65,22 @@ testthat::test_that("render validation requires the page and every station detai
   unlink(file.path(root, "stations", "station-details", "123.json"))
   testthat::expect_error(swc_daily_publish_validate_stations(root),
                          "details are missing")
+})
+
+testthat::test_that("integrated chart assets require matching daily reference fields", {
+  root <- tempfile("swc-chart-stage-")
+  station_beta_fixture(root,"2026-11-03")
+  on.exit(unlink(root,recursive=TRUE),add=TRUE)
+  writeLines("window.SWCStationTemperatureNormals",file.path(root,"explorer.js"))
+  testthat::expect_error(swc_station_beta_snapshot(root),"Rebuild station details")
+  detail <- list(uid=123L,as_of="2026-11-03",daily=list(list(normal_maxt=NULL,normal_mint=NULL,normal_years=0L,
+    record_high=NULL,record_low=NULL,record_pcpn=NULL,record_pcpn_status="INSUFFICIENT_HISTORY")),
+    temperature_reference=list(method="test"),temperature_records=list(method="test"),
+    precipitation_records=list(method="test"))
+  jsonlite::write_json(detail,file.path(root,"station-details","123.json"),auto_unbox=TRUE,null="null")
+  testthat::expect_equal(swc_station_beta_snapshot(root)$stations,1L)
+  unlink(file.path(root,"temperature-normals.js"))
+  testthat::expect_error(swc_station_beta_snapshot(root),"missing a required")
 })
 
 testthat::test_that("station staging carries cumulative curves and rejects missing comparisons", {

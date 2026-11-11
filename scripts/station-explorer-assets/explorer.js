@@ -539,7 +539,7 @@
       `aria-label="Previous chart day">← Previous day</button><button type="button" ` +
       `data-chart-step="1" aria-label="Next chart day">Next day →</button></div>`;
   }
-  function precipitationChart(days, station) {
+  function precipitationChart(days, station) { window.SWCStationTemperatureNormals.bind(days,station);
     const usable = days.filter(day => finite(day.pcpn)).map(day => Number(day.pcpn));
     if (!days.length) return `<p class="chart-empty">No daily precipitation dates in this period.</p>`;
     const width = 760, left = 43, right = 12, top = 14, bottomY = 145;
@@ -567,20 +567,19 @@
       const marker = wettest ? `<path class="chart-peak-marker" d="M${x + barWidth / 2 - 4},` +
         `${Math.max(top + 4, bottomY - height - 8)} h8 l-4,5 z"/>` : "";
       return `<rect x="${x}" y="${bottomY - height}" width="${barWidth}" height="${height}" ` +
-        `fill="#327eaa"${wettest ? ' class="chart-wettest-bar"' : ""}>` +
+        `${window.SWCStationTemperatureNormals.precipitationBarStyle(day)}${wettest ? ' class="chart-wettest-bar"' : ""}>` +
         `<title>${escapeHtml(day.date)}: ${compactNumber(day.pcpn, 2)} in.${day.pcpn_status === "TRACE" ? " (trace)" : ""}</title></rect>` +
         marker;
     }).join("");
-    const hits = days.map((day, i) => chartHit(left + i * step, step,
-      precipitationDayText(day, station), i === 0)).join("");
+    const hits = days.map((day,i) => window.SWCStationTemperatureNormals.precipitationHit(day,left+i*step,step,i===0)).join("");
     const empty = usable.length ? "" :
       `<text x="380" y="75" text-anchor="middle" class="chart-empty-label">No usable daily precipitation reports</text>`;
-    return chartFrame(threeDayBand + bars + empty + hits, 0, max,
+    return chartFrame(window.SWCStationTemperatureNormals.precipitationDefinitions() + threeDayBand + bars + empty + hits, 0, max,
       days[0].date, days.at(-1).date,
       "inches", "Daily precipitation bars; muted ticks mark missing or flagged days");
   }
-  function temperatureChart(days, station) {
-    const usable = days.flatMap(day => [day.maxt, day.mint])
+  function temperatureChart(days, station) { window.SWCStationTemperatureNormals.bind(days,station);
+    const usable = days.flatMap(day => [day.maxt, day.mint, day.normal_maxt, day.normal_mint, day.record_high, day.record_low])
       .filter(finite).map(Number);
     if (!days.length) return `<p class="chart-empty">No daily temperature dates in this period.</p>`;
     let min = usable.length ? Math.floor(Math.min(...usable) / 10) * 10 : 0;
@@ -603,8 +602,7 @@
       return `<path d="${segments}" fill="none" stroke="${color}" stroke-width="2"/>${points}`;
     };
     const step = (width - left - right) / days.length;
-    const hits = days.map((day, i) => chartHit(left + i * step, step,
-      temperatureDayText(day, station), i === 0)).join("");
+    const hits = days.map((day,i) => window.SWCStationTemperatureNormals.hit(day,left+i*step,step,i===0)).join("");
     const marker = (field, selectedDate, color) => {
       const i = days.findIndex(day => day.date === selectedDate);
       return i >= 0 && finite(days[i][field]) ?
@@ -615,8 +613,8 @@
       marker("mint", station.coldest_night_date, "#326a9e");
     const empty = usable.length ? "" :
       `<text x="380" y="75" text-anchor="middle" class="chart-empty-label">No usable daily temperature reports</text>`;
-    return chartFrame(line("maxt", "#b35b37") + line("mint", "#326a9e") +
-      marks + empty + hits,
+    return chartFrame(window.SWCStationTemperatureNormals.paths(days,x,y) + line("maxt", "#b35b37") + line("mint", "#326a9e") +
+      window.SWCStationTemperatureNormals.markers(days,x,y) + empty + hits,
       min, max, days[0].date, days.at(-1).date, "°F",
       "Daily maximum temperature in orange and minimum temperature in blue; gaps mark unavailable days");
   }
@@ -667,7 +665,12 @@
         date(station.hottest_day_date)) +
       selectedExtremeCard("Lowest low", station.coldest_night, 1,
         date(station.coldest_night_date)) + `</div>` +
-      `<h3>Frequency and persistence</h3><div class="detail-extreme-grid">` +
+      `<section><h3>Historical standing</h3>` +
+      `<p>Each rank compares one eligible corresponding ${escapeHtml(periodLabels[station.period])} ` +
+      `period per earlier year. Precipitation requires all days; mean temperature allows at most 5% missing paired days and no gap over two days.</p>` +
+      percentileGauge(station, "pcpn", "Precipitation") +
+      percentileGauge(station, "tmean", "Mean temperature") +
+      `</section><h3>Frequency and persistence</h3><div class="detail-extreme-grid">` +
       selectedCountCard("Unusually hot days", station.unusually_hot_days,
         "Maximum temperature above this station's seasonal 90th percentile") +
       selectedCountCard("Unusually warm nights", station.warm_nights,
@@ -716,27 +719,21 @@
       `<div class="detail-stats"><p><strong>Precipitation:</strong> ${coverage("pcpn")}</p>` +
       `<p><strong>Mean temperature:</strong> ${coverage("tmean")}</p></div>` +
       `<div class="detail-charts"><figure><figcaption>Daily precipitation</figcaption>` +
-      precipitationChart(days, station) + chartControls() +
-      `<p class="chart-readout" aria-live="polite">Hover, focus, or tap a day for its precipitation report.</p></figure>` +
+      window.SWCStationTemperatureNormals.precipitationLegend() + precipitationChart(days, station) + chartControls() +
+      `<div class="chart-readout temperature-readout precipitation-readout" aria-live="polite">Hover, focus, or tap a day to compare precipitation.</div></figure>` +
       `<figure><figcaption>Daily high and low temperature</figcaption>` +
-      temperatureChart(days, station) + chartControls() +
-      `<p class="chart-readout" aria-live="polite">Hover, focus, or tap a day for its high and low.</p></figure></div>` +
+      window.SWCStationTemperatureNormals.legend(days,detail.temperature_reference,detail.temperature_records) + temperatureChart(days, station) + chartControls() +
+      `<div class="chart-readout temperature-readout" aria-live="polite">Hover, focus, or tap a day to compare temperatures.</div></figure></div>` +
       `<p class="detail-chart-note">Daily bars are observations, not a cumulative total. ` +
       `Trace precipitation counts as zero; missing and flagged days are not filled. ` +
       `Use the day buttons or left and right arrow keys to move between chart dates.</p>` +
-      `<section class="station-cumulative"><h3>Seasonal precipitation and historical comparisons</h3>` +
+      selectedExtremeSummary(station) + `<section class="station-cumulative"><h3>Seasonal precipitation and historical comparisons</h3>` +
       `<p class="detail-chart-note">Choose water year, cool season or monsoon below; independent of the summary period above. ` +
       `Rankings compare matching dates; full-season bars and cumulative curves use their labeled samples.</p>` +
       `<iframe title="Seasonal precipitation and historical comparisons for ${escapeHtml(station.name)}" ` +
       `src="seasonal/index.html?embedded=1&amp;uid=${encodeURIComponent(station.uid)}&amp;as_of=${encodeURIComponent(station.as_of)}" ` +
       `loading="lazy" class="cumulative-frame"></iframe></section>` +
-      selectedExtremeSummary(station) +
-      `<div class="detail-lower"><section><h3>Historical standing</h3>` +
-      `<p>Each rank compares one eligible corresponding ${escapeHtml(periodLabels[station.period])} ` +
-      `period per earlier year. Precipitation requires all days; mean temperature allows at most 5% missing paired days and no gap over two days.</p>` +
-      percentileGauge(station, "pcpn", "Precipitation") +
-      percentileGauge(station, "tmean", "Mean temperature") +
-      `</section><section><h3>Usable daily record</h3><ul>` +
+      `<div class="detail-lower"><section><h3>Usable daily record</h3><ul>` +
       recordLine(detail.record.pcpn, "Precipitation") +
       recordLine(detail.record.maxt, "Maximum temperature") +
       recordLine(detail.record.mint, "Minimum temperature") +
@@ -985,7 +982,7 @@
     if (!hit || !detailContentEl.contains(hit)) return;
     const figure = hit.closest("figure");
     const readout = figure?.querySelector(".chart-readout");
-    if (readout) readout.textContent = hit.dataset.chartReadout;
+    if (readout && !window.SWCStationTemperatureNormals.renderReadout(hit,readout)) readout.textContent = hit.dataset.chartReadout;
     if (makeTabStop) {
       figure.querySelectorAll(".chart-day").forEach(day => day.tabIndex = -1);
       hit.tabIndex = 0;

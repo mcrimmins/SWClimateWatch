@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="leaflet.css">
   <link rel="stylesheet" href="explorer.css">
   <script src="leaflet.js" defer></script>
-  <script src="explorer.js" defer></script>
+  <script src="temperature-normals.js" defer></script><script src="explorer.js" defer></script>
 <!-- SWC analytics bootstrap: only the production site and top-level documents. -->
 <script>
 (() => {
@@ -22,7 +22,7 @@
 })();
 </script>
 
-</head>
+<link rel="stylesheet" href="temperature-normals.css"></head>
 <body>
   <main>
     <header class="page-head">
@@ -64,7 +64,7 @@
         <summary id="coverage-title">Why are some values unavailable?</summary>
         <div id="coverage-breakdown"></div>
         <a href="coverage-by-station.csv" download>Download station-by-station coverage audit</a>
-      </details>
+      <p><strong>Daily temperature normal lines:</strong> Project-calculated 1991-2020 calendar-day averages use paired, unflagged high/low observations, with at least 20 valid years per calendar date. A centered 15-day smoother is applied only where every date in its cyclic calendar window has adequate support; the reported support is the minimum across that window, and eligible years can vary by date. February 29 interpolates adjacent reference days. Hover departures use this smoothed reference; the table retains its existing period-anomaly method. These are not official NOAA normals, and no missing observed temperatures are filled.</p><p><strong>Daily temperature record lines:</strong> Dotted lines show the highest daily maximum and lowest daily minimum among earlier eligible years on that exact calendar date. Current observations and later years are excluded. References need 30 earlier observations, with the earliest qualifying report at least 30 calendar years before the plotted year; February 29 needs at least eight actual earlier leap-day reports with the same age requirement, never interpolated values. Missing, flagged and inverted daily temperatures are excluded. Hover identifies record values, all tied record years and the comparison sample. New/tied markers describe this eligible cached station or ThreadEx record, not certified official records; comparison ties allow 0.01 degree F for numerical precision.</p><p><strong>Daily precipitation record table:</strong> Observed totals are compared with earlier eligible reports on the exact calendar date, using the same 30-year count/age requirements as temperature records and actual leap-day reports only. Missing, flagged, accumulated and invalid reports are excluded. Trace reports are shown as trace and contribute zero to historical comparisons; zero or trace-only reference samples never create tied wettest-day labels. Hover records are within the eligible cached station or ThreadEx history, not certified official records. The wettest day or three-day span within the selected period is a separate indicator.</p></details>
     </section>
 
     <section id="station-detail" class="detail-section" aria-label="Selected station detail" hidden>

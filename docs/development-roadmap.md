@@ -1,6 +1,6 @@
 # Development roadmap
 
-Planning review: November 9, 2026. This is the consolidated backlog, not a
+Planning review: November 10, 2026. This is the consolidated backlog, not a
 commitment to enable every candidate product. No production settings change
 when this document is edited.
 
@@ -112,19 +112,22 @@ monitoring of source freshness, reference support, storage and daily timing.
 
 See [implemented synopsis scope](conditions-synopsis-scope.md#november-9-production-increment-linked-evidence-and-snow-context).
 
-### November 9 expanded hotlink scope — local implementation
+### November 10 stable map links — production promotion confirmed
 
 The user expanded stable image URLs from the two Drought and Grazing products
-to **all published map images** for reuse by other projects. A local increment
-adds predictable `maps/latest/` endpoints for rolling products and a searchable
+to **all published map images** for reuse by other projects. The user confirmed
+production promotion November 10. The release adds predictable `maps/latest/` endpoints for rolling products and a searchable
 HTML/CSV/JSON catalog covering both rolling and dated maps. Current PRISM, snow,
 all twelve monthly products, daily PRISM maps, CORe maps, historic-season maps
 and selected weekly-temperature support maps are included. Original URLs remain
 available. Missing/disabled latest products use notice images; integrity checks
 run after normal publication validation and optional weather quarantine. Aliases
 reuse existing PNGs, with short requested caching and no new source downloads.
-Local review and then VM staging/production promotion are pending. This does not
-complete external dashboard embedding or an Arizona-only export. See
+Local tests and staging review passed. The supplied staging HTTP check confirmed
+200, image/png and the requested public,max-age=300,must-revalidate response.
+Production promotion is user-confirmed; no production header output or full-run
+timing was supplied. External dashboard embedding and an Arizona-only export
+are not confirmed complete and remain separate follow-ups. See
 [stable map link contract and review steps](map-hotlinks.md).
 
 ## Priority order and working sequence
@@ -138,8 +141,8 @@ that work ahead of discretionary features.
 | --- | --- | --- |
 | P0 — ongoing operations | Monitor the confirmed production release | Navigation/About/SPI-footer and snow/evidence synopsis releases are confirmed live November 9. Check the next scheduled run and source freshness; address actual failures before adding features. GA4 Realtime collection still needs separate confirmation. |
 | Complete — monitor | Template conditions synopsis | Seasonal snow narrative, dated supporting evidence and matching weekly-temperature maps are confirmed live November 9. Retain seasonal tests, reference/coverage guards and successful-publication comparisons. AI and the daily AI page remain deferred. See [scope](conditions-synopsis-scope.md). |
-| P1 — active local increment | Stable URLs for all map images and monthly external deliverable | Review/stage the all-map hotlink catalog and latest endpoints described in [map-hotlinks.md](map-hotlinks.md). Then complete external embedding of SPI-12 and 12-month temperature-ranking image exports for Drought and Grazing. First verify whether any exports/links already exist, then agree Arizona extent, dimensions and standalone labels. Reuse existing monthly products; test stable and dated URLs, embedding and cache refresh before replacing external links. Monitor the first automatic new-month cycle; broader SPI validation remains separate. |
-| P2 — next project 2 | Station seasonal precipitation histories | Extend the reviewed annual chart to explicitly defined cool-season and monsoon totals, reusing station caches and completeness rules. Keep regional historical maps separate. |
+| Complete — monitor | Stable URLs for all published map images | User confirmed production promotion November 10. Predictable latest endpoints, dated links, searchable HTML/CSV/JSON catalog and publication integrity checks are live. External project embedding and any Arizona-only export remain separate follow-ups. See [contract](map-hotlinks.md). |
+| P1 — next recommended feature | Station seasonal precipitation histories | Extend the existing annual precipitation bars with cool-season and monsoon views. First agree exact season dates/year labels, then prototype a small cached station set with completeness checks, matching season-to-date comparisons and an explicitly incomplete current bar. Reuse station histories and measure cache/payload costs before network rollout. Regional historical maps remain separate. |
 | P2 — next project 3 | Recent-period weather means | Inventory retained numeric CORe fields; prototype a small 7-/30-day 500-mb/PWAT mean set with completeness checks and measured cost. Anomaly baselines follow separately. |
 | P2 — next project 4 | Historic seasonal snow anomalies | Validate existing peak-SWE departure/percent-of-median pilots and stage eligible years with support guards. Reorder within P2 if cool-season monitoring makes this more useful sooner. |
 | After existing commitments — 1 | Station daily-chart normals and records | Add temperature normals and calendar-date temperature/precipitation records to existing daily plots. Establish shared station reference calculations before expanding the climatology section. See [agreed scope](#station-and-regional-climatology-agreed-november-6-2026). |
@@ -151,13 +154,15 @@ that work ahead of discretionary features.
 | Later — feasibility exploration | Interactive raster map page | Explore selectable existing raster products over a basemap, adjustable transparency, zoom/pan and pixel-value queries. Benchmark a small static-site pilot before selecting delivery methods or scheduling implementation. See [scope](#new-exploration-interactive-raster-map-page). Existing commitments and agreed climatology order remain unchanged. |
 | Later — polish | Consistency and optional interactions | Shared city-label styling, historic RONI labels at the next archive refresh, custom Analytics events and remaining documentation reconciliation. |
 
-November 9 proposed working sequence: the latest production promotion is
-confirmed and the synopsis follow-up is complete. Next, close the external
-monthly-map deliverable, beginning with an inventory of existing exports and
-an agreed standalone image layout.
-Keep station seasonal precipitation histories, recent-period weather means and
-historic snow anomalies in their existing order ahead of the November 6
-climatology additions. Heat metrics remain deferred until spring 2027.
+November 10 proposed working sequence: stable map URLs and the synopsis follow-up
+are confirmed promoted. The next feature is station seasonal precipitation
+histories, beginning with definitions and a small cached-data chart prototype.
+Keep external dashboard link replacement and any Arizona-specific crop on the
+follow-up list; the URL release alone does not establish their completion.
+Then pursue recent-period weather means and historic snow anomalies in their
+existing order before the November 6 climatology additions. Heat metrics remain
+deferred until spring 2027. Check GA4 Realtime and the first automatic December
+monthly cycle as operational follow-ups.
 
 ## Agreed additions and enhancements
 
@@ -316,6 +321,17 @@ long-term PRISM ideas; it does not authorize changes to Monthly PRISM
 implementation files in this roadmap conversation.
 
 ### 1. Station daily-chart normals and records
+
+November 10: approved local charts and layout are integrated into the standard
+Station Conditions builder, ready for local build/preview and staging testing.
+Temperature plots include project-calculated smoothed 1991–2020 normals,
+earlier calendar-date records, filled new/tied markers at every period length,
+and compact daily comparison tables. Precipitation uses an earlier-record
+table and colored/striped record bars; no background record curve is added.
+Period extremes and historical standing precede the independently collapsed
+cumulative and historical-total plots. The staging file list includes both
+new chart assets; the normal reference cache is revision-aware. This release
+is not yet confirmed on staging or production.
 
 Enhance existing Station Conditions daily plots with normal high/low temperature
 lines and calendar-date record high/low values, plus historical maximum daily
@@ -965,10 +981,11 @@ and [production guidance](https://developers.openai.com/api/docs/guides/producti
 
 Follow the [priority order above](#priority-order-and-working-sequence).
 Production completion of the navigation/About/SPI-footer patch and the snow/
-evidence synopsis follow-up is confirmed. The next recommended increment is
-the external monthly-map deliverable: stable SPI-12 and 12-month temperature
-ranking images for Drought and Grazing, using existing monthly caches.
-Then follow the existing project order before the agreed station/regional
+evidence synopsis follow-up is confirmed. Stable all-map URLs are also promoted.
+The next recommended feature is station seasonal precipitation histories, using
+existing cached records. External dashboard embedding and any Arizona-only
+export remain separately tracked. Continue with recent-period weather means
+and historic snow anomalies before the agreed station/regional
 climatology additions; defer heat metrics until spring 2027. Move one bounded
 increment through local review, staging and explicit promotion before adding
 another daily-publication dependency. AI synthesis remains deferred.
