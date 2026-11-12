@@ -1,4 +1,4 @@
-# Manual staging adapter. Cached inputs only; not called by the daily runner.
+# Cached period archive shared by staging and the opt-in daily workflow.
 weather_period_archive_current <- function(directory,signature=NULL) {
   paths<-file.path(directory,c("height500.png","jet250.png","moisture.png","mean-native-grid.rds"))
   marker<-file.path(directory,"complete.rds")
@@ -16,9 +16,16 @@ build_weather_period_archive <- function(explorer_dir="site/daily-explorer",
   dates<-sort(intersect(vapply(payload$days,`[[`,character(1),"date"),
     vapply(Filter(function(d)identical(d$status,"available"),daily$days),`[[`,character(1),"date")))
   if(!length(dates))stop("No matching retained daily weather dates.")
-  ends<-if(is.null(end_dates))rev(tail(dates,recent_end_dates)) else sort(unique(as.character(as.Date(end_dates))),decreasing=TRUE)
-  if(length(ends)>30L||anyNA(as.Date(ends))||!all(ends%in%dates))stop("Choose up to 30 retained Explorer/weather endpoints.")
   dir.create(output_dir,recursive=TRUE,showWarnings=FALSE)
+  queue_path<-file.path(output_dir,"retry-endpoints.csv")
+  queued<-if(file.exists(queue_path))utils::read.csv(queue_path,stringsAsFactors=FALSE)$end else character()
+  if(length(queued)&&anyNA(as.Date(queued)))stop("Invalid weather mean retry endpoint.")
+  # Keep unresolved endpoints after they leave the recent 30-endpoint window.
+  # Service a few older queued endpoints alongside the newest endpoint.
+  queued<-intersect(queued,vapply(payload$days,`[[`,character(1),"date"))
+  recent<-rev(tail(dates,recent_end_dates))
+  ends<-if(is.null(end_dates))unique(c(head(recent,1),head(sort(intersect(queued,dates)),3),recent)) else sort(unique(as.character(as.Date(end_dates))),decreasing=TRUE)
+  if((!is.null(end_dates)&&length(ends)>30L)||anyNA(as.Date(ends))||!all(ends%in%dates))stop("Choose up to 30 retained Explorer/weather endpoints.")
   started<-proc.time()[["elapsed"]];report<-list();new_ends<-character()
   input_cache<-new.env(parent=emptyenv())
   decoded_cache<-new.env(parent=emptyenv())
@@ -90,6 +97,15 @@ build_weather_period_archive <- function(explorer_dir="site/daily-explorer",
   # Publish only this run's verified/current periods, so revisions never leave
   # stale means in the manifest. Retained files stay available for later reuse.
   report<-do.call(rbind,report);records<-list()
+  unresolved<-unique(report$end[report$status%in%c("DEFERRED","UNAVAILABLE")])
+  resolved<-setdiff(unique(report$end),unresolved)
+  queued<-union(setdiff(queued,resolved),unresolved)
+  utils::write.csv(data.frame(end=sort(queued)),queue_path,row.names=FALSE)
+  failed_inputs<-as.list(input_cache)
+  failed_inputs<-failed_inputs[vapply(failed_inputs,function(x)!is.null(x$error),logical(1))]
+  needs<-if(length(failed_inputs))data.frame(date=names(failed_inputs),note=vapply(failed_inputs,`[[`,character(1),"error")) else data.frame(date=character(),note=character())
+  # The next daily CORe update consumes this queue before means are retried.
+  utils::write.csv(needs,file.path(output_dir,"needed-dates.csv"),row.names=FALSE)
   for(i in which(report$status%in%c("BUILT","REUSED"))) {
     row<-report[i,];directory<-file.path(output_dir,"periods",row$end,paste0(row$days,"day"))
     if(!weather_period_archive_current(directory))stop("Period output changed before staging.")
@@ -110,7 +126,7 @@ build_weather_period_archive <- function(explorer_dir="site/daily-explorer",
   checked<-validate_weather_period_assets(explorer_dir)
   summary<-data.frame(periods=checked$periods,maps=length(checked$images),built=sum(report$status=="BUILT"),reused=sum(report$status=="REUSED"),
     deferred=sum(report$status=="DEFERRED"),unavailable=sum(report$status=="UNAVAILABLE"),requests=0L,seconds=proc.time()[["elapsed"]]-started,
-    latest=if(length(records))max(vapply(records,`[[`,character(1),"end")) else NA_character_)
+    latest=if(length(records))max(vapply(records,`[[`,character(1),"end")) else NA_character_,retry_endpoints=length(queued))
   write.csv(summary,file.path(output_dir,"update-summary.csv"),row.names=FALSE);print(summary,row.names=FALSE)
   invisible(summary)
 }

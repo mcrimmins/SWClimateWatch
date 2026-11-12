@@ -52,22 +52,24 @@ testthat::test_that("archive checkpoints, retains prior-year dates and isolates 
   # The next year's Explorer may no longer include September; retained weather
   # records must survive that change independently of current PRISM navigation.
   write_payload(c("2026-10-01","2026-10-02"))
-  second <- env$update_weather_circulation_archive(explorer,archive,today=as.Date("2026-10-03"),max_new_dates=1,recheck_days=0)
+  second <- env$update_weather_circulation_archive(explorer,archive,today=as.Date("2026-10-03"),max_new_dates=2,recheck_days=0)
   manifest <- jsonlite::read_json(file.path(explorer,"circulation-manifest.json"))
-  testthat::expect_equal(second$days,3)
+  testthat::expect_equal(second$days,4) # Also services the persisted September gap.
   testthat::expect_true("2026-09-30" %in% vapply(manifest$days,`[[`,character(1),"date"))
   testthat::expect_silent(validate_weather_circulation_assets(explorer))
   env$fail_dates <- "2026-10-03"
   write_payload(c("2026-10-01","2026-10-02","2026-10-03"))
   failed <- env$update_weather_circulation_archive(explorer,archive,today=as.Date("2026-10-04"),max_new_dates=1,recheck_days=0)
   testthat::expect_equal(failed$status,"PARTIAL")
-  testthat::expect_equal(failed$days,3)
+  testthat::expect_equal(failed$days,4)
   testthat::expect_equal(failed$pending,1)
   testthat::expect_true(file.exists(file.path(archive,"archive-state.rds")))
   env$fail_dates <- character()
   resumed <- env$update_weather_circulation_archive(explorer,archive,today=as.Date("2026-10-04"),max_new_dates=1,recheck_days=0)
-  testthat::expect_equal(resumed$days,4)
+  testthat::expect_equal(resumed$days,5)
   testthat::expect_equal(resumed$pending,0)
+  testthat::expect_true("2026-10-03"%in%env$refreshes) # Failed dates bypass stale cached indexes.
+  env$refreshes<-character()
   env$update_weather_circulation_archive(explorer,archive,today=as.Date("2026-10-04"),max_new_dates=0,recheck_days=3)
   testthat::expect_equal(sort(env$refreshes),c("2026-10-01","2026-10-02"))
   env$refreshes <- character()
@@ -76,11 +78,11 @@ testthat::test_that("archive checkpoints, retains prior-year dates and isolates 
   # A damaged archived PNG is removed from the known set and repaired on resume.
   writeLines("bad",file.path(archive,"daily","2026-10-02","height500.png"))
   repaired <- env$update_weather_circulation_archive(explorer,archive,today=as.Date("2026-10-04"),max_new_dates=1,recheck_days=0)
-  testthat::expect_equal(repaired$days,4)
+  testthat::expect_equal(repaired$days,5)
   testthat::expect_equal(repaired$built,1)
   env$weather_renderer_signature <- function() "new-renderer"
   changed <- env$update_weather_circulation_archive(explorer,archive,today=as.Date("2026-10-04"),max_new_dates=1,recheck_days=0)
-  testthat::expect_equal(changed$days,4) # Keep verified prior images while rebuilding in batches.
+  testthat::expect_equal(changed$days,5) # Keep verified prior images while rebuilding in batches.
   testthat::expect_equal(changed$built,1)
   testthat::expect_equal(changed$pending,2)
   testthat::expect_error(env$backfill_weather_circulation_archive(explorer,archive,batch_size=0),"1-30")

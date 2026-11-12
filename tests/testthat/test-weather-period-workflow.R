@@ -5,7 +5,7 @@ testthat::test_that("daily weather updates precede bounded cached means and erro
   root<-withr::local_tempdir();report<-file.path(root,"report");calls<-character()
   payload<-list(circulation_enabled=TRUE,circulation_period_means_enabled=TRUE)
   jsonlite::write_json(payload,file.path(root,"daily-data.json"),auto_unbox=TRUE)
-  daily<-function(today,explorer_dir){calls<<-c(calls,"daily");list(status="READY",days=30,built=0,reused=30,failed=0,pending=0,latest="2026-11-11")}
+  daily<-function(today,explorer_dir,dependency_path){calls<<-c(calls,"daily");testthat::expect_equal(dependency_path,file.path(report,"needed-dates.csv"));list(status="READY",days=30,built=0,reused=30,failed=0,pending=0,latest="2026-11-11")}
   means<-function(explorer_dir,output_dir,max_new_end_dates){calls<<-c(calls,"means");testthat::expect_equal(max_new_end_dates,3)
     data.frame(periods=6,maps=18,built=2,reused=4,deferred=0,unavailable=0,requests=0,seconds=12,latest="2026-11-11")}
   result<-swc_daily_publish_update_weather(daily_builder=daily,means_builder=means,explorer_dir=root,means_report_dir=report)

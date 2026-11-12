@@ -6,7 +6,8 @@ weather_write_json <- function(value,path) {
 }
 
 weather_archive_plan <- function(explorer_dates,known_dates=character(),start_date=NULL,
-    today=Sys.Date(),max_new_dates=3L,recheck_days=3L,checked_dates=character()) {
+    today=Sys.Date(),max_new_dates=3L,recheck_days=3L,checked_dates=character(),
+    retry_dates=character(),retry_order=character(),refresh_dates=character()) {
   dates <- sort(unique(as.Date(explorer_dates))); today <- as.Date(today)
   if (!length(dates) || anyNA(dates) || length(today)!=1L || is.na(today)) stop("Invalid weather archive dates.")
   if (length(max_new_dates)!=1L || !is.finite(max_new_dates) || max_new_dates<0 || max_new_dates>30 ||
@@ -18,18 +19,25 @@ weather_archive_plan <- function(explorer_dates,known_dates=character(),start_da
   if (length(start)!=1L || is.na(start)) stop("Invalid archive start date.")
   eligible <- eligible[eligible>=start]
   missing <- rev(eligible[!as.character(eligible) %in% known_dates])
-  scheduled <- head(missing,max_new_dates)
+  retry_dates<-intersect(as.character(eligible),as.character(retry_dates))
+  candidates<-unique(c(as.character(missing),retry_dates))
+  queue<-unique(c(intersect(retry_order,candidates),intersect(retry_dates,candidates)))
+  # Keep one newest-date slot when the budget allows, then service the
+  # persisted least-recently-attempted queue. Old failures cannot be crowded out.
+  priority<-if(length(queue))unique(c(if(max_new_dates>1L)head(as.character(missing),1),queue,candidates)) else candidates
+  scheduled <- head(priority,max_new_dates)
   # Re-fetch recent complete records at most once per run date. Comparing full
   # field hashes detects revisions even when byte offsets have not changed.
   recheck <- eligible[eligible>=today-recheck_days & as.character(eligible) %in% known_dates &
-    !as.character(eligible) %in% checked_dates]
+    !as.character(eligible) %in% c(checked_dates,scheduled)]
   data.frame(date=c(as.character(scheduled),as.character(recheck)),
-    action=c(rep("BUILD",length(scheduled)),rep("RECHECK",length(recheck))))
+    action=c(ifelse(scheduled%in%refresh_dates,"RETRY","BUILD"),rep("RECHECK",length(recheck))))
 }
 
 update_weather_circulation_archive <- function(explorer_dir=file.path("site","daily-explorer"),
     archive_dir=file.path("data","processed","weather-circulation"),today=Sys.Date(),
-    max_new_dates=3L,recheck_days=3L,backfill=FALSE) {
+    max_new_dates=3L,recheck_days=3L,backfill=FALSE,
+    dependency_path=file.path("data","processed","weather-period-means","needed-dates.csv")) {
   started <- proc.time()[["elapsed"]]
   payload_path <- file.path(explorer_dir,"daily-data.json")
   payload <- jsonlite::read_json(payload_path)
@@ -38,6 +46,7 @@ update_weather_circulation_archive <- function(explorer_dir=file.path("site","da
   dir.create(archive_dir,recursive=TRUE,showWarnings=FALSE)
   state_path <- file.path(archive_dir,"archive-state.rds")
   state <- if (file.exists(state_path)) readRDS(state_path) else list(start_date=NULL,records=list(),checked=list())
+  if(is.null(state$pending))state$pending<-list()
   valid <- vapply(state$records,function(record) {
     paths <- file.path(archive_dir,"daily",record$date,c("height500.png","jet250.png","moisture.png"))
     all(file.exists(paths)) && identical(unname(tools::md5sum(paths)),record$md5)
@@ -50,20 +59,60 @@ update_weather_circulation_archive <- function(explorer_dir=file.path("site","da
   if (!length(eligible)) stop("No completed dates to build.")
   if (is.null(state$start_date)) state$start_date <- as.character(max(eligible)-29L)
   if (backfill) state$start_date <- as.character(min(as.Date(state$start_date),min(eligible)))
+  dependencies<-character()
+  if(file.exists(dependency_path)) {
+    dependency<-utils::read.csv(dependency_path,stringsAsFactors=FALSE)
+    if(!"date"%in%names(dependency))stop("Malformed weather mean dependency queue.")
+    parsed<-as.Date(as.character(dependency$date))
+    if(anyNA(parsed))stop("Invalid weather mean dependency date.")
+    dependencies<-as.character(parsed[parsed<as.Date(today)&parsed>=min(eligible)-29L&parsed<=max(eligible)])
+  }
+  # Persist all missing candidates before attempting any request. First-seen
+  # timestamps plus last-attempt timestamps provide fair retries across runs.
+  stamp<-format(Sys.time(),"%Y-%m-%d %H:%M:%OS6",tz="UTC")
+  missing<-as.character(eligible[eligible>=as.Date(state$start_date)&!as.character(eligible)%in%current_dates])
+  previous_failed<-character()
+  previous_path<-file.path(archive_dir,"last-batch.csv")
+  if(file.exists(previous_path)) {
+    previous<-utils::read.csv(previous_path,stringsAsFactors=FALSE)
+    if(all(c("date","status")%in%names(previous))) {
+      parsed<-as.Date(as.character(previous$date[previous$status=="FAILED"]))
+      previous_failed<-as.character(parsed[!is.na(parsed)&parsed<as.Date(today)])
+    }
+  }
+  for(date in unique(c(missing,dependencies,previous_failed))) {
+    if(is.null(state$pending[[date]]))state$pending[[date]]<-list(first_seen=stamp,last_attempt="",attempts=0L,note="",refresh=FALSE)
+    if(date%in%c(dependencies,previous_failed))state$pending[[date]]$refresh<-TRUE
+  }
+  pending_dates<-names(state$pending)
+  eligible_pending<-pending_dates[as.Date(pending_dates)<as.Date(today)]
+  rank<-vapply(state$pending[eligible_pending],function(x)if(nzchar(x$last_attempt))x$last_attempt else x$first_seen,character(1))
+  retry_order<-eligible_pending[order(rank,-as.numeric(as.Date(eligible_pending)))]
+  # Include queued gaps even if the Explorer window has since moved forward.
+  plan_dates<-unique(c(dates,eligible_pending))
+  retry_start<-min(c(as.Date(state$start_date),as.Date(eligible_pending)))
   checked <- names(state$checked)[vapply(state$checked,function(x) identical(x,as.character(today)),logical(1))]
-  plan <- weather_archive_plan(dates,current_dates,state$start_date,today,
-    max_new_dates,recheck_days,checked)
+  refresh_dates<-pending_dates[vapply(state$pending,function(x)isTRUE(x$refresh),logical(1))]
+  plan <- weather_archive_plan(plan_dates,current_dates,retry_start,today,
+    max_new_dates,recheck_days,checked,retry_dates=eligible_pending,retry_order=retry_order,refresh_dates=refresh_dates)
+  saveRDS(state,state_path)
   reports <- list()
   for (i in seq_len(nrow(plan))) {
     date <- plan$date[i]
     message("Weather archive ",i,"/",nrow(plan),": ",date," (",plan$action[i],")")
     result <- build_weather_circulation_cached(as.Date(date),file.path(archive_dir,"daily"),
-      refresh=identical(plan$action[i],"RECHECK"))
+      refresh=plan$action[i]%in%c("RECHECK","RETRY"))
     reports[[i]] <- result
     if (result$status!="FAILED") {
       paths <- file.path(archive_dir,"daily",date,c("height500.png","jet250.png","moisture.png"))
       state$records[[date]] <- list(date=date,md5=unname(tools::md5sum(paths)),renderer=renderer)
       state$checked[[date]] <- as.character(today)
+      state$pending[[date]]<-NULL
+    } else {
+      old<-state$pending[[date]]
+      if(is.null(old))old<-list(first_seen=stamp,attempts=0L)
+      state$pending[[date]]<-list(first_seen=old$first_seen,last_attempt=format(Sys.time(),"%Y-%m-%d %H:%M:%OS6",tz="UTC"),
+        attempts=old$attempts+1L,note=result$note,refresh=TRUE)
     }
     # Checkpoint every successful date, so interruption never loses the batch.
     saveRDS(state,state_path)
@@ -108,7 +157,11 @@ update_weather_circulation_archive <- function(explorer_dir=file.path("site","da
       names(state$records)[vapply(state$records,function(record) identical(record$renderer,renderer),logical(1))]),
     latest=if(length(records)) max(names(records)) else NA_character_,
     lag_days=if(length(records)) as.integer(as.Date(today)-as.Date(max(names(records)))) else NA_integer_,
-    requests=sum(reports$requests),elapsed_seconds=proc.time()[["elapsed"]]-started)
+    requests=sum(reports$requests),elapsed_seconds=proc.time()[["elapsed"]]-started,retry_pending=length(state$pending))
+  queue<-if(length(state$pending))do.call(rbind,lapply(names(state$pending),function(date) {
+    x<-state$pending[[date]];data.frame(date,first_seen=x$first_seen,last_attempt=x$last_attempt,attempts=x$attempts,note=x$note)
+  })) else data.frame(date=character(),first_seen=character(),last_attempt=character(),attempts=integer(),note=character())
+  utils::write.csv(queue,file.path(archive_dir,"retry-queue.csv"),row.names=FALSE)
   utils::write.csv(as.data.frame(summary),file.path(archive_dir,"update-summary.csv"),row.names=FALSE)
   utils::write.csv(reports,file.path(archive_dir,"last-batch.csv"),row.names=FALSE)
   message("Weather maps: ",summary$days," dates retained; ",summary$built," built, ",summary$reused,

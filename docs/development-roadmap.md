@@ -325,6 +325,15 @@ Tests verify ordering, opt-out, caps, failures preserving daily weather,
 workflow continuation and summary reporting. Integrated staging-run acceptance
 and production promotion remain pending; existing cron needs no schedule change.
 
+Automatic gap recovery is strengthened with persisted CORe retry state,
+least-recently-attempted service alongside a newest-date slot, and forced
+source refresh after failures. Missing required mean inputs queue daily-date
+repairs even when existing daily PNGs are valid; unresolved mean endpoints
+remain queued beyond the recent 30-endpoint window while in the Explorer.
+Tests simulate HTTP failure followed by next-run recovery, refreshed indexes,
+missing cached input recovery restoring both means, fair retry budgets and
+endpoints aging beyond the recent selection. Queue CSVs expose pending work.
+
 ## Agreed additions and enhancements
 
 **Historic ENSO labels at next archive refresh (October 28 request):** apply the

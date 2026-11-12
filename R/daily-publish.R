@@ -184,6 +184,8 @@ swc_daily_publish_summary_lines <- function(record, prism = NULL, snow = NULL,
         coverage$recent_available,coverage$recent_expected,coverage$available_dates,
         coverage$explorer_dates,coverage$wind_withheld_dates,coverage$unknown_overlay_dates))
     }
+    if(is.numeric(weather$retry_pending)&&length(weather$retry_pending)==1L&&is.finite(weather$retry_pending)&&weather$retry_pending>0)
+      lines<-c(lines,sprintf("CORe retry queue: %d dates; retries resume on subsequent daily runs.",weather$retry_pending))
     means<-weather$period_means
     if(is.list(means)&&!identical(means$status,"DISABLED"))lines<-c(lines,
       if(identical(means$status,"ERROR"))"Weather means: unavailable this run; daily maps retained." else
@@ -344,7 +346,8 @@ swc_daily_publish_update_weather_means <- function(explorer_dir=file.path("site"
     if(!is.data.frame(result)||nrow(result)!=1L||!all(vapply(counts,function(n)is.numeric(result[[n]])&&
         length(result[[n]])==1L&&is.finite(result[[n]])&&result[[n]]>=0,logical(1)))||result$requests!=0L)
       stop("Weather means returned an invalid cached-build summary.")
-    status<-if(result$deferred>0||result$unavailable>0||result$periods==0)"PARTIAL" else "READY"
+    retry_pending<-if(is.numeric(result$retry_endpoints)&&length(result$retry_endpoints)==1L)result$retry_endpoints else 0L
+    status<-if(result$deferred>0||result$unavailable>0||result$periods==0||retry_pending>0)"PARTIAL" else "READY"
     dir.create(report_dir,recursive=TRUE,showWarnings=FALSE)
     utils::write.csv(cbind(data.frame(status=status,note=""),result),file.path(report_dir,"workflow-status.csv"),row.names=FALSE)
     c(list(status=status),as.list(result))
@@ -371,7 +374,10 @@ swc_daily_publish_update_weather <- function(today=Sys.Date(),daily_builder=NULL
     return(list(status="DISABLED"))
   }
   if(is.null(daily_builder)){source(file.path("scripts","load-weather-circulation-archive.R"));daily_builder<-update_weather_circulation_archive}
-  result<-daily_builder(today=today,explorer_dir=explorer_dir)
+  daily_args<-list(today=today,explorer_dir=explorer_dir)
+  if("dependency_path"%in%names(formals(daily_builder)))daily_args$dependency_path<-
+    if(tolower(Sys.getenv("SWC_WEATHER_PERIOD_MEANS","false"))%in%c("true","1","yes"))file.path(means_report_dir,"needed-dates.csv") else ""
+  result<-do.call(daily_builder,daily_args)
   if(is.list(result)&&result$status%in%c("READY","PARTIAL")) {
     result$period_means<-swc_daily_publish_update_weather_means(explorer_dir,builder=means_builder,report_dir=means_report_dir)
   } else swc_daily_publish_disable_weather_means(explorer_dir)

@@ -61,6 +61,22 @@ elapsed time. Current workflow status and per-period details are under
 Mean-build failures disable only the means selector, preserving daily weather.
 See [staging and promotion](weather-period-means-staging.md) before activation.
 
+Missing CORe dates are persisted in
+`data/processed/weather-circulation/retry-queue.csv` and archive state. With
+the default request budget, a newest-date slot is preserved while older gaps
+are serviced by least-recent attempt. Failed dates refresh upstream indexes
+and selected fields on retry, so an incomplete cached response cannot lock in
+a failure. Unresolved dates survive Explorer-window changes.
+
+Means are checked again each daily run. Missing required inputs are recorded
+in `data/processed/weather-period-means/needed-dates.csv`; the next daily CORe
+step queues those dates for source refresh even if their PNGs already exist.
+Unresolved/deferred endpoints persist in `retry-endpoints.csv` and remain
+eligible for repair beyond the recent 30-endpoint selection while their dates
+are retained in the Explorer. Successful repairs clear the corresponding
+queues; affected 7-/30-day maps then rebuild within the configured endpoint
+limit. Mean calculations still make zero downloads and use complete windows.
+
 ## Home dashboard refresh (local review)
 
 The hydroclimate-oriented home layout reuses six existing maps: seven-day rain

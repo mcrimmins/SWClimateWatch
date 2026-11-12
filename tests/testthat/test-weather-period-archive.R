@@ -35,4 +35,23 @@ testthat::test_that("rolling mean builds resume, reuse, reject stale inputs and 
   check<-env$validate_weather_period_assets(explorer);testthat::expect_equal(length(check$images),18)
   writeLines("corrupted",file.path(explorer,check$images[1]))
   testthat::expect_error(env$validate_weather_period_assets(explorer),"stale weather")
+  # A missing day blocks both means, queues the raw dependency and survives
+  # aging outside the recent endpoint selection until recovery and rebuilding.
+  plan_builder<-env$weather_period_plan;env$missing<-"2026-09-30"
+  env$weather_period_plan<-function(date,days,roots){p<-plan_builder(date,days,roots);p$ready<-date!=env$missing;p}
+  blocked<-env$build_weather_period_archive(explorer,cache,max_new_end_dates=1L,recent_end_dates=1L)
+  testthat::expect_equal(blocked$unavailable,2)
+  testthat::expect_equal(read.csv(file.path(cache,"needed-dates.csv"))$date,"2026-09-30")
+  testthat::expect_true("2026-10-05"%in%read.csv(file.path(cache,"retry-endpoints.csv"))$end)
+  dates<-c(dates,"2026-11-10")
+  jsonlite::write_json(list(schema_version=1L,days=lapply(dates,function(d)list(date=d)),circulation_enabled=TRUE),file.path(explorer,"daily-data.json"),auto_unbox=TRUE)
+  jsonlite::write_json(list(days=lapply(dates,function(d)list(date=d,status="available"))),file.path(explorer,"circulation-manifest.json"),auto_unbox=TRUE)
+  env$missing<-"";env$revision<-"recovered"
+  env$build_weather_period_archive(explorer,cache,max_new_end_dates=1L,recent_end_dates=1L)
+  recovered<-env$build_weather_period_archive(explorer,cache,max_new_end_dates=1L,recent_end_dates=1L)
+  testthat::expect_equal(recovered$built,2)
+  manifest<-jsonlite::read_json(file.path(explorer,"circulation-means-manifest.json"))
+  testthat::expect_true(all(c(7L,30L)%in%vapply(Filter(function(p)p$end=="2026-10-05",manifest$periods),`[[`,integer(1),"days")))
+  testthat::expect_equal(nrow(read.csv(file.path(cache,"needed-dates.csv"))),0)
+  testthat::expect_equal(nrow(read.csv(file.path(cache,"retry-endpoints.csv"))),0)
 })
