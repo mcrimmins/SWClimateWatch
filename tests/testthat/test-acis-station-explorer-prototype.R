@@ -43,7 +43,7 @@ testthat::test_that("one stale station does not delay fresh station values", {
   paths <- write_acis_station_explorer_details(
     stations, list(caches[[1L]], NULL), as.Date("2023-12-31"),
     output_dir = tempfile("missing-station-detail-"),
-    module_dir = file.path(project_root,"R"), reference_cache_dir=tempfile("chart-reference-"))
+    module_dir = file.path(project_root,"R"), reference_cache_dir=tempfile("chart-reference-"),monthly_cache_dir=tempfile("monthly-reference-"))
   saved <- jsonlite::fromJSON(paths[[2L]])
   testthat::expect_true(is.null(saved$cache_as_of))
   testthat::expect_equal(saved$record$pcpn$valid_days, 0L)
@@ -401,7 +401,7 @@ testthat::test_that("station detail keeps daily gaps, traces, and invalid pairs 
   output <- tempfile("station-details-")
   paths <- write_acis_station_explorer_details(station, list(cache),
     dates[[7L]], output, module_dir=file.path(project_root,"R"),
-    reference_cache_dir=tempfile("chart-reference-"))
+    reference_cache_dir=tempfile("chart-reference-"),monthly_cache_dir=tempfile("monthly-reference-"))
   saved <- jsonlite::fromJSON(paths[[1L]])
   testthat::expect_equal(saved$uid, 7L)
   testthat::expect_equal(nrow(saved$daily), 7L)

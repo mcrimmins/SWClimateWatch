@@ -354,6 +354,46 @@ and browser costs before daily integration.
 
 ### 2. Collapsible station climatology section
 
+November 12: approved climatology is now integrated locally into the standard
+Station Conditions builder and daily station path. Both reference periods,
+linked month tables, distributions and selectors are included. Publication
+validation requires linked assets, both periods, correct station/snapshot,
+coverage and ordered ranges; older station pages can still be upgraded safely.
+Reusable references live at `data/processed/acis-stations/monthly-climatology/`.
+Local integration/refresh command: `scripts/build-station-climatology-integration.R`;
+standard preview: `scripts/serve-station-conditions-review.R`. Ready for local
+review and staging tests; staging/production promotion is not yet confirmed.
+
+November 11 local pilot: an isolated “Typical climate at this station” section
+shows monthly average precipitation totals and monthly mean daily highs/lows
+for 1991–2020, with Jan–Dec / Oct–Sep ordering. Precipitation requires complete
+calendar months; paired temperature months require at least 95% valid days and
+no gap over two days. At least 20 eligible years are required independently per
+month/variable. Actual leap-day observations enter February. Unsupported months
+remain gaps, zero precipitation remains zero, and sample counts/methods are
+available in a coverage table. These are project-calculated references, not
+official NOAA normals. Monthly precipitation is shown with a median mark and 25th–75th percentile
+box; whiskers span the actual reference-period minimum–maximum, not a 1.5-IQR
+rule. Temperature uses average high/low lines, middle-50% bands and lighter
+minimum–maximum envelopes for the monthly means. Short hover labels show the
+main values; linked tables below both plots show means, medians, ranges, sample
+counts and tied extreme years. Month selection supports hover, click/tap, focus
+and keyboard arrows, and persists when switching calendar/water-year order. These extremes refer
+only to eligible 1991–2020 months, not full-record or daily temperature records;
+these ranges are not confidence intervals. Zero-median boxes remain visible.
+Baseline-only fingerprints detect historical revisions
+without invalidating references for new current observations. No new downloads,
+production integration or VM deployment is enabled by this pilot.
+The local pilot also offers full available cached station/ThreadEx history
+with the same screening and minimum 20 eligible years, defaulting to 1991–2020.
+Both periods are precomputed and cached; switching updates both plots, labels
+and linked tables without a source request, preserving month/order selection.
+Full-record month/variable sample counts and eligible spans are explicit.
+Unfinished calendar months and observations after the displayed snapshot are
+excluded; current incomplete-month appends do not invalidate references.
+Build: `scripts/build-station-monthly-climatology-preview.R`; preview:
+`scripts/serve-station-monthly-climatology-preview.R`.
+
 For the selected station, provide interactive daily normal high/low/mean
 temperatures, calendar-date record highs/lows and daily precipitation averages
 and records, with calendar-year or water-year ordering. Include monthly

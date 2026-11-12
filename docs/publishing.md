@@ -456,3 +456,35 @@ Historic pages retain their existing badges for now. Their next refresh should
 apply consistent strength bands to the documented DJF value, with period/source
 context and without applying the current operational advisory retrospectively.
 This follow-up is recorded in the development roadmap.
+
+
+## Station monthly climatology integration (November 12, 2026)
+
+The standard station builder includes the collapsed monthly climatology section,
+its default 1991-2020 reference and full available cached-record alternative.
+Both periods use the same month-screening rules and minimum 20 eligible years.
+Only finished calendar months enter the comparisons. Reference selection,
+month selection, plot ordering and linked tables are browser-side operations.
+
+Private reference caches live in
+`data/processed/acis-stations/monthly-climatology/`: `<uid>.rds` for 1991-2020 and
+`<uid>-record.rds` for the full available history. Historical revisions or a newly
+completed month invalidate the affected fingerprint; current incomplete-month
+appends do not. The first build on a VM may need to calculate these references;
+there are no additional data requests. Existing daily station updates include
+this preparation automatically; no new cron entry is needed after deployment.
+
+To add the section to an existing local station snapshot without recalculating
+period summaries or downloading data, run from the project root:
+
+```r
+source("scripts/build-station-climatology-integration.R")
+source("scripts/serve-station-conditions-review.R")
+```
+
+This refreshes the standard unpublished Station Conditions snapshot. For a new
+snapshot from scratch, use `scripts/build-acis-station-explorer-prototype.R`.
+Local `scripts/stage-station-beta.R` copies the prepared assets/data for Quarto;
+remote publication remains a separate explicit step. Monthly data and linked
+assets are validated before staging and again after rendering. This entry does
+not establish that the release has been promoted to staging or production.

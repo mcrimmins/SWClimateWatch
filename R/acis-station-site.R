@@ -1,5 +1,9 @@
 # Publishable snapshot of the screened, local ACIS station explorer.
 # Source after the station explorer and publication-audit modules.
+.swc_station_module_files <- Filter(function(x)is.character(x)&&length(x)==1L,
+  lapply(sys.frames(),function(frame)frame$ofile))
+source(file.path(dirname(tail(.swc_station_module_files,1)[[1]]),"acis-station-monthly-climatology.R"),local=TRUE)
+rm(.swc_station_module_files)
 
 swc_station_beta_files <- c(
   "index.html", "explorer.js", "explorer.css", "leaflet.js", "leaflet.css",
@@ -15,6 +19,8 @@ swc_station_beta_snapshot <- function(directory) {
     setdiff(swc_station_beta_files,c("temperature-normals.js","temperature-normals.css"))
   if(grepl("SWCStationChartTools",explorer_js,fixed=TRUE))
     required_files <- c(required_files,"station-chart-tools.js")
+  monthly_charts <- grepl("SWCStationMonthlyClimatology",explorer_js,fixed=TRUE)
+  if(monthly_charts)required_files <- c(required_files,"monthly-climatology.js","monthly-climatology.css")
   paths <- file.path(directory, required_files)
   if (!all(file.exists(paths)) || any(file.info(paths)$size <= 0))
     stop("Station snapshot is missing a required nonempty file.", call. = FALSE)
@@ -42,6 +48,9 @@ swc_station_beta_snapshot <- function(directory) {
           (is.finite(rows$pcpn_anomaly) | is.finite(rows$pcpn_percentile))))
     stop("A provisional precipitation total has a comparison value.",
          call. = FALSE)
+  if(monthly_charts&&(!grepl('src="monthly-climatology.js"',html,fixed=TRUE)||
+      !grepl('href="monthly-climatology.css"',html,fixed=TRUE)))
+    stop("Station page does not link monthly climatology assets.",call.=FALSE)
   if (integrated_charts) {
     for (path in details) {
       detail <- jsonlite::read_json(path,simplifyVector=TRUE)
@@ -55,6 +64,10 @@ swc_station_beta_snapshot <- function(directory) {
         stop("Rebuild station details with daily normals and records before staging: ",path,
              call.=FALSE)
     }
+  }
+  if(monthly_charts)for(path in details) {
+    detail<-jsonlite::read_json(path,simplifyVector=TRUE)
+    validate_acis_station_monthly_detail(detail,sub("\\.json$","",basename(path)),rows$as_of[[1L]])
   }
   if (grepl("cumulative/index.html", explorer_js, fixed = TRUE))
     validate_acis_station_cumulative_site(file.path(directory, "cumulative"),
@@ -94,6 +107,9 @@ swc_station_beta_stage <- function(
   dir.create(stage)
   on.exit(if (dir.exists(stage)) unlink(stage, recursive = TRUE), add = TRUE)
   copied <- file.copy(file.path(source_dir, swc_station_beta_files), stage)
+  for(name in c("monthly-climatology.js","monthly-climatology.css"))
+    if(file.exists(file.path(source_dir,name))&&!file.copy(file.path(source_dir,name),stage))
+      stop("Could not copy station monthly climatology assets; last good page retained.")
   if(file.exists(file.path(source_dir,"station-chart-tools.js")) &&
      !file.copy(file.path(source_dir,"station-chart-tools.js"),stage))
     stop("Could not copy station chart controls; last good page retained.")

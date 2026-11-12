@@ -2,6 +2,7 @@
 .swc_daily_module_files <- Filter(function(x) is.character(x)&&length(x)==1L,
   lapply(sys.frames(),function(frame) frame$ofile))
 source(file.path(dirname(tail(.swc_daily_module_files,1)[[1]]),"monthly-publish.R"))
+source(file.path(dirname(tail(.swc_daily_module_files,1)[[1]]),"acis-station-monthly-climatology.R"),local=TRUE)
 rm(.swc_daily_module_files)
 
 # ntfy is opt-in. Never store a topic or access token in repository files.
@@ -419,12 +420,23 @@ swc_daily_publish_validate_stations <- function(output_dir) {
          call. = FALSE)
   explorer_js <- paste(readLines(file.path(station_dir, "explorer.js"), warn = FALSE), collapse = "\n")
   chart_assets <- c(
+    if(grepl("SWCStationMonthlyClimatology",explorer_js,fixed=TRUE)) c("monthly-climatology.js","monthly-climatology.css"),
     if(grepl("SWCStationChartTools",explorer_js,fixed=TRUE)) "station-chart-tools.js",
     if(grepl("SWCStationTemperatureNormals",explorer_js,fixed=TRUE))
       c("temperature-normals.js","temperature-normals.css"))
   chart_paths <- file.path(station_dir,chart_assets)
   if(length(chart_paths) && (!all(file.exists(chart_paths)) || any(file.info(chart_paths)$size<=0)))
     stop("Rendered station chart assets are missing; S3 sync stopped.",call.=FALSE)
+  if(grepl("SWCStationMonthlyClimatology",explorer_js,fixed=TRUE))for(path in details) {
+    detail<-jsonlite::read_json(path,simplifyVector=TRUE)
+    validate_acis_station_monthly_detail(detail,sub("\\.json$","",basename(path)),rows$as_of[[1L]])
+  }
+  if(grepl("SWCStationMonthlyClimatology",explorer_js,fixed=TRUE)) {
+    station_html<-paste(readLines(file.path(station_dir,"index.html"),warn=FALSE),collapse="\n")
+    if(!grepl('src="monthly-climatology.js"',station_html,fixed=TRUE)||
+       !grepl('href="monthly-climatology.css"',station_html,fixed=TRUE))
+      stop("Rendered station page does not link monthly climatology assets; S3 sync stopped.",call.=FALSE)
+  }
   if (grepl("cumulative/index.html", explorer_js, fixed = TRUE)) {
     context <- new.env(parent = environment())
     if (!exists("validate_acis_station_cumulative_site", mode = "function"))

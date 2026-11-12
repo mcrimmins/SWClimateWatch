@@ -735,7 +735,7 @@
       `<iframe title="Seasonal precipitation and historical comparisons for ${escapeHtml(station.name)}" ` +
       `src="seasonal/index.html?embedded=1&amp;uid=${encodeURIComponent(station.uid)}&amp;as_of=${encodeURIComponent(station.as_of)}" ` +
       `loading="lazy" class="cumulative-frame"></iframe></details>` +
-      `<div class="detail-lower"><section><h3>Usable daily record</h3><ul>` +
+      window.SWCStationMonthlyClimatology.section(detail.monthly_climatology) + `<div class="detail-lower"><section><h3>Usable daily record</h3><ul>` +
       recordLine(detail.record.pcpn, "Precipitation") +
       recordLine(detail.record.maxt, "Maximum temperature") +
       recordLine(detail.record.mint, "Minimum temperature") +
@@ -770,6 +770,7 @@
         throw new Error("Station detail does not match the preview date.");
       }
       detailContentEl.innerHTML = detailContent(current, detail);
+      window.SWCStationMonthlyClimatology.mount(detailContentEl.querySelector(".station-climatology"),detail.monthly_climatology);
       exportSelection = {station:current,detail};
     } catch (error) {
       detailCache.delete(uid);

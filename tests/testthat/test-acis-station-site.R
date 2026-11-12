@@ -87,6 +87,31 @@ testthat::test_that("integrated chart assets require matching daily reference fi
   testthat::expect_error(swc_station_beta_snapshot(root),"missing a required")
 })
 
+testthat::test_that("monthly climatology assets and both periods survive staging and rendered validation",{
+  root<-tempfile("swc-monthly-stage-");on.exit(unlink(root,recursive=TRUE),add=TRUE)
+  site<-file.path(root,"site");dir.create(site,recursive=TRUE)
+  writeLines("project:",file.path(site,"_quarto.yml"))
+  source_dir<-file.path(root,"source");station_beta_fixture(source_dir,"2026-11-03")
+  writeLines("window.SWCStationMonthlyClimatology",file.path(source_dir,"explorer.js"))
+  for(name in c("monthly-climatology.js","monthly-climatology.css"))writeLines("fixture",file.path(source_dir,name))
+  writeLines('<div id="explorer-data">2026-11-03</div><script src="monthly-climatology.js"></script><link href="monthly-climatology.css">',file.path(source_dir,"index.html"))
+  testthat::expect_error(swc_station_beta_snapshot(source_dir),"monthly climatology")
+  ref<-prepare_acis_station_monthly_reference(NULL,123,"2026-11-03",file.path(root,"cache"))$reference
+  detail<-list(uid=123L,as_of="2026-11-03",monthly_climatology=ref)
+  jsonlite::write_json(detail,file.path(source_dir,"station-details","123.json"),auto_unbox=TRUE,dataframe="rows",na="null",null="null")
+  testthat::expect_equal(swc_station_beta_snapshot(source_dir)$stations,1L)
+  destination<-file.path(site,"stations");swc_station_beta_stage(source_dir,destination)
+  testthat::expect_true(file.exists(file.path(destination,"monthly-climatology.js")))
+  dir.create(file.path(site,"pages"))
+  writeLines('<iframe src="../stations/index.html?embedded=1"></iframe>',file.path(site,"pages","station-conditions.html"))
+  testthat::expect_invisible(swc_daily_publish_validate_stations(site))
+  detail$monthly_climatology$full_record<-NULL
+  jsonlite::write_json(detail,file.path(destination,"station-details","123.json"),auto_unbox=TRUE,dataframe="rows",na="null",null="null")
+  testthat::expect_error(swc_daily_publish_validate_stations(site),"monthly climatology")
+  unlink(file.path(destination,"monthly-climatology.css"))
+  testthat::expect_error(swc_daily_publish_validate_stations(site),"chart assets are missing")
+})
+
 testthat::test_that("station staging carries cumulative curves and rejects missing comparisons", {
   root <- tempfile("swc-cumulative-stage-")
   site <- file.path(root, "site"); dir.create(site, recursive = TRUE)

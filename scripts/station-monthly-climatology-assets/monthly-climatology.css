@@ -1,0 +1,14 @@
+.station-climatology svg{width:100%;height:auto;font-size:11px;fill:#506878}
+.station-climatology label{display:block;margin:.7rem 0}.station-climatology select{max-width:100%}
+.monthly-table-scroll{overflow-x:auto}.station-climatology .monthly-climatology-table{width:100%;min-width:450px;table-layout:auto}
+.station-climatology .monthly-climatology-table th{position:static;background:transparent}
+.station-climatology .monthly-climatology-table th,.station-climatology .monthly-climatology-table td{white-space:normal;padding:.4rem}
+.monthly-reference{margin:.7rem 0}.monthly-reference summary{cursor:pointer}
+.monthly-climatology-table small{display:block;color:#536b79;font-size:.74rem}
+.station-climatology .monthly-day-table{width:100%;max-width:100%;min-width:0;table-layout:fixed;border-collapse:collapse;font-size:.8rem}
+.station-climatology .monthly-day-table th,.station-climatology .monthly-day-table td{position:static;white-space:normal;overflow-wrap:anywhere;background:transparent;padding:.4rem;border-bottom:1px solid #d7e3e8}
+.station-climatology .monthly-day-table th:first-child{width:32%}
+.monthly-day-table small{display:block;color:#536b79;font-size:.72rem}
+.monthly-tied-years summary{cursor:pointer;font-size:.72rem}
+.monthly-chart-day.monthly-selected{fill:#426e85;fill-opacity:.09}
+.monthly-chart-day:focus{outline:none;stroke:#bd532a;stroke-width:1.2}
