@@ -125,6 +125,12 @@ let days = [], byDate = new Map(), selectedDate = "", visibleDates = [];
 let circulationEnabled = false, circulationPromise = null, circulationEpoch = 0, circulationShownDate = "";
 let circulationActiveTab = "height500";
 let circulationRecords = null;
+let circulationMeansEnabled = false, circulationMeansPromise = null;
+function circulationPeriod() {return circulationMeansEnabled ? $("circulation-period").value : "1";}
+function showDailyCirculation(date = selectedDate) {
+  if (circulationMeansEnabled) $("circulation-period").value = "1";
+  selectDate(date);
+}
 const CIRCULATION_FIELDS = ["height500","jet250","moisture"];
 function selectCirculationTab(field) {
   if (!CIRCULATION_FIELDS.includes(field)) return;
@@ -156,13 +162,14 @@ function renderCirculationComparison(figure) {
   grid.replaceChildren();
   if (!show) return;
   const dates = comparisonDates();
-  caption.textContent = `${mode === "30" ? "30 days ending" : "7 days centered on"} ${dayLabel(selectedDate)} · ${shortLabel(dates[0])}–${shortLabel(dates.at(-1))} · UTC daily means.`;
+  caption.textContent = `Daily maps · ${mode === "30" ? "30 days ending" : "7 days centered on"} ${dayLabel(selectedDate)} · ${shortLabel(dates[0])}–${shortLabel(dates.at(-1))} · UTC daily means. Select a tile to show its daily map.`;
   for (const date of dates) {
     const record = circulationRecords.get(date);
     const source = record?.status === "available" ? record.images[figure.circulationField] : null;
     const button = document.createElement("button"); button.type = "button";
     button.className = `mini${date === selectedDate ? " selected" : ""}`;
-    button.setAttribute("aria-label", `${dayLabel(date)} UTC, ${figure.circulationTitle}${source ? "" : ", unavailable"}`);
+    button.setAttribute("aria-label", `Show daily map: ${dayLabel(date)} UTC, ${figure.circulationTitle}${source ? "" : ", unavailable"}`);
+    button.title = "Show this daily map (switches Weather period to Daily)";
     const title = document.createElement("strong"); title.textContent = shortLabel(date); button.append(title);
     if (source) {
       const image = document.createElement("img"); image.loading = "lazy"; image.src = source;
@@ -180,7 +187,7 @@ function renderCirculationComparison(figure) {
       missing.textContent = "Not built or unavailable"; button.append(missing);
     }
     button.disabled = !byDate.has(date);
-    button.addEventListener("click", () => selectDate(date));
+    button.addEventListener("click", () => showDailyCirculation(date));
     grid.append(button);
   }
 }
@@ -211,13 +218,36 @@ function validateCirculationManifest(payload) {
   }
   return records;
 }
+function validateCirculationMeansManifest(payload) {
+  if (payload?.schema_version !== 1 || !Array.isArray(payload.periods)) throw new Error("Invalid weather means manifest.");
+  const records = new Map();
+  for (const period of payload.periods) {
+    if (![7,30].includes(period.days) || !/^\d{4}-\d{2}-\d{2}$/.test(period.end) ||
+        !Number.isFinite(isoDate(period.end).getTime()) || isoDate(period.end).toISOString().slice(0,10) !== period.end ||
+        period.start !== shift(period.end,1-period.days)) throw new Error("Invalid weather mean period.");
+    const key = `${period.end}|${period.days}`;
+    if (records.has(key)) throw new Error("Duplicate weather mean period.");
+    for (const field of CIRCULATION_FIELDS) {
+      if (period.images?.[field] !== `circulation/means/${period.end}-${period.days}day-${field}.png`) throw new Error("Invalid weather mean path.");
+    }
+    records.set(key,period);
+  }
+  return records;
+}
 async function renderCirculation() {
   const panel = $("circulation-panel");
   if (!circulationEnabled || !panel) return;
+  if ($("circulation-show-daily")) $("circulation-show-daily").hidden = true;
   panel.hidden = false;
   $("circulation-compare").value = $("compare").value;
   $("circulation-date").textContent = selectedDate ? ` · ${dayLabel(selectedDate)} UTC` : "";
-  const viewKey = `${selectedDate}|${$("compare").value}`;
+  const period = circulationPeriod();
+  const viewKey = `${selectedDate}|${$("compare").value}|${period}`;
+  if (circulationMeansEnabled) {
+    $("circulation-period-note").textContent = !selectedDate ? "Select a date to view weather maps." : period === "1"
+      ? "Large map: selected UTC day. Map view below browses individual daily maps."
+      : `Large map: ${period}-day mean, ${dayLabel(shift(selectedDate,1-Number(period)))}–${dayLabel(selectedDate)} UTC. Map view below still browses individual days. Complete periods only; no missing-day filling.`;
+  }
   if (panel.open && circulationShownDate === viewKey) return;
   const epoch = ++circulationEpoch, date = selectedDate;
   circulationShownDate = "";
@@ -234,13 +264,20 @@ async function renderCirculation() {
     if (!circulationPromise) circulationPromise = fetch("circulation-manifest.json",{cache:"no-store"})
       .then(response => {if (!response.ok) throw new Error(`HTTP ${response.status}`); return response.json();})
       .then(validateCirculationManifest);
-    const records = await circulationPromise;
+    if (period !== "1" && !circulationMeansPromise) circulationMeansPromise = fetch("circulation-means-manifest.json",{cache:"no-store"})
+      .then(response => {if (!response.ok) throw new Error(`HTTP ${response.status}`); return response.json();})
+      .then(validateCirculationMeansManifest);
+    const [records,means] = await Promise.all([circulationPromise,period === "1" ? null : circulationMeansPromise]);
     if (epoch !== circulationEpoch || !panel.open || date !== selectedDate) return;
     circulationRecords = records;
-    const record = records.get(date);
-    const available = record?.status === "available";
+    const record = period === "1" ? records.get(date) : means.get(`${date}|${period}`);
+    const available = period === "1" ? record?.status === "available" : !!record;
     if (!available) {
-      $("circulation-status").textContent = `Circulation maps unavailable for ${dayLabel(date)} UTC. No other date has been substituted.`;
+      $("circulation-status").textContent = `${period === "1" ? "Circulation maps" : `${period}-day weather means`} unavailable for ${dayLabel(date)} UTC. No other date has been substituted.`;
+      if (period !== "1" && records.get(date)?.status === "available" && $("circulation-show-daily")) {
+        $("circulation-show-daily").hidden = false;
+        $("circulation-status").textContent += " A daily map is available for this date.";
+      }
       if ($("compare").value === "single") {circulationShownDate = viewKey; return;}
     } else {
       $("circulation-status").textContent = "";
@@ -251,7 +288,7 @@ async function renderCirculation() {
       figure.circulationTitle = title; figure.circulationEpoch = epoch;
       figure.setAttribute("role","tabpanel"); figure.setAttribute("aria-labelledby",`circulation-tab-${field}`);
       figure.tabIndex = 0;
-      const img = document.createElement("img"); img.alt = `${title}, ${date} UTC daily mean`;
+      const img = document.createElement("img"); img.alt = period === "1" ? `${title}, ${date} UTC daily mean` : `${title}, ${period}-day mean ${record?.start || shift(date,1-Number(period))} through ${date} UTC`;
       img.loading = "lazy"; img.width = 1920; img.height = 1088;
       const link = document.createElement("a"); link.target = "_blank"; link.rel = "noopener";
       img.hidden = link.hidden = !available;
@@ -466,8 +503,20 @@ async function initialize() {
       (payload.circulation_preview === true && payload.publication_mode !== true);
     setupCirculationTabs();
     $("circulation-panel").addEventListener("toggle",renderCirculation);
-    $("circulation-retry").addEventListener("click",() => {circulationPromise=null; circulationShownDate=""; renderCirculation();});
+    $("circulation-retry").addEventListener("click",() => {circulationPromise=null; circulationMeansPromise=null; circulationShownDate=""; renderCirculation();});
+    circulationMeansEnabled = payload.circulation_period_means_enabled === true ||
+      (payload.circulation_period_means_preview === true && payload.publication_mode !== true);
+    $("circulation-period-control").hidden = $("circulation-period-note").hidden = !circulationMeansEnabled;
+    if (circulationMeansEnabled) {
+      $("circulation-period").value = "1";
+      $("circulation-period").addEventListener("change",renderCirculation);
+    }
+    $("circulation-show-daily")?.addEventListener("click",() => showDailyCirculation());
     $("mode-badge").textContent = payload.publication_mode ? "Daily PRISM maps" : "Local preview · Unpublished";
+    if (payload.local_review_note && payload.publication_mode !== true) {
+      $("local-review-note").textContent = payload.local_review_note;
+      $("local-review-note").hidden = false;
+    }
     const years = [...new Set(days.map(day => day.water_year))].sort((a,b) => b-a);
     setOptions($("year"), years.map(year => [String(year), `${year} · Oct ${year-1}–Sep ${year}`]), String(years[0]));
     $("coverage").textContent = `${payload.publication_mode ? "Daily maps" : "Cached daily maps"}: ${dayLabel(days[0].date)}–${dayLabel(days.at(-1).date)} · Latest PRISM date: ${dayLabel(payload.latest_cached_date)} · Temperature reference: ${payload.baseline}`;

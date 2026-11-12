@@ -34,8 +34,16 @@ validate_daily_explorer_assets <- function(directory) {
   paths <- file.path(directory, images)
   if (!all(file.exists(paths)) || any(file.info(paths)$size <= 0))
     stop("Daily Explorer images are missing; publication stopped.")
+  mean_images<-character()
+  if(isTRUE(data$circulation_period_means_enabled)) {
+    adapter<-file.path("R","weather-period-archive.R")
+    if(!file.exists(adapter)&&exists("project_root",inherits=TRUE))adapter<-file.path(get("project_root",inherits=TRUE),adapter)
+    if(!file.exists(adapter)&&file.exists(file.path("..","..",adapter)))adapter<-file.path("..","..",adapter)
+    source(adapter,local=TRUE)
+    mean_images<-validate_weather_period_assets(directory)$images
+  }
   invisible(list(days = length(dates), maps = length(images), start_date = dates[[1L]],
-    end_date = tail(dates, 1L), images = images))
+    end_date = tail(dates, 1L), images = images,weather_mean_images=mean_images))
 }
 
 stage_daily_explorer_site <- function(window_days = NULL,
@@ -62,6 +70,8 @@ stage_daily_explorer_site <- function(window_days = NULL,
       if (is.logical(flag) && length(flag) == 1L && !is.na(flag)) {
         payload <- jsonlite::read_json(from)
         payload$circulation_enabled <- flag
+        if(is.logical(previous$circulation_period_means_enabled)&&length(previous$circulation_period_means_enabled)==1L&&!is.na(previous$circulation_period_means_enabled))
+          payload$circulation_period_means_enabled<-previous$circulation_period_means_enabled
         serialized <- as.character(jsonlite::toJSON(payload, auto_unbox = TRUE,
           na = "null", null = "null", digits = NA, pretty = FALSE))
         if (!identical(paste(readLines(to, warn = FALSE), collapse = "\n"), serialized))

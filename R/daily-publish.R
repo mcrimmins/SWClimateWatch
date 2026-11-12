@@ -385,7 +385,8 @@ swc_daily_publish_validate_explorer <- function(output_dir,
   rendered <- file.path(output_dir, "daily-explorer", "daily-data.json")
   if (!file.exists(staged) || !identical(unname(tools::md5sum(staged)), unname(tools::md5sum(rendered))))
     stop("Rendered Daily Explorer payload is stale; S3 sync stopped.")
-  relative <- c("index.html", "explorer.js", "explorer.css", checked$images)
+  relative <- c("index.html", "explorer.js", "explorer.css", checked$images,
+    if(length(checked$weather_mean_images))c("circulation-means-manifest.json",checked$weather_mean_images))
   source_paths <- file.path(source_dir, relative)
   rendered_paths <- file.path(output_dir, "daily-explorer", relative)
   if (!all(file.exists(source_paths)) || !identical(unname(tools::md5sum(source_paths)),

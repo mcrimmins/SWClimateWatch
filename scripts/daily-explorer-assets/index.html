@@ -22,7 +22,7 @@
 <body>
 <main>
   <header><div><p class="eyebrow" id="context-label">Southwest Climate Watch · Daily Explorer</p>
-    <h1>Daily Explorer</h1><p id="coverage">Loading cached PRISM observations…</p></div>
+    <h1>Daily Explorer</h1><p id="coverage">Loading cached PRISM observations…</p><p id="local-review-note" class="muted small" hidden></p></div>
     <span class="badge" id="mode-badge">Local preview · Unpublished</span></header>
   <p id="error" role="alert" hidden></p>
   <section class="controls card" aria-label="Explore daily conditions">
@@ -62,7 +62,7 @@
   </section>
   <details id="circulation-panel" class="card circulation" hidden>
     <summary>Weather maps<span id="circulation-date"></span></summary>
-    <p class="muted small">NOAA CPC CORe reanalysis · UTC daily means · Pacific–North America context. The selected calendar date is used exactly; PRISM reporting periods may differ. These maps provide circulation context, not forecasts or evidence of causation.</p>
+    <p class="muted small">NOAA CPC CORe reanalysis · Pacific–North America context. The selected calendar date is used exactly; PRISM reporting periods may differ. These maps provide circulation context, not forecasts or evidence of causation.</p>
     <div class="map-actions weather-view">
       <div class="date-controls">
         <button id="circulation-latest" type="button" aria-label="Go to the latest Explorer date">Latest</button>
@@ -70,8 +70,11 @@
         <input type="date" id="circulation-date-input" aria-label="Weather selected date">
         <button id="circulation-next" type="button" aria-label="Next weather map calendar day">→</button>
       </div>
+      <label id="circulation-period-control" hidden>Weather period<select id="circulation-period" aria-label="Weather averaging period"><option value="1">Daily</option><option value="7">7-day mean</option><option value="30">30-day mean</option></select></label>
     </div>
+    <p id="circulation-period-note" class="muted small" aria-live="polite" hidden></p>
     <p id="circulation-status" role="status" aria-live="polite"></p>
+    <button id="circulation-show-daily" type="button" hidden>Show daily map for this date</button>
     <button id="circulation-retry" type="button" hidden>Retry circulation maps</button>
     <div id="circulation-tabs" class="circulation-tabs" role="tablist" aria-label="Circulation map" hidden>
       <button id="circulation-tab-height500" type="button" role="tab" aria-selected="true" aria-controls="circulation-map-height500">500-mb heights</button>
@@ -82,8 +85,8 @@
     <div id="circulation-view-fallback" class="map-actions weather-view">
       <label id="circulation-view-control">Map view<select id="circulation-compare" aria-label="Weather map view"><option value="single">Single day</option><option value="7">7 days</option><option value="30">30 days</option></select></label>
     </div>
-    <p class="muted small">500-mb contours show absolute heights in dam, with a shared 480–612 dam scale; blue/orange shading is not an anomaly. Purple outlines locate AZ/NM. Jet shading is the speed of daily-mean 250-mb wind components in knots, not a daily maximum or gust. Streamlines show mean flow, not storm tracks. No anomaly baseline is included.</p>
-    <p class="muted small">Moisture shading shows total precipitable water (0–3+ inches), with sea-level pressure contours every 4 hPa. Arrows show 850-mb flow, not surface winds or integrated vapor transport. Winds are omitted when hourly terrain-screening inputs are incomplete; the map notes this limitation. H/L labels use daily surface pressure for separate terrain screening and describe filtered daily-mean pressure centers, not tracked storms.</p>
+    <p class="muted small">500-mb contours show absolute heights in dam, with a shared 480–612 dam scale; blue/orange shading is not an anomaly. Purple outlines locate AZ/NM. Jet shading is the speed of mean 250-mb wind components in knots for the selected weather period, not mean scalar wind speed, a maximum or gust. Streamlines show mean flow, not storm tracks. No anomaly baseline is included.</p>
+    <p class="muted small">Moisture shading shows total precipitable water (0–3+ inches), with sea-level pressure contours every 4 hPa. Arrows show mean 850-mb flow, not surface winds or integrated vapor transport. Winds require above-ground screening at every sample in the selected period and are omitted where screening inputs are incomplete. H/L labels use matching surface-pressure screening and describe filtered pressure centers in that period, not tracked storms.</p>
   </details>
   <details class="card discussions">
     <summary>Forecast discussions<span id="discussion-date"></span></summary>

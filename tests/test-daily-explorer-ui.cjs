@@ -82,10 +82,11 @@ assert.equal(controls['discussion-content'].hidden, true);
 assert.equal(controls['discussion-no-date'].hidden, false);
 assert.equal(controls['discussion-local'].children.length, 0);
 assert.match(code, /renderComparison\(\); renderDiscussions\(\)/);
-// Climate payload plus opt-in local circulation metadata; never an archive URL.
-assert.equal((code.match(/\bfetch\(/g) || []).length, 2);
+// Climate payload plus opt-in daily/period metadata; never an archive URL.
+assert.equal((code.match(/\bfetch\(/g) || []).length, 3);
 assert.match(code, /fetch\("daily-data.json"/);
 assert.match(code, /fetch\("circulation-manifest.json"/);
+assert.match(code, /fetch\("circulation-means-manifest.json"/);
 evaluate('selectedDate = "2026-10-02"');
 assert.equal(evaluate('comparisonDates().length'), 0);
 controls.compare.value = '7';

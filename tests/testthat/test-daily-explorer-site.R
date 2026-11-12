@@ -123,3 +123,33 @@ testthat::test_that("rendered explorer must link the frame and match the staged 
   writeLines("stale pixels", file.path(rendered, "daily-explorer", "maps", "2026-10-02-pcpn-observed.png"))
   testthat::expect_error(swc_daily_publish_validate_explorer(rendered, staged), "assets are stale")
 })
+
+testthat::test_that("weather means survive PRISM restaging and stale renders block publication",{
+  root<-withr::local_tempdir();work<-file.path(root,"work");staged<-file.path(root,"source")
+  payload<-explorer_asset_fixture(staged);payload$circulation_enabled<-TRUE;payload$circulation_period_means_enabled<-TRUE
+  jsonlite::write_json(payload,file.path(staged,"daily-data.json"),auto_unbox=TRUE)
+  fields<-c("height500","jet250","moisture")
+  images<-setNames(paste0("circulation/means/2026-10-02-7day-",fields,".png"),fields)
+  dir.create(file.path(staged,"circulation","means"),recursive=TRUE)
+  for(p in images)writeLines("mean",file.path(staged,p))
+  period<-list(start="2026-09-26",end="2026-10-02",days=7L,images=as.list(images),
+    md5=as.list(setNames(unname(tools::md5sum(file.path(staged,images))),fields)))
+  jsonlite::write_json(list(schema_version=1L,periods=list(period)),file.path(staged,"circulation-means-manifest.json"),auto_unbox=TRUE)
+  raw<-file.path(root,"grid");writeLines("grid",raw)
+  manifest<-data.frame(product="daily",aoi_id=swc_prism$aoi_id,variable="pcpn",path=raw,end_date=as.Date("2026-10-02"))
+  builder<-function(output_dir,...){explorer_asset_fixture(output_dir);list(built=0L,reused=1L)}
+  stage_daily_explorer_site(output_dir=staged,work_dir=work,manifest=manifest,builder=builder)
+  testthat::expect_true(jsonlite::read_json(file.path(staged,"daily-data.json"))$circulation_period_means_enabled)
+  testthat::expect_length(validate_daily_explorer_assets(staged)$weather_mean_images,3)
+  rendered<-file.path(root,"rendered");dir.create(rendered)
+  dir.create(file.path(rendered,"daily-explorer"));dir.create(file.path(rendered,"pages"))
+  files<-list.files(staged,recursive=TRUE,full.names=FALSE)
+  for(p in files){to<-file.path(rendered,"daily-explorer",p);dir.create(dirname(to),recursive=TRUE,showWarnings=FALSE);file.copy(file.path(staged,p),to)}
+  writeLines('<iframe src="../daily-explorer/index.html?embedded=1"></iframe>',file.path(rendered,"pages","daily-explorer.html"))
+  testthat::expect_length(swc_daily_publish_validate_explorer(rendered,staged)$weather_mean_images,3)
+  path<-file.path(rendered,"daily-explorer","circulation-means-manifest.json")
+  cat("\n",file=path,append=TRUE) # Valid JSON, different rendered bytes.
+  testthat::expect_error(swc_daily_publish_validate_explorer(rendered,staged),"assets are stale")
+  writeLines("damaged",file.path(rendered,"daily-explorer",images[1]))
+  testthat::expect_error(validate_daily_explorer_assets(file.path(rendered,"daily-explorer")),"stale weather")
+})

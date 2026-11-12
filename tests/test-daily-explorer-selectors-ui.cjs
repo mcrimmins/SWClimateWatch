@@ -86,7 +86,7 @@ function activeFigure() {return controls['circulation-maps'].children.find(figur
   }
   // Clicking a weather thumbnail drives the shared date, PRISM map and timeline.
   const thumbnail = activeFigure().circulationGrid.children.find(button =>
-    button.attributes['aria-label'].startsWith('Oct 10, 2026'));
+    button.attributes['aria-label'].includes('Oct 10, 2026'));
   thumbnail.listeners.click(); await run('renderCirculation()');
   assert.equal(controls.date.value,'2026-10-10');
   assert.match(controls.map.src,/2026-10-10/);
