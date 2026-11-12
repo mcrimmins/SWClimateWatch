@@ -184,6 +184,11 @@ swc_daily_publish_summary_lines <- function(record, prism = NULL, snow = NULL,
         coverage$recent_available,coverage$recent_expected,coverage$available_dates,
         coverage$explorer_dates,coverage$wind_withheld_dates,coverage$unknown_overlay_dates))
     }
+    means<-weather$period_means
+    if(is.list(means)&&!identical(means$status,"DISABLED"))lines<-c(lines,
+      if(identical(means$status,"ERROR"))"Weather means: unavailable this run; daily maps retained." else
+        sprintf("Weather means (7/30 days): %d periods, %d maps; %d built, %d reused; %d deferred, %d unavailable (%s).",
+          means$periods,means$maps,means$built,means$reused,means$deferred,means$unavailable,swc_publish_elapsed(means$seconds)))
   }
   lines <- c(lines,swc_monthly_summary_line(monthly))
   if (is.list(validation) &&
@@ -312,20 +317,65 @@ swc_daily_publish_update_explorer <- function() {
   stage_daily_explorer_site()
 }
 
-swc_daily_publish_update_weather <- function(today=Sys.Date()) {
+swc_daily_publish_disable_weather_means <- function(explorer_dir=file.path("site","daily-explorer")) {
+  path<-file.path(explorer_dir,"daily-data.json")
+  if(file.exists(path)) {
+    payload<-jsonlite::read_json(path)
+    if(isTRUE(payload$circulation_period_means_enabled)) {
+      payload$circulation_period_means_enabled<-FALSE
+      jsonlite::write_json(payload,path,auto_unbox=TRUE,digits=NA)
+    }
+  }
+  invisible(NULL)
+}
+
+swc_daily_publish_update_weather_means <- function(explorer_dir=file.path("site","daily-explorer"),builder=NULL,
+    report_dir=file.path("data","processed","weather-period-means")) {
+  if(!tolower(Sys.getenv("SWC_WEATHER_PERIOD_MEANS","false"))%in%c("true","1","yes")) {
+    swc_daily_publish_disable_weather_means(explorer_dir)
+    return(list(status="DISABLED"))
+  }
+  tryCatch({
+    cap<-suppressWarnings(as.numeric(Sys.getenv("SWC_WEATHER_MEANS_MAX_NEW_DATES","3")))
+    if(length(cap)!=1L||is.na(cap)||!cap%in%0:30)stop("SWC_WEATHER_MEANS_MAX_NEW_DATES must be 0-30.")
+    if(is.null(builder)){source(file.path("scripts","load-weather-period-archive.R"));builder<-build_weather_period_archive}
+    result<-builder(explorer_dir=explorer_dir,output_dir=report_dir,max_new_end_dates=cap)
+    counts<-c("periods","maps","built","reused","deferred","unavailable","requests","seconds")
+    if(!is.data.frame(result)||nrow(result)!=1L||!all(vapply(counts,function(n)is.numeric(result[[n]])&&
+        length(result[[n]])==1L&&is.finite(result[[n]])&&result[[n]]>=0,logical(1)))||result$requests!=0L)
+      stop("Weather means returned an invalid cached-build summary.")
+    status<-if(result$deferred>0||result$unavailable>0||result$periods==0)"PARTIAL" else "READY"
+    dir.create(report_dir,recursive=TRUE,showWarnings=FALSE)
+    utils::write.csv(cbind(data.frame(status=status,note=""),result),file.path(report_dir,"workflow-status.csv"),row.names=FALSE)
+    c(list(status=status),as.list(result))
+  },error=function(e) {
+    swc_daily_publish_disable_weather_means(explorer_dir)
+    dir.create(report_dir,recursive=TRUE,showWarnings=FALSE)
+    utils::write.csv(data.frame(status="ERROR",note=conditionMessage(e)),file.path(report_dir,"workflow-status.csv"),row.names=FALSE)
+    list(status="ERROR",error=conditionMessage(e))
+  })
+}
+
+swc_daily_publish_update_weather <- function(today=Sys.Date(),daily_builder=NULL,means_builder=NULL,
+    explorer_dir=file.path("site","daily-explorer"),means_report_dir=file.path("data","processed","weather-period-means")) {
   if (!tolower(Sys.getenv("SWC_WEATHER_MAPS","false")) %in% c("true","1","yes")) {
-    path <- file.path("site","daily-explorer","daily-data.json")
+    path <- file.path(explorer_dir,"daily-data.json")
     if (file.exists(path)) {
       payload <- jsonlite::read_json(path)
-      if (isTRUE(payload$circulation_enabled)) {
+      if (isTRUE(payload$circulation_enabled)||isTRUE(payload$circulation_period_means_enabled)) {
         payload$circulation_enabled <- FALSE
+        payload$circulation_period_means_enabled<-FALSE
         jsonlite::write_json(payload,path,auto_unbox=TRUE,digits=NA)
       }
     }
     return(list(status="DISABLED"))
   }
-  source(file.path("scripts","load-weather-circulation-archive.R"))
-  update_weather_circulation_archive(today=today)
+  if(is.null(daily_builder)){source(file.path("scripts","load-weather-circulation-archive.R"));daily_builder<-update_weather_circulation_archive}
+  result<-daily_builder(today=today,explorer_dir=explorer_dir)
+  if(is.list(result)&&result$status%in%c("READY","PARTIAL")) {
+    result$period_means<-swc_daily_publish_update_weather_means(explorer_dir,builder=means_builder,report_dir=means_report_dir)
+  } else swc_daily_publish_disable_weather_means(explorer_dir)
+  result
 }
 
 swc_daily_publish_weather_expected <- function(source_dir=file.path("site","daily-explorer")) {
@@ -635,6 +685,11 @@ run_swc_daily_publish <- function(
       try(disable_weather_circulation(),silent=TRUE)
     if (weather$status %in% c("ERROR","PARTIAL"))
       send("warning","Weather maps are incomplete or unavailable; core publishing will continue. See the weather archive report.")
+    if(is.list(weather$period_means)&&identical(weather$period_means$status,"ERROR"))
+      send("warning","Weather period means failed; their selector is disabled for this run. Daily weather and core publishing continue.")
+    else if(is.list(weather$period_means)&&identical(weather$period_means$status,"PARTIAL"))
+      send("progress",sprintf("Weather means: %d complete periods; %d deferred, %d unavailable. See the cached-input build report.",
+        weather$period_means$periods,weather$period_means$deferred,weather$period_means$unavailable))
     if (weather$status %in% c("READY","PARTIAL") && !is.null(weather$lag_days) &&
         length(weather$lag_days)==1L && !is.na(weather$lag_days) && weather$lag_days>3L)
       send("warning",paste0("Latest retained weather maps are ",weather$lag_days,

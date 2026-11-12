@@ -315,6 +315,16 @@ Local tests cover batch limits/resume, revisions withdrawing stale periods,
 output corruption, restaging and stale rendered metadata. VM acceptance and
 production promotion remain pending.
 
+The manual staging trial was accepted. Daily-run integration is now prepared
+behind `SWC_WEATHER_PERIOD_MEANS=true`, alongside `SWC_WEATHER_MAPS=true`.
+The default three-endpoint build/revision cap carries backlogs forward while
+reusing unchanged cached fields/PNGs; it adds no weather-input requests.
+Means run after daily weather, report period/map/build/reuse/backlog/time
+statistics in console and ntfy, and disable only their selector on failure.
+Tests verify ordering, opt-out, caps, failures preserving daily weather,
+workflow continuation and summary reporting. Integrated staging-run acceptance
+and production promotion remain pending; existing cron needs no schedule change.
+
 ## Agreed additions and enhancements
 
 **Historic ENSO labels at next archive refresh (October 28 request):** apply the

@@ -7,8 +7,10 @@ thumbnail grid. Clicking a daily thumbnail selects Daily; date arrows preserve
 the averaging choice. Missing windows are explicit; no date substitution or
 partial means. All samples must support terrain screening for displayed winds.
 
-This is a manual staging trial. The production cron and daily publisher do not
-call the mean builder yet. The builder reads existing daily CORe GRIB caches
+The daily publisher now calls the mean builder after daily weather updates
+when both `SWC_WEATHER_MAPS=true` and `SWC_WEATHER_PERIOD_MEANS=true` are set.
+The means flag defaults off; activating it in the installed VM configuration
+requires no cron change. The builder reads existing daily CORe GRIB caches
 and checksum markers, including recovered pressure samples. It performs zero
 network requests. No laptop cache transfer is required for a VM with the
 retained operational weather archive. Missing input windows are reported in
@@ -88,9 +90,69 @@ can be independent of mean-map validation; inspect the reported missing dates.
 Repeat the first build/publish steps under the staging lock to advance another
 three endpoints. Increase `SWC_WEATHER_MEANS_MAX_NEW_DATES` to at most 30 for a
 larger initial trial; rendering time and image count increase accordingly.
-Do not run the mean build concurrently with a staging data refresh. Keep the
-production cron unchanged until the staging runtime/cache tests are accepted.
+Do not run the mean build concurrently with a staging data refresh.
 
-Before production: test another-day input revisions, decide ongoing retention/
-update budget, wire the builder into the daily runner behind an explicit flag,
-extend workflow reporting and complete the production promotion checklist.
+## Automatic daily integration and promotion
+
+The daily workflow runs daily weather first, then reads cached inputs for
+means. Source revisions invalidate overlapping windows; the endpoint cap
+limits rebuild work and carries the backlog forward. Mean errors clear only
+the means selector flag and leave daily weather available. Missing periods
+remain gaps; no replacement dates or partial means. The workflow report and
+console/ntfy completion summary include counts and elapsed seconds.
+
+On the laptop, commit/push `R/daily-publish.R`, `R/weather-period-archive.R`,
+`scripts/production.env.example`, `tests/testthat/test-weather-period-workflow.R`
+and these publishing/roadmap documents. Check out that same commit on staging
+under its lock, then set these lines in the staging configuration (back it up
+first; replace previous definitions):
+
+```bash
+SWC_WEATHER_MAPS=true
+SWC_WEATHER_PERIOD_MEANS=true
+SWC_WEATHER_MEANS_MAX_NEW_DATES=3
+```
+
+Release the checkout lock before invoking the runner, which obtains its own:
+
+```bash
+cd /home/crimmins/RProjects/SWClimateWatch-staging
+SWC_PRODUCTION_CONFIG=/home/crimmins/.config/swclimatewatch/staging.env \
+  bash scripts/run-production-daily.sh
+Rscript scripts/check-weather-period-publication.R
+cat data/processed/weather-period-means/workflow-status.csv
+```
+
+Review the refreshed staging site and its log. Expected: zero extra mean-input
+requests, completed means reused, new/revised endpoints built up to the cap,
+and rendered period validation PASS. Deferred/unavailable counts are explicit.
+Continue seasonal and upstream-revision monitoring after promotion.
+
+For production, pin to the accepted staging commit under BOTH staging and
+production locks. Save the previous production commit, stash generated tracked
+site pages, verify the tracked checkout is clean, fetch and check out that
+commit. With both locks still held, copy the verified cache with:
+
+```bash
+mkdir -p /home/crimmins/RProjects/SWClimateWatch/data/processed/weather-period-means
+cp -a /home/crimmins/RProjects/SWClimateWatch-staging/data/processed/weather-period-means/. \
+  /home/crimmins/RProjects/SWClimateWatch/data/processed/weather-period-means/
+```
+
+Generated map PNGs and the Explorer manifest are staged from that cache by the
+next workflow; no rendered site or whole raw-data transfer is needed. Set the
+same three weather flags in `production.env` while preserving its `watch/`
+destination and production state directory. Release BOTH locks, then invoke:
+
+```bash
+cd /home/crimmins/RProjects/SWClimateWatch
+SWC_PRODUCTION_CONFIG=/home/crimmins/.config/swclimatewatch/production.env \
+  bash scripts/run-production-daily.sh
+Rscript scripts/check-weather-period-publication.R
+```
+
+The existing cron reads this configuration on every run and will thereafter
+update means automatically. Disable just means with
+`SWC_WEATHER_PERIOD_MEANS=false`; the next daily workflow clears the selector
+while preserving daily weather. Keep the saved commit and configuration backup
+for code rollback if needed.

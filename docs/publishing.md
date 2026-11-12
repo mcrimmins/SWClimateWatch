@@ -48,6 +48,19 @@ without downloading data or publishing. Daily and site-only publishers also
 save the report automatically during rendered-weather validation; see the
 weather workflow document for report fields and PASS/WARN/FAIL meanings.
 
+Trailing 7-/30-day weather means are separately opt-in with
+`SWC_WEATHER_PERIOD_MEANS=true` (requires `SWC_WEATHER_MAPS=true`). They run
+after daily CORe updates, reading verified cached fields without extra network
+requests. `SWC_WEATHER_MEANS_MAX_NEW_DATES=3` bounds newly built/revised
+endpoints per run (0-30); unchanged periods are reused. The most recent 30
+retained weather endpoints are considered. Initial or revision backlogs resume
+on later runs; missing complete windows are withheld. Console/ntfy completion
+summaries include periods/maps, built/reused/deferred/unavailable counts and
+elapsed time. Current workflow status and per-period details are under
+`data/processed/weather-period-means/{workflow-status,last-batch}.csv`.
+Mean-build failures disable only the means selector, preserving daily weather.
+See [staging and promotion](weather-period-means-staging.md) before activation.
+
 ## Home dashboard refresh (local review)
 
 The hydroclimate-oriented home layout reuses six existing maps: seven-day rain

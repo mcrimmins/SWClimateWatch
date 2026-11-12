@@ -109,7 +109,8 @@ build_weather_period_archive <- function(explorer_dir="site/daily-explorer",
   for(asset in c("index.html","explorer.js","explorer.css"))file.copy(file.path("scripts/daily-explorer-assets",asset),file.path(explorer_dir,asset),overwrite=TRUE)
   checked<-validate_weather_period_assets(explorer_dir)
   summary<-data.frame(periods=checked$periods,maps=length(checked$images),built=sum(report$status=="BUILT"),reused=sum(report$status=="REUSED"),
-    deferred=sum(report$status=="DEFERRED"),unavailable=sum(report$status=="UNAVAILABLE"),requests=0L,seconds=proc.time()[["elapsed"]]-started)
+    deferred=sum(report$status=="DEFERRED"),unavailable=sum(report$status=="UNAVAILABLE"),requests=0L,seconds=proc.time()[["elapsed"]]-started,
+    latest=if(length(records))max(vapply(records,`[[`,character(1),"end")) else NA_character_)
   write.csv(summary,file.path(output_dir,"update-summary.csv"),row.names=FALSE);print(summary,row.names=FALSE)
   invisible(summary)
 }
