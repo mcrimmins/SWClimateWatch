@@ -123,6 +123,13 @@ build_weather_period_archive <- function(explorer_dir="site/daily-explorer",
   weather_write_json(payload,file.path(explorer_dir,"daily-data.json"))
   # UI updates are staged without rebuilding PRISM or other site products.
   for(asset in c("index.html","explorer.js","explorer.css"))file.copy(file.path("scripts/daily-explorer-assets",asset),file.path(explorer_dir,asset),overwrite=TRUE)
+  if(!exists("swc_cache_version_app",mode="function")) {
+    cache_module<-file.path("R","site-cache.R")
+    if(!file.exists(cache_module)&&exists("project_root",inherits=TRUE))cache_module<-file.path(get("project_root",inherits=TRUE),cache_module)
+    if(!file.exists(cache_module)&&file.exists(file.path("..","..",cache_module)))cache_module<-file.path("..","..",cache_module)
+    source(cache_module,local=TRUE)
+  }
+  swc_cache_version_app(explorer_dir)
   checked<-validate_weather_period_assets(explorer_dir)
   summary<-data.frame(periods=checked$periods,maps=length(checked$images),built=sum(report$status=="BUILT"),reused=sum(report$status=="REUSED"),
     deferred=sum(report$status=="DEFERRED"),unavailable=sum(report$status=="UNAVAILABLE"),requests=0L,seconds=proc.time()[["elapsed"]]-started,

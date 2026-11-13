@@ -90,6 +90,11 @@ stage_daily_explorer_site <- function(window_days = NULL,
     full.names = TRUE)
   obsolete <- old[!paste0("maps/", basename(old)) %in% checked$images]
   if (length(obsolete) && any(!file.remove(obsolete))) stop("Could not prune old Daily Explorer images.")
+  cache_module<-file.path("R","site-cache.R")
+  if(!file.exists(cache_module)&&exists("project_root",inherits=TRUE))cache_module<-file.path(get("project_root",inherits=TRUE),cache_module)
+  if(!file.exists(cache_module)&&file.exists(file.path("..","..",cache_module)))cache_module<-file.path("..","..",cache_module)
+  source(cache_module,local=TRUE)
+  swc_cache_version_app(output_dir)
   checked <- validate_daily_explorer_assets(output_dir)
   result <- c(list(status = "STAGED", built = build$built, reused = build$reused,
     elapsed_seconds = as.numeric(difftime(Sys.time(), started, units = "secs"))), checked)

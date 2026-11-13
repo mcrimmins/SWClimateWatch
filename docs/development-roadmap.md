@@ -14,6 +14,11 @@ its implementation files as part of roadmap planning.
 
 ## Operational baseline
 
+November 12 browser freshness repair: content-versioned Explorer/Station
+scripts and styles, publication cache headers, and a one-time existing-object
+header refresh are implemented and locally tested. Staging publication and
+public-header verification are pending; do not mark this deployed yet.
+
 The user confirmed the November 4 morning production run published release
 `e4ec458d049417e567ba182eb824d4070b8d4e0e`. Production runs daily on the AWS VM;
 the laptop remains the development environment, with a separate VM staging

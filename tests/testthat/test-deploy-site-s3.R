@@ -62,3 +62,24 @@ testthat::test_that("stable images are uploaded separately with short caching an
   testthat::expect_true(optional<create&&create<upload)
   testthat::expect_true(any(grepl('shQuote("maps/latest/*")',script,fixed=TRUE)))
 })
+
+testthat::test_that("mutable uploads revalidate and metadata migration avoids historical bulk copies",{
+  args<-swc_deploy_mutable_args("/tmp/site","s3://bucket/climate/watch/","us-west-2",TRUE)
+  testthat::expect_true(all(c("sync","--dryrun","--cache-control")%in%args))
+  testthat::expect_true(any(grepl("no-cache,max-age=0,must-revalidate",args,fixed=TRUE)))
+  for(pattern in c("*.html","*.js","*.css","*.json"))testthat::expect_true(shQuote(pattern)%in%args)
+  force<-swc_deploy_mutable_args("/tmp/site","s3://bucket/climate/watch/","us-west-2",TRUE,force=TRUE)
+  testthat::expect_true(all(c("cp","--recursive","--dryrun")%in%force))
+  testthat::expect_false("--delete"%in%force)
+  testthat::expect_true(shQuote("*/history/*")%in%force)
+  testthat::expect_true(shQuote("assets/cache-policy.json")%in%args)
+  testthat::expect_error(swc_deploy_cache_policy_current("aws","s3://bucket/climate/watch/","us-west-2",
+    capture=function(args)structure("AccessDenied",status=1L)),"AWS access")
+  testthat::expect_false(swc_deploy_cache_policy_current("aws","s3://bucket/climate/watch/","us-west-2",
+    capture=function(args)structure("404 Not Found",status=1L)))
+  testthat::expect_true(swc_deploy_cache_policy_current("aws","s3://bucket/climate/watch/","us-west-2",
+    capture=function(args)jsonlite::toJSON(list(version=swc_deploy_cache_policy_version()),auto_unbox=TRUE)))
+  script<-readLines(file.path(project_root,"scripts/deploy-site-s3.R"))
+  testthat::expect_true(grep('"Apply cache headers',script)<grep('"Record completed cache-policy upgrade"',script))
+  testthat::expect_true(grep('swc_cache_version_app(file.path("site","daily-explorer"))',script,fixed=TRUE)<grep('c("render", "site")',script,fixed=TRUE))
+})

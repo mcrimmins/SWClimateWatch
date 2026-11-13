@@ -34,6 +34,49 @@ To disable optional yesterday requests, set `SWC_PRISM_TRY_YESTERDAY=false` in
 the applicable VM environment file. Revision/gap requests retain their existing
 failure policy; this fallback applies to the optional newest date.
 
+## Browser and CDN freshness
+
+The publisher versions Daily Explorer and Station Conditions JavaScript/CSS
+with content-derived filenames (`name.swc-<hash>.js/css`). URLs change only
+when their bytes change; versioned copies and canonical source files are
+checksum-validated. Their application HTML is prepared before Quarto copies
+resources, preserving staged/rendered identity. Changing a manual date token
+or repeatedly forcing browser refreshes is no longer part of a release.
+
+HTML, JS/CSS, JSON, CSV/XML and current-map image paths receive
+`Cache-Control: no-cache,max-age=0,must-revalidate`: browsers may retain bytes
+but must check for freshness on a new request. Stable `maps/latest/` hotlinks
+retain their five-minute policy. Dated/historical images otherwise retain
+their existing treatment; newly uploaded Explorer images also revalidate.
+
+AWS `s3 sync` does not update metadata on unchanged objects. The first publish
+of this cache policy therefore refreshes headers on existing pages, scripts,
+styles, current data and current-map aliases. This pass skips historical
+station-curve JSONs and dated Explorer images to avoid a bulk resend. Normal
+changed-file sync sets the policy on future uploads. A destination-specific
+S3 marker (`assets/cache-policy.json`) is uploaded only after the migration
+succeeds; later runs skip that force-copy pass. No climate inputs are downloaded
+or recomputed for this change. Dry runs preview it without changing S3.
+
+After publishing, run `Rscript scripts/check-site-cache.R` on the VM. It checks
+staged/rendered app filenames and hashes. Verify HTTP response headers too:
+
+```bash
+curl -fsSI -H 'Cache-Control: no-cache' \
+  "https://cales.arizona.edu/climate/watch-staging/daily-explorer/index.html?check=$(date +%s)" |
+  grep -Ei '^(HTTP/|cache-control:|age:|etag:|x-cache:)'
+```
+
+Expected Cache-Control is `no-cache,max-age=0,must-revalidate`. Repeat with
+`watch/` after production promotion. An already open tab is not auto-reloaded;
+the policy governs subsequent requests. Existing cached responses can persist
+through the initial migration until revalidated/expired. If a CDN/proxy ignores
+origin headers, its cache policy may need adjustment or a one-time purge by
+the hosting administrator. CloudFront minimum TTL must be zero for origin
+no-cache directives to take effect. See
+[CloudFront cache policy](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cache-key-understand-cache-policy.html)
+and [AWS sync metadata behavior](https://docs.aws.amazon.com/cli/latest/reference/s3/sync.html).
+
 ## Optional weather maps
 
 Optional Weather maps now have an opt-in daily adapter and a retained,

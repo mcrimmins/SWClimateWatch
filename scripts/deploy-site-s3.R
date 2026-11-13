@@ -51,6 +51,46 @@ swc_deploy_hotlink_sync_args <- function(output_dir,destination,region,dry_run) 
     "--cache-control",shQuote("public,max-age=300,must-revalidate"))
 }
 
+swc_deploy_mutable_patterns <- function()c("*.html","*.htm","*.js","*.css","*.json","*.csv","*.xml",
+  "maps/generated/prism/temperature/*-latest.png","maps/generated/prism/precipitation/*-latest.png",
+  "maps/generated/snodas/current/*.png","daily-explorer/maps/*.png","daily-explorer/circulation/maps/*.png",
+  "daily-explorer/circulation/means/*.png")
+swc_deploy_cache_control <- function()"no-cache,max-age=0,must-revalidate"
+swc_deploy_cache_policy_version <- function()"20261112-1"
+
+swc_deploy_mutable_args <- function(output_dir,destination,region,dry_run,delete=FALSE,force=FALSE) {
+  args<-if(force)c("s3","cp",shQuote(paste0(output_dir,"/")),shQuote(swc_deploy_destination(destination)),
+    "--recursive","--region",region,if(dry_run)"--dryrun") else swc_deploy_sync_args(output_dir,destination,region,dry_run,delete)
+  args<-c(args,"--exclude",shQuote("*"),unlist(lapply(swc_deploy_mutable_patterns(),function(p)c("--include",shQuote(p)))),
+    "--exclude",shQuote("maps/latest/*"),"--exclude",shQuote("assets/cache-policy.json"),
+    "--cache-control",shQuote(swc_deploy_cache_control()))
+  # The one-time metadata repair need not resend the thousands of unchanged
+  # historical station curves. Future changed JSONs get the policy via sync.
+  if(force)args<-c(args,"--exclude",shQuote("*/history/*"),"--exclude",shQuote("daily-explorer/maps/*.png"),
+    "--exclude",shQuote("daily-explorer/circulation/maps/*.png"),"--exclude",shQuote("daily-explorer/circulation/means/*.png"))
+  args
+}
+
+swc_deploy_cache_policy_current <- function(aws,destination,region,capture=NULL) {
+  if(is.null(capture))capture<-function(args)suppressWarnings(system2(aws,args,stdout=TRUE,stderr=TRUE))
+  result<-capture(c("s3","cp",shQuote(paste0(swc_deploy_destination(destination),"assets/cache-policy.json")),"-",
+    "--only-show-errors","--region",region))
+  status<-attr(result,"status");if(is.null(status))status<-0L
+  if(status!=0L) {
+    if(any(grepl("404|NoSuchKey|Not Found|does not exist",result,ignore.case=TRUE)))return(FALSE)
+    stop("Could not check the S3 cache-policy marker; inspect AWS access/connectivity.")
+  }
+  marker<-tryCatch(jsonlite::fromJSON(paste(result,collapse="\n")),error=function(e)NULL)
+  is.list(marker)&&identical(marker$version,swc_deploy_cache_policy_version())
+}
+
+swc_deploy_write_cache_policy <- function(output_dir) {
+  path<-file.path(output_dir,"assets","cache-policy.json");dir.create(dirname(path),recursive=TRUE,showWarnings=FALSE)
+  value<-as.character(jsonlite::toJSON(list(version=swc_deploy_cache_policy_version(),cache_control=swc_deploy_cache_control()),auto_unbox=TRUE))
+  if(!file.exists(path)||!identical(paste(readLines(path,warn=FALSE),collapse="\n"),value))writeLines(value,path)
+  path
+}
+
 swc_deploy_run <- function(command, args, label) {
   message(label, "...")
   status <- system2(command, args = args, stdout = "", stderr = "")
@@ -127,12 +167,15 @@ deploy_swc_site <- function(
   message("Sync mode: ", if (dry_run) "DRY RUN" else "LIVE",
           if (delete) " with deletion inside this prefix" else " without deletion")
   if (render) {
+    source(file.path("R","site-cache.R"),local=TRUE)
     quarto <- swc_deploy_quarto()
     swc_deploy_run(rscript, "scripts/build-map-product-site.R", "Build and validate map catalog")
     swc_deploy_run(rscript, "scripts/stage-daily-explorer.R", "Stage cached Daily Explorer")
     swc_deploy_run(rscript, c("scripts/stage-conditions-synopsis.R", destination), "Stage cached template synopsis")
     swc_deploy_run(rscript, "scripts/stage-current-map-groups.R", "Stage grouped Current Maps")
     swc_deploy_run(rscript, "scripts/stage-cached-prism-monthly-site.R", "Stage cached Monthly Climate")
+    swc_cache_version_app(file.path("site","daily-explorer"))
+    swc_cache_version_app(file.path("site","stations"))
     swc_deploy_run(quarto, c("render", "site"), "Render Quarto site")
   }
   output_dir <- file.path(project_dir, "site", "_site")
@@ -159,14 +202,27 @@ deploy_swc_site <- function(
     source(file.path("R",file),local=TRUE)
   map_hotlinks <- stage_map_hotlinks(output_dir,destination)
   validate_map_hotlinks(output_dir)
+  cache_policy_path<-swc_deploy_write_cache_policy(output_dir)
+  migrate_cache<-isTRUE(dry_run)||!swc_deploy_cache_policy_current(aws,destination,region)
   swc_deploy_run(aws,
     swc_deploy_hotlink_sync_args(output_dir,destination,region,dry_run),
     if(dry_run)"Preview stable map links" else "Upload stable map links")
   swc_deploy_run(
     aws,
-    c(swc_deploy_sync_args(output_dir, destination, region, dry_run, delete),"--exclude",shQuote("maps/latest/*")),
+    c(swc_deploy_sync_args(output_dir, destination, region, dry_run, delete),"--exclude",shQuote("maps/latest/*"),
+      unlist(lapply(swc_deploy_mutable_patterns(),function(p)c("--exclude",shQuote(p))))),
     if (dry_run) "Preview S3 sync" else "Upload site to S3"
   )
+  swc_deploy_run(aws,swc_deploy_mutable_args(output_dir,destination,region,dry_run,delete),
+    "Upload pages, application assets and data with revalidation")
+  if(migrate_cache) {
+    swc_deploy_run(aws,swc_deploy_mutable_args(output_dir,destination,region,dry_run,force=TRUE),
+      "Apply cache headers to existing pages and current data (one-time per destination)")
+    # Publish the marker last: interruption retries the metadata repair.
+    swc_deploy_run(aws,c("s3","cp",shQuote(cache_policy_path),shQuote(paste0(destination,"assets/cache-policy.json")),
+      "--region",region,"--content-type","application/json","--cache-control",shQuote(swc_deploy_cache_control()),if(dry_run)"--dryrun"),
+      "Record completed cache-policy upgrade")
+  }
   if (dry_run) {
     message("Dry run complete; no S3 objects were changed.")
   } else {

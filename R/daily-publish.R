@@ -2,6 +2,7 @@
 .swc_daily_module_files <- Filter(function(x) is.character(x)&&length(x)==1L,
   lapply(sys.frames(),function(frame) frame$ofile))
 source(file.path(dirname(tail(.swc_daily_module_files,1)[[1]]),"monthly-publish.R"))
+source(file.path(dirname(tail(.swc_daily_module_files,1)[[1]]),"site-cache.R"),local=TRUE)
 source(file.path(dirname(tail(.swc_daily_module_files,1)[[1]]),"acis-station-monthly-climatology.R"),local=TRUE)
 rm(.swc_daily_module_files)
 
@@ -449,7 +450,8 @@ swc_daily_publish_validate_explorer <- function(output_dir,
   if (!file.exists(staged) || !identical(unname(tools::md5sum(staged)), unname(tools::md5sum(rendered))))
     stop("Rendered Daily Explorer payload is stale; S3 sync stopped.")
   relative <- c("index.html", "explorer.js", "explorer.css", checked$images,
-    if(length(checked$weather_mean_images))c("circulation-means-manifest.json",checked$weather_mean_images))
+    if(length(checked$weather_mean_images))c("circulation-means-manifest.json",checked$weather_mean_images),
+    swc_cache_validate_app(file.path(output_dir,"daily-explorer")))
   source_paths <- file.path(source_dir, relative)
   rendered_paths <- file.path(output_dir, "daily-explorer", relative)
   if (!all(file.exists(source_paths)) || !identical(unname(tools::md5sum(source_paths)),
@@ -497,10 +499,11 @@ swc_daily_publish_validate_stations <- function(output_dir) {
   }
   if(grepl("SWCStationMonthlyClimatology",explorer_js,fixed=TRUE)) {
     station_html<-paste(readLines(file.path(station_dir,"index.html"),warn=FALSE),collapse="\n")
-    if(!grepl('src="monthly-climatology.js"',station_html,fixed=TRUE)||
-       !grepl('href="monthly-climatology.css"',station_html,fixed=TRUE))
+    if(!grepl('src="monthly-climatology(\\.swc-[a-f0-9]{16})?\\.js"',station_html)||
+       !grepl('href="monthly-climatology(\\.swc-[a-f0-9]{16})?\\.css"',station_html))
       stop("Rendered station page does not link monthly climatology assets; S3 sync stopped.",call.=FALSE)
   }
+  swc_cache_validate_app(station_dir)
   if (grepl("cumulative/index.html", explorer_js, fixed = TRUE)) {
     context <- new.env(parent = environment())
     if (!exists("validate_acis_station_cumulative_site", mode = "function"))

@@ -3,6 +3,7 @@
 .swc_station_module_files <- Filter(function(x)is.character(x)&&length(x)==1L,
   lapply(sys.frames(),function(frame)frame$ofile))
 source(file.path(dirname(tail(.swc_station_module_files,1)[[1]]),"acis-station-monthly-climatology.R"),local=TRUE)
+source(file.path(dirname(tail(.swc_station_module_files,1)[[1]]),"site-cache.R"),local=TRUE)
 rm(.swc_station_module_files)
 
 swc_station_beta_files <- c(
@@ -48,8 +49,8 @@ swc_station_beta_snapshot <- function(directory) {
           (is.finite(rows$pcpn_anomaly) | is.finite(rows$pcpn_percentile))))
     stop("A provisional precipitation total has a comparison value.",
          call. = FALSE)
-  if(monthly_charts&&(!grepl('src="monthly-climatology.js"',html,fixed=TRUE)||
-      !grepl('href="monthly-climatology.css"',html,fixed=TRUE)))
+  if(monthly_charts&&(!grepl('src="monthly-climatology(\\.swc-[a-f0-9]{16})?\\.js"',html)||
+      !grepl('href="monthly-climatology(\\.swc-[a-f0-9]{16})?\\.css"',html)))
     stop("Station page does not link monthly climatology assets.",call.=FALSE)
   if (integrated_charts) {
     for (path in details) {
@@ -129,6 +130,7 @@ swc_station_beta_stage <- function(
       dir.exists(file.path(source_dir, "seasonal")) &&
       !file.copy(file.path(source_dir, "seasonal"), stage, recursive = TRUE))
     stop("Could not copy seasonal station resources; last good page retained.")
+  swc_cache_version_app(stage)
   swc_station_beta_snapshot(stage)
   had_previous <- dir.exists(destination)
   if (had_previous && !file.rename(destination, backup))
