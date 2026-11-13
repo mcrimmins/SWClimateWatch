@@ -123,7 +123,12 @@ validate_prism_monthly_publication <- function(site_dir = "site", rendered_dir =
       safe <- !is.na(src) && grepl("^\\.\\./maps/generated/prism/monthly/[0-9]{4}-[0-9]{2}-[a-f0-9]{16}/[a-z]+-[0-9]{2}month\\.png$", src)
       if (!safe) { add(paste0("path_", ids[i]), FALSE, "Unexpected asset path"); next }
       version <- basename(dirname(src)); versions <- c(versions, version)
-      manifest <- jsonlite::read_json(file.path(root, "maps/generated/prism/monthly", version, "manifest.json"), simplifyVector = TRUE)
+      manifest_path<-file.path(root,"maps/generated/prism/monthly",version,"manifest.json")
+      if(!file.exists(manifest_path)) {
+        add(paste0("manifest_",ids[i]),FALSE,paste("Missing monthly release manifest:",manifest_path))
+        next
+      }
+      manifest <- jsonlite::read_json(manifest_path, simplifyVector = TRUE)
       row <- manifest$products[paste(manifest$products$family, manifest$products$duration, sep = "-") == ids[i], ]
       path <- file.path(dirname(page), src)
       add(paste0("map_", ids[i]), nrow(row) == 1 && manifest$end_month == end &&

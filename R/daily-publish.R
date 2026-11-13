@@ -299,7 +299,7 @@ swc_daily_publish_update_snow <- function(today = Sys.Date()) {
   list(data = data, maps = maps)
 }
 
-swc_daily_publish_update_stations <- function(today = Sys.Date()) {
+swc_daily_publish_station_context <- function() {
   context <- new.env(parent = .GlobalEnv)
   for (path in c("R/config.R", "R/acis-station-inventory.R",
                  "R/acis-station-daily-pilot.R", "R/map-southwest.R",
@@ -310,7 +310,14 @@ swc_daily_publish_update_stations <- function(today = Sys.Date()) {
                  "R/acis-station-explorer-update-pilot.R",
                  "R/acis-station-publication-audit.R",
                  "R/acis-station-site.R"))
-    sys.source(path, envir = context)
+    # source() supplies the current filename for modules that load siblings.
+    # Keep all station definitions isolated in the same private environment.
+    source(path, local = context)
+  context
+}
+
+swc_daily_publish_update_stations <- function(today = Sys.Date()) {
+  context<-swc_daily_publish_station_context()
   context$run_swc_station_beta_update(today = today)
 }
 

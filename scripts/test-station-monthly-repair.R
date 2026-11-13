@@ -1,0 +1,17 @@
+# Targeted staging test: refresh station caches/page, reconcile cached monthly
+# assets and validate. No PRISM/SNODAS updates, Quarto render or S3 publication.
+if(!identical(Sys.getenv("SWC_S3_DESTINATION"),"s3://cales-climate-reports/climate/watch-staging/"))
+  stop("Run this repair test with the staging configuration.")
+options(error=function(){traceback(20);quit(save="no",status=1L)})
+source("scripts/check-station-update-loader.R")
+message("Refreshing Station Conditions only; retaining normal cache and publication guards...")
+station_repair_result<-swc_daily_publish_update_stations(today=Sys.Date())
+print(station_repair_result)
+message("Reconciling Monthly Climate from this VM's existing verified products...")
+source("scripts/load-prism-monthly.R")
+source("R/prism-monthly-site.R")
+monthly_repair_result<-stage_cached_prism_monthly_site()
+monthly_repair_check<-validate_prism_monthly_publication()
+print(monthly_repair_check$summary,row.names=FALSE)
+if(!identical(monthly_repair_check$summary$status,"PASS"))stop("Staged Monthly Climate validation failed.")
+message("Station/monthly repair test complete. No website rendering or S3 publication.")

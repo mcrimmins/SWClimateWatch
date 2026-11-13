@@ -24,6 +24,11 @@ testthat::test_that("monthly release stages all twelve maps and rejects corrupti
   # A checkout can import a laptop-specific release name without its ignored assets.
   wrong <- gsub(staged$version,"2026-10-0000000000000000",readLines(staged$page),fixed=TRUE)
   writeLines(wrong,staged$page)
+  # A stale checkout reference must fail validation without emitting a raw
+  # connection warning; reconciliation can then install the verified release.
+  testthat::expect_silent(missing_release<-validate_prism_monthly_publication(site_dir=site,report_dir=file.path(root,"missing-report")))
+  testthat::expect_equal(missing_release$summary$status,"FAIL")
+  testthat::expect_true(any(grepl("Missing monthly release manifest",missing_release$checks$note,fixed=TRUE)))
   dir.create(file.path(ranking,"2026-11"),recursive=TRUE)
   dir.create(file.path(spi,"2026-11"),recursive=TRUE)
   reconciled <- stage_cached_prism_monthly_site(site,ranking,spi,today=as.Date("2026-12-01"),.verify_sources=FALSE)
