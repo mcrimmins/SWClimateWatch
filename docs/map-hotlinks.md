@@ -1,6 +1,9 @@
 # Stable map image links
 
-Implemented locally for review. Staging/production promotion is pending.
+Production promotion confirmed by the user November 10, 2026, after local tests
+and staging review. The supplied staging header check confirmed HTTP 200,
+image/png and public,max-age=300,must-revalidate. Deployment instructions below
+remain available for future releases.
 
 ## Public contract
 
@@ -89,7 +92,8 @@ browseURL(normalizePath("site/_site/maps/catalog.html"))
 
 The script makes no requests and does not upload. Catalog image links resolve
 locally for preview; displayed/copyable URLs show the proposed production URLs,
-which are not live until promotion. It verifies image integrity and routing,
+which now have production endpoints. A local preview can still contain older
+source dates than production. It verifies image integrity and routing,
 not the age of this laptop's cached data. Production retains all its existing
 freshness gates. Rerun the preview to verify unchanged alias reuse.
 

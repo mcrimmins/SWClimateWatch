@@ -29,6 +29,9 @@ Live features include:
 - Daily CORe 500-mb heights, 250-mb jet/flow, and PWAT/sea-level-pressure/
   terrain-screened 850-mb-flow maps. Bounded same-source recovery addresses
   selected broken pressure indexes; coverage and withheld overlays are audited.
+- Trailing 7-/30-day versions of all three weather maps, integrated into the
+  daily workflow and confirmed in production November 12. Missing CORe dates
+  and affected means are automatically retried with persistent bounded queues.
 - Station Conditions for 62 records (51 mapped), with linked daily charts,
   temperature normals and daily records, selected-period CSV downloads,
   period extremes/historical standing and freeze nights. Water-year,
@@ -167,12 +170,12 @@ that work ahead of discretionary features.
 
 | Priority | Work | Next bounded step and completion evidence |
 | --- | --- | --- |
-| P0 — ongoing operations | Monitor the confirmed production release | Station enhancements and monthly climatology are confirmed live November 12. Check the next daily run, monthly reference reuse, timing and source freshness; address actual failures before adding features. GA4 Realtime collection still needs confirmation. |
+| P0 — ongoing operations | Monitor the confirmed production release | Weather means and automatic retries join the station enhancements/monthly climatology confirmed live November 12. Check the next scheduled run's timing, cache reuse, retry-queue changes and source freshness. GA4 Realtime collection still needs confirmation. |
 | Complete — monitor | Template conditions synopsis | Seasonal snow narrative, dated supporting evidence and matching weekly-temperature maps are confirmed live November 9. Retain seasonal tests, reference/coverage guards and successful-publication comparisons. AI and the daily AI page remain deferred. See [scope](conditions-synopsis-scope.md). |
 | Complete — monitor | Stable URLs for all published map images | User confirmed production promotion November 10. Predictable latest endpoints, dated links, searchable HTML/CSV/JSON catalog and publication integrity checks are live. External project embedding and any Arizona-only export remain separate follow-ups. See [contract](map-hotlinks.md). |
 | Complete — monitor | Station seasonal precipitation histories | Water-year, cool-season and monsoon comparisons are confirmed live. Retain completeness guards, matching-date comparisons and the hatched incomplete current-season bar. Regional historical maps remain separate. |
-| P1 — local pilot in progress | Recent-period weather means | Seven-day 500-mb height/PWAT maps are built locally for September 29-October 5, 2026, with complete-day/native-grid checks and cache reuse. Review appearance and additional seasonal cases before VM tests, 30-day means or operational integration. Anomaly baselines remain separate. |
-| P2 — following increment | Historic seasonal snow anomalies | Validate existing peak-SWE departure/percent-of-median pilots and stage eligible years with support guards. Reorder within P2 if cool-season monitoring makes this more useful sooner. |
+| Complete — monitor | Recent-period weather means and automatic retries | User confirmed production November 12: 7-/30-day 500-mb heights, 250-mb jet/flow and PWAT overlays; daily integration, cached reuse, revision invalidation, persistent CORe/mean retries and reporting. Weather anomaly baselines remain separate. |
+| P1 — recommended next increment | Historic seasonal snow anomalies | Review the existing WY2005/2018/2024 pilot, validate peak-SWE departure/percent-of-median references and support guards, then prepare a small historic-page staging release. Reuse completed seasonal grids; no new daily downloads. |
 | Complete — monitor | Station daily-chart normals, records and interactions | Daily normals/records were confirmed live November 10. Linked chart dates, selected-period CSV exports and the seasonal disclosure/layout refinements are also confirmed in production November 12. Retain coverage and source-record safeguards. |
 | Complete — monitor | Monthly station climatology | Confirmed production November 12: 1991-2020/full-record selection, monthly distributions/extreme years, linked tables, coverage and calendar/water-year ordering. Daily annual-cycle climatology views remain optional future extensions. |
 | After existing commitments — 3 | Climate of the region page | Start with 1991–2020 annual and seasonal precipitation normals and temperature averages when the required PRISM inputs are available. Historical extremes follow separately. |
@@ -182,157 +185,84 @@ that work ahead of discretionary features.
 | Later — feasibility exploration | Interactive raster map page | Explore selectable existing raster products over a basemap, adjustable transparency, zoom/pan and pixel-value queries. Benchmark a small static-site pilot before selecting delivery methods or scheduling implementation. See [scope](#new-exploration-interactive-raster-map-page). Existing commitments and agreed climatology order remain unchanged. |
 | Later — polish | Consistency and optional interactions | Shared city-label styling, historic RONI labels at the next archive refresh, custom Analytics events and remaining documentation reconciliation. |
 
-November 12 recommended working sequence: station seasonal histories, daily
-chart enhancements and monthly climatology are confirmed live. Monitor the next
-automatic run, then begin a local-only seven-day circulation/moisture means
-pilot using retained CORe grids. Validate completeness and measure runtime/cache
-reuse before considering 30-day means or daily integration. Historic snow
-anomalies follow; regional climatology remains on the backlog. Heat metrics
-remain deferred until spring 2027. External dashboard links/Arizona-only exports,
-GA4 Realtime and the first automatic December monthly cycle remain follow-ups.
+November 12 recommended working sequence: station enhancements, monthly
+climatology, daily weather means and automatic retries are confirmed live.
+Monitor the next scheduled run, then return to historic seasonal snow anomaly
+companions as the next bounded feature increment. First review the existing
+three-year pilot and its references/masks before expanding historical pages.
+The regional climatology page follows the agreed climatology sequence; the
+interactive raster pilot remains a separate later increment. Heat metrics stay
+deferred until spring 2027. External dashboard links/Arizona-only exports, GA4
+Realtime and the first automatic December monthly cycle remain follow-ups.
 
-### Seven-day weather means - local pilot, November 12
+### Daily weather means and automatic retries - production confirmed
 
-An isolated pilot now averages seven consecutive complete UTC CORe daily fields
-for 500-mb heights and PWAT. Both use eight complete 3-hourly samples per day,
-equal day weights and matching native Gaussian grids; no partial means,
-interpolation over missing dates, or anomaly baseline is introduced. Shared
-daily-map scales, Pacific context and purple AZ/NM boundaries are retained.
-PWAT is mean column moisture, not rainfall or integrated moisture transport.
-No pressure/wind overlays are inferred from the two selected fields.
+The user confirmed the production release on November 12, 2026, after local
+review, VM staging tests and promotion. **Feature delivery is complete.**
+The production commit hash and new VM timing/coverage logs were not supplied
+with this confirmation; do not infer them from laptop HEAD or pilot timings.
 
-The initial laptop cache held three consecutive usable dates. The user
-explicitly authorized fetching only the eight missing height/PWAT fields for
-September 29-October 2 to complete the week ending October 5, 2026. The build
-made 16 bounded requests (indexes plus selected records), transferred 1,118,035
-bytes and initially took 30.06 seconds: 8.54 seconds decoding, 16.17 rendering.
-The unchanged-run check reused both maps in 0.46 seconds with zero requests.
-These are laptop measurements for this one case, not VM/daily-run promises.
-Maps and native-coordinate mean data together occupied about 0.96 MiB.
+The live Daily Explorer includes daily, trailing 7-day and trailing 30-day
+weather maps for:
 
-Run `scripts/run-weather-seven-day-pilot.R` and preview with
-`scripts/serve-weather-seven-day-pilot.R` (localhost port 8780). The runner is
-cached-only by default. Explicit `SWC_WEATHER_MEAN_DOWNLOAD=true` permits at most
-four missing dates and only the two selected fields; no automatic archive
-backfill. Outputs live at `data/diagnostics/weather-seven-day-pilot/`; inputs
-remain in their existing caches or `data/diagnostics/weather-seven-day-inputs/`.
-Source/index hashes, units, daily timestamps, GRIB/grid identity, complete-week
-coverage and cached-output checksums are verified. Local tests cover arithmetic,
-zero values, incomplete days, bad indexes, corruption and request caps.
+- 500-mb heights with consistent colors and 6-dam contours.
+- 250-mb jet/flow, averaging wind components before calculating speed and
+  streamlines; this is not mean scalar speed or an extreme-wind product.
+- PWAT with mean sea-level-pressure contours, terrain-screened 850-mb flow
+  and H/L labels calculated from the selected period's mean pressure field.
+  These are not tracked storms, surface winds, precipitation totals or IVT.
 
-No production, staging, Daily Explorer or daily publisher change is enabled.
-Expanded locally to a 1-/7-/30-day suite with 500-mb heights, PWAT and 250-mb
-jet/flow on November 12. Wind components are averaged before speed and
-streamlines are calculated; direction changes can weaken the mean vector.
-This is not mean scalar wind speed or an extreme-wind diagnostic. All periods
-require complete daily inputs and retain shared scales/native Gaussian cells.
+Periods use complete UTC days and all eight three-hour samples per day, native
+Gaussian coordinates and shared map scales. No partial means, missing-day
+filling or date substitution. Wind arrows require above-ground support at
+every sample in the period. Anomaly maps/baselines remain separate future work.
 
-Run `scripts/run-weather-period-means-pilot.R`, then
-`scripts/serve-weather-period-means-pilot.R` (localhost port 8781). The preview
-links all three variables with the period selector. The default case ends
-October 5, 2026; the monthly window starts September 6. Set
-`SWC_WEATHER_MEAN_END` to choose another completed end date. Downloads remain
-opt-in with `SWC_WEATHER_MEAN_DOWNLOAD=true`, capped at 30 missing dates,
-120 selected fields, 180 requests and 60 MB; no full collection download.
+Weather period controls averaging; Map view controls the grid of individual
+days. Shared date controls, timeline, season/year changes and weather tabs
+remain synchronized. Clicking a daily weather tile selects Daily. Missing
+means offer Show daily map only when that exact daily map exists.
 
-This case reused 21 fields and fetched 99 missing fields in 148 requests,
-9,352,933 bytes. All nine maps built in 55.71 seconds including acquisition;
-the unchanged check reused nine maps in 2.16 seconds with zero requests.
-Decoded grids, mean data and PNGs occupy about 11.1 MiB, excluding source
-GRIB caches. These are local measurements. Arithmetic/completeness/index/cap
-tests and all nine selector combinations pass; independent raw-cell checks
-cover three locations and all periods. Use
-`scripts/check-weather-period-means-pilot.R` to repeat the raw-cell check.
+The existing daily VM runner updates daily CORe first, then builds/reuses
+means from cached numeric fields. Source/output hashes invalidate affected
+windows when inputs change. The default cap is three new/revised endpoints
+per run, with checkpointed backlogs; there is no recurring historical download
+for the means calculation. Runtime/count summaries appear in console and ntfy.
+Mean failures disable only the means selector, preserving daily weather and
+core publication. Staged/rendered manifest and PNG integrity are validated.
 
-Next: user review, more seasonal cases under a bounded input plan, then VM
-runtime/cache testing before operational wiring. No daily update or publication
-integration is enabled by this pilot; anomalies remain separately scoped.
+Automatic retry coverage is also complete:
 
-The local period suite now also has PWAT overlays at all three time scales:
-mean sea-level pressure contours every 4 hPa, vector-mean 850-mb wind arrows
-and filtered H/L labels from the period-mean pressure field. H/L labels are
-not tracked storms. Winds are neither surface winds nor IVT. Every displayed
-wind cell must be above terrain at all eight samples on every contributing
-day (240 samples for the 30-day map). Missing screening evidence withholds
-arrows; incomplete daily pressure evidence withholds affected center labels.
-The existing bounded GRIB surface-pressure recovery is reused for incomplete
-indexes, with raw-field identity, date, units and native-grid checks.
+- Missing/failed CORe dates persist in archive state and a visible retry queue.
+  Least-recent attempts receive slots alongside the newest date; older gaps
+  cannot be continually displaced by new failures.
+- Failed dates refresh upstream indexes and selected fields, including after
+  upgrade from an older archive state, rather than reuse a cached failure.
+- Missing required mean inputs queue daily-date repairs even when daily PNGs
+  already exist. Means retry after those input repairs.
+- Deferred/unavailable mean endpoints stay queued beyond the recent 30-endpoint
+  selection while retained in the Explorer. Completed repairs clear queues;
+  build/request limits and complete-window safeguards remain in force.
 
-Run `scripts/run-weather-period-moisture-overlays.R` to build/reuse overlays
-after the base suite; the normal period runner refreshes overlays once their
-input manifest exists. The same port-8781 viewer selects the overlay PWAT
-images. Additional inputs are isolated under
-`data/diagnostics/weather-period-overlay-inputs/`. The initial local window
-has all 360 overlay/screening records, including 11 recovered pressure samples.
-Downloads are opt-in and capped at 30 dates, 700 requests and 80 MB per invocation;
-unchanged overlay checks use zero requests. Overlay arithmetic, direction
-cancellation, missing-data/terrain guards and all viewer combinations are tested.
-This remains local; no staging/production or daily-run setting is changed.
+Operational records:
 
-#### Daily Explorer integration - local review, November 12
+- `data/processed/weather-circulation/{last-batch,retry-queue}.csv`
+- `data/processed/weather-period-means/{workflow-status,last-batch,needed-dates,retry-endpoints}.csv`
+- [Weather workflow, staging and promotion runbook](weather-period-means-staging.md)
+- [Publishing configuration and retry behavior](publishing.md)
 
-The combined local Explorer now has a Weather period selector (daily, 7-day
-mean, 30-day mean) across all three weather tabs. Period means trail the shared
-selected date; date arrows, Latest, timeline selections, season/year changes
-and thumbnails use that same endpoint. Weather averaging is separate from
-Map view, which still controls the daily 7-/30-day thumbnail grids and the
-PRISM timeline. Captions explicitly identify daily grids versus period means.
-Changing the regional summary or PRISM variable does not change weather fields.
-The active weather tab and averaging period persist across date changes.
-Daily weather thumbnails explicitly switch Weather period to Daily so the
-large viewer shows the clicked map. Their caption and hover label explain the
-switch. Date arrows retain the chosen averaging period; an unavailable mean
-offers a Show daily map button when that exact daily map exists. No mean or
-date is silently substituted.
+Tests cover missing-date recovery on subsequent runs, refreshing failed source
+indexes, rebuilding both means after input recovery, retry fairness, aging
+endpoints, revisions, cache reuse, selector combinations and publication
+integrity. **Ongoing monitoring:** record the next scheduled run's timing,
+cache reuse and queue changes; distinguish upstream delay from software errors.
+Successful publication does not imply every source date is available.
 
-Build with `scripts/build-daily-explorer-weather-means-preview.R`, then serve
-with `scripts/serve-daily-explorer-weather-means.R` (localhost port 8782).
-The preview uses 35 existing PRISM dates, three daily weather dates and six
-verified mean maps ending October 5; no downloads. Other mean endpoints show
-unavailable rather than substituting another date. Assets, manifests and copied
-maps are isolated under `data/diagnostics/daily-explorer-weather-means/`.
-Only PNGs are copied; GRIB/decoded/native caches stay outside the viewer.
-
-The controls require an explicit local-preview flag and are hidden for public
-payloads. Means load lazily when requested; failed mean availability leaves
-PRISM usable. Validation rejects malformed windows, duplicate keys, external
-image paths and damaged source PNGs. UI tests cover averaging/tab/grid/variable/
-region combinations, year boundaries, unavailable endpoints and in-flight
-selector changes. Existing daily Explorer control tests continue to pass.
-Next: user review, expand rolling-date coverage efficiently from cached fields,
-then VM timing and publication checks before enabling any operational update.
-
-Manual staging support is prepared in `scripts/build-staging-weather-periods.R`
-with the [staging runbook](weather-period-means-staging.md). The builder reads
-verified existing VM daily GRIB caches without downloading, checkpoints each
-period, caches decoded inputs, detects source revisions and stages current
-checksummed PNGs. The default batch builds up to three new endpoints; reruns
-resume/reuse within the most recent 30 retained weather endpoints. Period
-validation checks the staged/rendered manifest and PNG hashes, and survives
-PRISM restaging. Public activation requires an explicit payload flag; the
-manual trial sets it only on staging. No daily cron integration is enabled.
-Local tests cover batch limits/resume, revisions withdrawing stale periods,
-output corruption, restaging and stale rendered metadata. VM acceptance and
-production promotion remain pending.
-
-The manual staging trial was accepted. Daily-run integration is now prepared
-behind `SWC_WEATHER_PERIOD_MEANS=true`, alongside `SWC_WEATHER_MAPS=true`.
-The default three-endpoint build/revision cap carries backlogs forward while
-reusing unchanged cached fields/PNGs; it adds no weather-input requests.
-Means run after daily weather, report period/map/build/reuse/backlog/time
-statistics in console and ntfy, and disable only their selector on failure.
-Tests verify ordering, opt-out, caps, failures preserving daily weather,
-workflow continuation and summary reporting. Integrated staging-run acceptance
-and production promotion remain pending; existing cron needs no schedule change.
-
-Automatic gap recovery is strengthened with persisted CORe retry state,
-least-recently-attempted service alongside a newest-date slot, and forced
-source refresh after failures. Missing required mean inputs queue daily-date
-repairs even when existing daily PNGs are valid; unresolved mean endpoints
-remain queued beyond the recent 30-endpoint window while in the Explorer.
-Tests simulate HTTP failure followed by next-run recovery, refreshed indexes,
-missing cached input recovery restoring both means, fair retry budgets and
-endpoints aging beyond the recent selection. Queue CSVs expose pending work.
+Local prototypes remain reproducible with the seven-day, period-means and
+combined Explorer preview scripts. Their default example ends October 5,
+2026; these preview dates are not the production freshness date. The initial
+nine-map period suite transferred 9,352,933 bytes for 99 missing selected
+fields and took 55.71 seconds including acquisition; unchanged reuse took
+2.16 seconds. These are laptop measurements, not production performance.
 
 ## Agreed additions and enhancements
 
@@ -350,7 +280,7 @@ those pages are next refreshed.
 | Workstream | Next bounded step | Relative effort |
 | --- | --- | --- |
 | Conditions synopsis / daily text summary (requested November 4, 2026) | Confirmed live November 9, including seasonal snow highlights and dated evidence links for quantitative selected bullets. Matching seven-day temperature maps and resource-integrity checks are included. Retain routine seasonal/source monitoring; AI remains deferred. See [implemented scope](conditions-synopsis-scope.md). | Complete; monitor |
-| Recent-period weather means and anomalies (requested November 2, 2026) | Scope trailing 7- and 30-day circulation/moisture means using cached CORe fields; separately assess calendar-matched anomaly baselines, missing-day guards, interpretation and update costs. Prototype means before committing to historical baseline acquisition. | Moderate for means; larger for validated anomalies |
+| Recent-period weather means and anomalies (requested November 2, 2026) | 7-/30-day circulation/moisture means, daily updates and automatic retries are confirmed live November 12. Monitor runtime, revisions and source gaps. Calendar-matched anomaly baselines remain a separate feasibility/methods task. | Means/retries complete; anomalies deferred |
 | Station water-year precipitation curves (requested November 1, 2026) | Live November 4 for 62 records: current cumulative precipitation, historical-year selection, WY1991-2020 mean and middle-50% band, record bounds, closest progression and interactive inspection. Historical/reference caches support daily builds. Review production cache timing; optional background curves remain deferred. | Live; monitor |
 | Historical seasonal and water-year time series (requested November 1, 2026) | Water-year, cool-season and monsoon station histories are confirmed live. Completed-year totals and a supported normal line reuse the cumulative-history catalog; the hatched current season-to-date bar is excluded from full-year comparisons. Regional summaries remain separate. | Station histories complete; monitor |
 | Historical odds of reaching precipitation thresholds (requested November 1, 2026) | Pilot CW3E-style climatological probabilities of reaching fractions of full water-year normal given precipitation already observed. Validate Southwest seasonality, historical samples and uncertainty; benchmark cached historical remainder distributions before selecting monthly or daily updates and maps. | Moderate-large; methods validation first |
@@ -369,7 +299,7 @@ those pages are next refreshed.
 | Internal documentation reconciliation | Replace obsolete manual/unpublished/two-snow-map descriptions or clearly mark them as historical pilot instructions. Preserve useful reproducibility details. | Small |
 | ENSO/RONI composites and analogs | Define season, variable, reference and sample membership before implementing configurable comparisons. | Large |
 | Validated SPI module | Separately validate fitting, zero precipitation, reference period and SPI-1/3/6/12 behavior; do not substitute raw standardized precipitation anomalies. | Large |
-| Daily weather and circulation diagnostics | Three-map CORe integration, retained backfill and publication checks are live. Monitor date gaps, source availability, recovery and cache reuse. Recent-period means, anomaly baselines and additional fields remain separate; IVT remains deferred. | Live; monitor |
+| Daily weather and circulation diagnostics | Daily and 7-/30-day three-map CORe integration, retained backfill, automatic gap/mean retries and publication checks are live. Monitor source availability, queues and cache/runtime behavior. Anomaly baselines/additional fields remain separate; IVT remains deferred. | Live; monitor |
 | Archived forecast discussions in Daily Explorer | Date-bound AFD/WPC links and the fixed-size embedded reader are live and user-tested. Metadata indexing and optional SPC/report sources remain future work. | Indexing effort pending |
 | Long-term monthly PRISM maps | Monthly Climate rankings and SPI plus automatic revision-aware updates are live. January 1895–October 2026 inputs are verified. External hotlink exports remain to close; the requested monthly-based Historic Years rebuild and regional climate normals page remain separate future work. | Core release live; extensions scoped separately |
 | Local storm reports and watch/warning polygons | Scope archived reports and NWS hazard polygons alongside Daily Explorer and/or seasonal summaries, including event-time matching, deduplication, data availability and efficient caching. | Longer-term; scope first |
@@ -618,25 +548,18 @@ separate projects; this document does not enable production configuration.
 
 ### Recent-period mean weather and circulation maps
 
-Requested November 2, 2026; scope only. Consider trailing **7- and 30-day mean
-conditions**, with optional anomaly companions, to show persistent patterns
-alongside the existing daily weather maps. Candidate fields are 500-mb heights,
-250-mb jet/flow, PWAT, sea-level pressure and terrain-screened low-level flow.
-Choose a small complementary set and decide whether period controls belong in
-Daily Explorer's Weather maps panel or a separate recent-pattern view. Label
-the exact UTC averaging dates and keep these periods distinct from PRISM's
-observation-day windows and Daily Explorer's grid-of-days display.
+Requested November 2, 2026; **absolute 7-/30-day means and automatic retries are
+complete and confirmed in production November 12**. Daily Explorer's Weather
+period selector covers 500-mb heights, 250-mb vector-mean jet/flow and PWAT with
+sea-level-pressure/terrain-screened 850-mb-flow overlays. Exact UTC averaging
+dates, complete samples, native grids and clear separation from the daily
+thumbnail grid are implemented. Means use cached numerical fields, not PNGs.
+Pressure centers are calculated from the period mean rather than copied from
+daily maps. See the production completion section above for retry behavior.
 
-First inventory which numeric CORe fields are retained and suitable for
-aggregation; PNG images cannot be averaged. Reuse validated cached fields and
-daily summaries where possible, with bounded recovery/backfill rather than
-repeated full-period downloads. Define day/sample completeness, handling of
-unavailable fields and terrain masks, and explicit insufficient-data states.
-Do not silently average a shorter available subset and label it seven or
-30 days. For winds, distinguish mean speed from the magnitude of the mean
-vector; average vector components for a mean-flow overlay and explain that
-opposing daily flows can cancel. Daily pressure-center labels should not
-automatically be transferred to period means.
+The remaining work in this entry is **anomaly-baseline feasibility**, not more
+absolute-mean integration. It remains separate from current operations and is
+not the next feature increment ahead of the existing snow commitment.
 
 Anomalies need a separate, documented reference: assess the available CORe
 record, a fixed climatological period, calendar matching/smoothing, leap days,
@@ -646,12 +569,11 @@ are useful for each variable, with adequate sample support. Absolute heights
 are not anomalies, and mean wind-speed anomalies differ from vector anomalies.
 Keep ENSO/teleconnection interpretation descriptive unless separately validated.
 
-Begin with a local two-period means pilot on representative winter and monsoon
-dates. Review patterns and legends, then scope a small anomaly pilot only after
-baseline feasibility is established. Benchmark one-time historical downloads,
-reference storage, incremental rolling sums/means, revision invalidation and
-daily rendering cost. Cache reference products and rebuild only affected windows;
-do not add recurring historical baseline downloads to the production job.
+If this deferred anomaly work is selected, start with baseline feasibility,
+then a small winter/monsoon anomaly pilot. Benchmark one-time historical
+downloads, reference storage and daily rendering/invalidation costs. Cache
+reference products; do not add recurring historical baseline downloads to the
+production job. Continue routine seasonal review of the live mean maps.
 No new maps or daily processing are enabled by this entry.
 
 ## New exploration: archived forecast discussions
