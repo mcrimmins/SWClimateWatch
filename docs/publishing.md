@@ -1,5 +1,15 @@
 # Updating and publishing the site
 
+## Historical seasonal snow anomalies
+
+The November 13 release prepares WY2005-WY2025 peak-SWE departure and
+percent-of-median companions for Historic Years. Before publishing a checkout
+with `config/snodas-seasonal-anomalies.yml` enabled, build or transfer its
+verified anomaly archive. Normal publication reconciles cached pages/maps and
+validates them after rendering; it does not calculate the archive daily.
+See [local build and staging prerequisites](snodas-seasonal-anomaly-release.md).
+This increment still requires staging and production acceptance.
+
 ## Optional monthly climate cycle
 
 After transferring and verifying a checkout's monthly cache, set

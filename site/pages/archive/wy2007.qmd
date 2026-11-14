@@ -154,6 +154,32 @@ Number of October-May days with SWE at least 0.1 inch.
 :::
 :::
 
+::: {.dashboard-map-card}
+![Peak SWE departure from median](../../maps/generated/snodas/seasonal-archive/wy2007/peak_swe_departure.png)
+
+::: {.archive-map-description}
+Seasonal peak SWE minus the WY2005-WY2025 median seasonal peak, in inches. White marks departures within +/-1 inch where median peak SWE is at least 1 inch. Gray marks typically little snow (median peak below 1 inch) with departure within +/-1 inch; larger departures retain brown/blue colors. Beige marks unavailable data or reference support.
 :::
+
+::: {.dashboard-card-actions}
+[Open full-resolution PNG](../../maps/generated/snodas/seasonal-archive/wy2007/peak_swe_departure.png){.btn .btn-sm .btn-outline-primary}
+:::
+:::
+
+::: {.dashboard-map-card}
+![Peak SWE percent of median](../../maps/generated/snodas/seasonal-archive/wy2007/peak_swe_percent_median.png)
+
+::: {.archive-map-description}
+Seasonal peak SWE divided by the WY2005-WY2025 median seasonal peak, times 100. Percentages require a median of at least 1 inch; gray marks lower medians and beige marks unavailable data or support. This is a ratio, not a percentile.
+:::
+
+::: {.dashboard-card-actions}
+[Open full-resolution PNG](../../maps/generated/snodas/seasonal-archive/wy2007/peak_swe_percent_median.png){.btn .btn-sm .btn-outline-primary}
+:::
+:::
+
+:::
+
+Companions compare one screened October-May peak per year, including the displayed year in the reference. Peak dates can differ among years and pixels; these are not same-date comparisons. At least 18 eligible reference years and 95% daily coverage per eligible year are required. Existing documented peak masks and archive review cautions are retained.
 
 <!-- END GENERATED SNODAS SNOW MAPS -->

@@ -63,6 +63,16 @@ testthat::test_that("stable images are uploaded separately with short caching an
   testthat::expect_true(any(grepl('shQuote("maps/latest/*")',script,fixed=TRUE)))
 })
 
+testthat::test_that("cached snow staging and rendered checks surround render before upload", {
+  script <- readLines(file.path(project_root, "scripts/deploy-site-s3.R"))
+  stage <- grep('"scripts/stage-cached-snodas-seasonal-anomalies.R"', script, fixed = TRUE)
+  render <- grep('c("render", "site")', script, fixed = TRUE)
+  check <- grep('"scripts/check-snodas-seasonal-anomaly-publication.R"', script, fixed = TRUE)
+  upload <- grep('"Upload stable map links"', script, fixed = TRUE)
+  testthat::expect_true(length(stage) == 1L && stage < render)
+  testthat::expect_true(length(check) == 1L && render < check && check < upload)
+})
+
 testthat::test_that("mutable uploads revalidate and metadata migration avoids historical bulk copies",{
   args<-swc_deploy_mutable_args("/tmp/site","s3://bucket/climate/watch/","us-west-2",TRUE)
   testthat::expect_true(all(c("sync","--dryrun","--cache-control")%in%args))

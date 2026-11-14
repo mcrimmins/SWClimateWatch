@@ -159,7 +159,7 @@ snodas_historic_validate_triage <- function(
        decisions = decisions, verified = verified)
 }
 
-snodas_historic_page_section <- function(water_year) {
+snodas_historic_page_section <- function(water_year, include_anomalies = FALSE) {
   path <- paste0("../../maps/generated/snodas/seasonal-archive/wy",
                  water_year, "/")
   card <- function(label, filename, description) c(
@@ -179,11 +179,20 @@ snodas_historic_page_section <- function(water_year) {
          "Maximum daily SWE during October-May, in inches."),
     card("Snow-covered days", "snow_days.png",
          "Number of October-May days with SWE at least 0.1 inch."),
-    ":::", "", "<!-- END GENERATED SNODAS SNOW MAPS -->")
+    if (include_anomalies) c(
+      card("Peak SWE departure from median", "peak_swe_departure.png",
+        "Seasonal peak SWE minus the WY2005-WY2025 median seasonal peak, in inches. White marks departures within +/-1 inch where median peak SWE is at least 1 inch. Gray marks typically little snow (median peak below 1 inch) with departure within +/-1 inch; larger departures retain brown/blue colors. Beige marks unavailable data or reference support."),
+      card("Peak SWE percent of median", "peak_swe_percent_median.png",
+        "Seasonal peak SWE divided by the WY2005-WY2025 median seasonal peak, times 100. Percentages require a median of at least 1 inch; gray marks lower medians and beige marks unavailable data or support. This is a ratio, not a percentile.")),
+    ":::", "",
+    if (include_anomalies) c(
+      "Companions compare one screened October-May peak per year, including the displayed year in the reference. Peak dates can differ among years and pixels; these are not same-date comparisons. At least 18 eligible reference years and 95% daily coverage per eligible year are required. Existing documented peak masks and archive review cautions are retained.", ""),
+    "<!-- END GENERATED SNODAS SNOW MAPS -->")
 }
 
 write_snodas_historic_page_section <- function(
-    water_year, page_dir = file.path("site", "pages", "archive")) {
+    water_year, page_dir = file.path("site", "pages", "archive"),
+    include_anomalies = FALSE) {
   path <- file.path(page_dir, sprintf("wy%04d.qmd", water_year))
   if (!file.exists(path)) {
     stop("Missing Historic Years page: ", path, call. = FALSE)
@@ -200,7 +209,7 @@ write_snodas_historic_page_section <- function(
   while (length(lines) && !nzchar(trimws(lines[[length(lines)]]))) {
     lines <- lines[-length(lines)]
   }
-  updated <- c(lines, "", snodas_historic_page_section(water_year))
+  updated <- c(lines, "", snodas_historic_page_section(water_year, include_anomalies))
   writeLines(updated, path, useBytes = TRUE)
   path
 }

@@ -1,5 +1,20 @@
 source(file.path(project_root, "R", "snodas-seasonal-anomaly.R"))
 
+testthat::test_that("departure display separates low-snow neutral cells without hiding anomalies", {
+  departure <- c(-20, -16, -8, -4, -1, 0, 1, 1.01, 4, 8, 16, 20, NA, 0, 0)
+  reference <- c(rep(.5, 12), 2, NA, 1)
+  classes <- snodas_peak_departure_classes(departure, reference)
+  testthat::expect_equal(as.character(classes), c("<=-16", "<=-16", "-16 to -8",
+    "-8 to -4", rep("Typically\nlittle snow", 3), "+1 to +4", "+1 to +4",
+    "+4 to +8", "+8 to +16", ">16", "Unavailable", "Unavailable", "-1 to +1"))
+  testthat::expect_equal(as.character(snodas_peak_departure_classes(c(-1, 0, 1), c(1, 2, 3))),
+    rep("-1 to +1", 3))
+  testthat::expect_identical(departure, c(-20, -16, -8, -4, -1, 0, 1, 1.01, 4, 8, 16, 20, NA, 0, 0))
+  testthat::expect_error(snodas_peak_departure_classes(0, c(0, 1)), "matched")
+  testthat::expect_error(snodas_peak_departure_classes(0, -1), "matched")
+  testthat::expect_error(snodas_peak_departure_classes(0, 0, 0), "positive")
+})
+
 testthat::test_that("percent of median is guarded, uncapped and separates low snow from unavailable", {
   template <- terra::rast(nrows = 1, ncols = 8, xmin = -112, xmax = -111,
     ymin = 34, ymax = 35, crs = "EPSG:4326")
@@ -77,6 +92,18 @@ testthat::test_that("pilot uses verified archives without changing their files",
     c(NA, 100 * 5 / 6), tolerance = 1e-4)
   testthat::expect_equal(terra::values(terra::rast(result$summary$percent_status_path), mat = FALSE), c(2, 1))
   testthat::expect_equal(result$summary$percent_low_median_cells, 1)
+  # Resume without recalculating unchanged years; damaged outputs rebuild.
+  again <- build_snodas_seasonal_anomaly_pilot(target_years = 2005L,
+    years = 2005:2007, min_years = 2L, archive_dir = root,
+    output_dir = file.path(root, "pilot"), render_maps = FALSE)
+  testthat::expect_equal(again$summary$event, "REUSED")
+  testthat::expect_identical(tools::md5sum(result$summary$path), tools::md5sum(again$summary$path))
+  writeBin(as.raw(1:4), result$summary$path)
+  repaired <- build_snodas_seasonal_anomaly_pilot(target_years = 2005L,
+    years = 2005:2007, min_years = 2L, archive_dir = root,
+    output_dir = file.path(root, "pilot"), render_maps = FALSE)
+  testthat::expect_equal(repaired$summary$event, "BUILT")
+  testthat::expect_equal(terra::values(terra::rast(repaired$summary$path), mat = FALSE), c(0, -1))
   # Completion checksums prevent stale or edited seasonal rasters entering a baseline.
   changed <- file.path(root, "wy2005", "peak_swe.tif")
   writeBin(as.raw(1:4), changed)

@@ -20,6 +20,7 @@ site/daily-explorer/
 site/synopsis-evidence/
 site/assets/current-map-groups/manifest.json
 site/assets/current-map-groups/assets.json
+site/assets/snodas-seasonal-anomalies.json
 data/diagnostics/
 docs/prism-data-methods.html
 !data/raw/.gitkeep

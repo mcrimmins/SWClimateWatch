@@ -91,3 +91,19 @@ testthat::test_that("invalid declared source maps fail before replacing existing
   testthat::expect_error(map_hotlink_path(root,"../outside.png"),"Unsafe")
   testthat::expect_error(map_hotlink_base("s3://bucket/climate/../"),"exact site")
 })
+
+testthat::test_that("seasonal snow anomaly images receive stable dated catalog URLs", {
+  root <- tempfile(); on.exit(unlink(root, recursive = TRUE), add = TRUE)
+  f <- hotlink_fixture(root)
+  paths <- paste0("maps/generated/snodas/seasonal-archive/wy2024/",
+    c("peak_swe_departure.png", "peak_swe_percent_median.png"))
+  for (path in paths) f$png(path)
+  cat(paste0('<img alt="Peak SWE anomaly" src="../../', paths, '">', collapse = "\n"),
+    file = file.path(root, "pages/archive/wy2024.html"), append = TRUE)
+  rows <- stage_map_hotlinks(root, "s3://bucket/climate/watch-staging/", f$products, f$metadata, f$registry)
+  snow <- rows[rows$path %in% paths, ]
+  testthat::expect_equal(nrow(snow), 2L)
+  testthat::expect_setequal(snow$url, paste0("https://cales.arizona.edu/climate/watch-staging/", paths))
+  testthat::expect_true(all(snow$status == "AVAILABLE"))
+  testthat::expect_silent(validate_map_hotlinks(root))
+})

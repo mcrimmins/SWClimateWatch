@@ -29,6 +29,8 @@ Under the production site base `https://cales.arizona.edu/climate/watch/`:
 | Latest moisture pattern | `maps/latest/weather/moisture.png` |
 | Weekly synopsis temperature | `maps/latest/synopsis/temperature-7day.png` |
 | Historical seasonal map | `maps/generated/prism/seasonal-archive/wy2024/cool_total.png` |
+| Historical peak SWE departure | `maps/generated/snodas/seasonal-archive/wy2024/peak_swe_departure.png` |
+| Historical peak SWE percent of median | `maps/generated/snodas/seasonal-archive/wy2024/peak_swe_percent_median.png` |
 | Individual daily map | `daily-explorer/maps/2026-10-02-pcpn-observed.png` |
 
 All 1-/3-/6-/12-month products receive latest endpoints. Current map endpoints
@@ -37,6 +39,12 @@ versioned monthly releases, are unchanged; the catalog JSON includes the
 original source URL and checksum for provenance. Historical and individual-day
 URLs are date-specific; they can reflect a validated source revision for that
 same date. They do not become a later observation day.
+
+November 13 local archive increment: the seasonal snow anomaly companions are
+prepared for WY2005-WY2025, pending staging/production acceptance. They use the
+stable year-specific paths above, without a hash or a redundant latest alias.
+The normal catalog discovers both from each validated rendered Historic Years
+page. No new URL is public until that release is explicitly deployed.
 
 Latest means the most recent accepted publication for that product, not
 necessarily yesterday or a common date across PRISM, snow, monthly and CORe.

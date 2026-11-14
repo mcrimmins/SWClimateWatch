@@ -5,6 +5,7 @@ project:
     - synopsis-evidence/**
     - assets/site-analytics.js
     - assets/monthly-climate.js
+    - assets/snodas-seasonal-anomalies.json
     - assets/current-map-groups/**
     - maps/generated/prism/monthly/**
     - stations/**

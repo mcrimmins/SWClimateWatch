@@ -1,6 +1,6 @@
 # Development roadmap
 
-Planning review: November 12, 2026. This is the consolidated backlog, not a
+Planning review: November 13, 2026. This is the consolidated backlog, not a
 commitment to enable every candidate product. No production settings change
 when this document is edited.
 
@@ -14,10 +14,9 @@ its implementation files as part of roadmap planning.
 
 ## Operational baseline
 
-November 12 browser freshness repair: content-versioned Explorer/Station
-scripts and styles, publication cache headers, and a one-time existing-object
-header refresh are implemented and locally tested. Staging publication and
-public-header verification are pending; do not mark this deployed yet.
+November 13 operational review: the station update, monthly manifest and browser
+freshness repairs are complete in production. The scheduled daily run succeeded;
+see the completion evidence below. Continue routine source/cache monitoring.
 
 The user confirmed the November 4 morning production run published release
 `e4ec458d049417e567ba182eb824d4070b8d4e0e`. Production runs daily on the AWS VM;
@@ -166,6 +165,41 @@ supplied with this confirmation; do not infer them from laptop HEAD. Check the
 next scheduled run for publication success, cache reuse and timing. Further
 station climatology/heat extensions remain separate backlog items below.
 
+### November 13 operational repairs - production verified
+
+The November 13 scheduled production run published successfully in **36m 12s**
+(runner elapsed 2,173 seconds; exit 0). It validated **54/54 current and 352/352
+historic maps**. These results close the three operational fixes:
+
+- **Station update - complete:** the station module-loading repair is deployed.
+  The full daily run reported `Stations: updated; 62 records (51 mapped)`,
+  replacing the earlier subscript-out-of-bounds failure and retained-page fallback.
+- **Monthly manifest warning - complete:** the missing-release manifest guard
+  and cached-release reconciliation are deployed. The full run emitted no monthly
+  manifest connection warning; October's completed cycle used no new requests
+  and took about one second. This does not test December's new monthly cycle.
+- **Browser caching - complete:** staging and production site-only publication
+  completed the one-time cache-policy upgrade. Staged/rendered asset checks passed
+  for two Explorer and nine Station assets. Production HTTP verification returned
+  200 and `Cache-Control: no-cache,max-age=0,must-revalidate`. Content-versioned
+  app scripts/styles and future publication headers are automatic; stable map
+  hotlinks retain their five-minute policy. Already-open tabs still need a reload.
+
+PRISM reached November 12 (24 changed/processed inputs); snow reached November 13
+(one new daily grid). Explorer reused 70 dates and rebuilt three, for 73 dates/
+511 maps. Weather retained 72/73 Explorer dates and 29/30 recent dates, latest
+November 11, with one failed/pending date queued for automatic retry and no
+withheld or unknown wind overlays. Means reached 28 periods/84 maps, with six
+built, 22 reused, 32 deferred and zero unavailable (56 seconds). The deferred
+mean backlog remains bounded catch-up work, not a completed full-archive build.
+
+Remaining maintenance: monitor the CORe retry/mean queues, address repeated
+raster-rendering warnings as a separate geometry-only fix, confirm GA4 Realtime,
+and verify the December 1-5 monthly cycle. No additional cron or production
+configuration change is required for the three completed repairs. The release
+hash and detailed station-reference cache statistics were not provided with
+this run; do not infer them from laptop HEAD.
+
 ## Priority order and working sequence
 
 This is the proposed working order, with one feature increment active at a time.
@@ -175,12 +209,13 @@ that work ahead of discretionary features.
 
 | Priority | Work | Next bounded step and completion evidence |
 | --- | --- | --- |
-| P0 — ongoing operations | Monitor the confirmed production release | Weather means and automatic retries join the station enhancements/monthly climatology confirmed live November 12. Check the next scheduled run's timing, cache reuse, retry-queue changes and source freshness. GA4 Realtime collection still needs confirmation. |
+| P0 — ongoing operations | Monitor the confirmed production release | November 13 full run passed in 36m 12s: stations updated, monthly manifest warning absent, and browser cache upgrade verified in production. Monitor the one-date CORe retry queue, deferred weather means, source freshness and remaining raster warnings. Confirm GA4 Realtime and the next monthly cycle separately. |
+| Complete — monitor | Station loader, monthly manifest and browser freshness repairs | Production publication/header checks and the November 13 scheduled run close all three fixes. Retain automatic cache-policy handling, release reconciliation and station-loading regression checks. |
 | Complete — monitor | Template conditions synopsis | Seasonal snow narrative, dated supporting evidence and matching weekly-temperature maps are confirmed live November 9. Retain seasonal tests, reference/coverage guards and successful-publication comparisons. AI and the daily AI page remain deferred. See [scope](conditions-synopsis-scope.md). |
 | Complete — monitor | Stable URLs for all published map images | User confirmed production promotion November 10. Predictable latest endpoints, dated links, searchable HTML/CSV/JSON catalog and publication integrity checks are live. External project embedding and any Arizona-only export remain separate follow-ups. See [contract](map-hotlinks.md). |
 | Complete — monitor | Station seasonal precipitation histories | Water-year, cool-season and monsoon comparisons are confirmed live. Retain completeness guards, matching-date comparisons and the hatched incomplete current-season bar. Regional historical maps remain separate. |
 | Complete — monitor | Recent-period weather means and automatic retries | User confirmed production November 12: 7-/30-day 500-mb heights, 250-mb jet/flow and PWAT overlays; daily integration, cached reuse, revision invalidation, persistent CORe/mean retries and reporting. Weather anomaly baselines remain separate. |
-| P1 — recommended next increment | Historic seasonal snow anomalies | Review the existing WY2005/2018/2024 pilot, validate peak-SWE departure/percent-of-median references and support guards, then prepare a small historic-page staging release. Reuse completed seasonal grids; no new daily downloads. |
+| P1 — active local release | Historic seasonal snow anomalies | Three-year maps/pages accepted locally. The all-year increment prepares 42 companions for WY2005-WY2025, cached page staging, publication checks and dated catalog links. Complete all-year local review, then VM staging and explicit promotion. Reuse seasonal grids; no new daily downloads. |
 | Complete — monitor | Station daily-chart normals, records and interactions | Daily normals/records were confirmed live November 10. Linked chart dates, selected-period CSV exports and the seasonal disclosure/layout refinements are also confirmed in production November 12. Retain coverage and source-record safeguards. |
 | Complete — monitor | Monthly station climatology | Confirmed production November 12: 1991-2020/full-record selection, monthly distributions/extreme years, linked tables, coverage and calendar/water-year ordering. Daily annual-cycle climatology views remain optional future extensions. |
 | After existing commitments — 3 | Climate of the region page | Start with 1991–2020 annual and seasonal precipitation normals and temperature averages when the required PRISM inputs are available. Historical extremes follow separately. |
@@ -190,15 +225,31 @@ that work ahead of discretionary features.
 | Later — feasibility exploration | Interactive raster map page | Explore selectable existing raster products over a basemap, adjustable transparency, zoom/pan and pixel-value queries. Benchmark a small static-site pilot before selecting delivery methods or scheduling implementation. See [scope](#new-exploration-interactive-raster-map-page). Existing commitments and agreed climatology order remain unchanged. |
 | Later — polish | Consistency and optional interactions | Shared city-label styling, historic RONI labels at the next archive refresh, custom Analytics events and remaining documentation reconciliation. |
 
-November 12 recommended working sequence: station enhancements, monthly
-climatology, daily weather means and automatic retries are confirmed live.
-Monitor the next scheduled run, then return to historic seasonal snow anomaly
-companions as the next bounded feature increment. First review the existing
+November 13 recommended working sequence: station enhancements, monthly
+climatology, daily weather means/retries and the operational repairs above are
+confirmed live. The scheduled production check has passed. Return to historic
+seasonal snow anomaly companions as the next bounded feature increment while
+monitoring source gaps and deferred means. First review the existing
 three-year pilot and its references/masks before expanding historical pages.
 The regional climatology page follows the agreed climatology sequence; the
 interactive raster pilot remains a separate later increment. Heat metrics stay
 deferred until spring 2027. External dashboard links/Arizona-only exports, GA4
 Realtime and the first automatic December monthly cycle remain follow-ups.
+
+November 13 local snow increment: the reviewed three-year anomaly maps now have
+an isolated full Historic Years page preview with four snow cards, original
+PRISM content, explicit peak/reference/display explanations and source/output
+integrity gates. See [local review commands](snodas-historic-anomaly-preview.md).
+The user accepted the local three-year page review. The next local increment
+expands to WY2005-WY2025 (42 companions), removes pilot-only footer text in the
+publication build, adds resumable/checksummed reuse, standard page staging,
+dedicated publication validation and automatic dated catalog links. See
+[archive build/release guide](snodas-seasonal-anomaly-release.md). Local checks
+passed for all 21 years/84 snow images (42 companions), with zero rendered
+failures, all 21 years reused on a second build, and 42 stable dated anomaly
+catalog links validated. The user still needs to review the expanded local
+site; VM staging and production acceptance remain pending. No remote publication
+or VM configuration changed.
 
 ### Daily weather means and automatic retries - production confirmed
 
@@ -1099,12 +1150,13 @@ and [production guidance](https://developers.openai.com/api/docs/guides/producti
 ## Suggested sequence
 
 Follow the [priority order above](#priority-order-and-working-sequence).
-Station seasonal histories, daily chart/CSV/layout enhancements and monthly
-climatology are now confirmed in production. The next recommended increment is
-a local seven-day 500-mb/PWAT means pilot using cached CORe fields; completeness
-and runtime/cache checks precede any 30-day expansion or operational integration.
-Historic snow anomalies follow, with regional climatology and remaining station
-extensions retained for later scoping. External dashboard embedding/Arizona-only
+Station seasonal histories, daily chart/CSV/layout enhancements, monthly
+climatology and 7-/30-day weather means/retries are confirmed in production.
+The November 13 full run closes the station/monthly/cache repair checks.
+The next recommended increment is review of the existing three-year historic
+seasonal snow anomaly pilot, followed by a small archive-page staging release
+after reference/support checks. Regional climatology and remaining station
+extensions remain later work. External dashboard embedding/Arizona-only
 exports remain separate. Heat metrics stay deferred until spring 2027; AI
 synthesis remains deferred. Move one bounded increment through local review,
 staging and explicit promotion before adding another daily dependency.
