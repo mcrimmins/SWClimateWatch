@@ -1,0 +1,272 @@
+---
+title: "Climate of the Region"
+page-layout: full
+toc: false
+bread-crumbs: false
+body-classes: climate-region-page
+---
+
+Typical precipitation and temperature patterns across Arizona, New Mexico and surrounding areas.
+
+**1991-2020 reference** · PRISM monthly and daily grids via RCC-ACIS
+
+Explore a period by topic, or compare the same metric across all four seasons. These maps describe the reference climate; use Current Maps for recent conditions.
+
+```{=html}
+<div class="climate-controls" id="climate-shared-controls">
+<label>Period <select id="climate-period"><option value="annual">Annual (Jan-Dec)</option><option value="winter">Winter (Jan-Mar)</option><option value="spring">Spring (Apr-Jun)</option><option value="summer">Summer (Jul-Sep)</option><option value="fall">Fall (Oct-Dec)</option></select></label>
+<span id="climate-period-hint" role="status" aria-live="polite"></span></div>
+```
+
+::: {.panel-tabset .climate-reference-tabs}
+
+## Precipitation
+
+```{=html}
+<div data-climate-group="precipitation">
+<div class="climate-controls">
+<label>Metric <select id="climate-precipitation-metric"><option value="precipitation">Precipitation total</option><option value="wet_days">Wet days</option><option value="wet_amount">Amount per wet day</option><option value="heavy_days">Heavy-precipitation days</option></select></label>
+<label>View <select id="climate-precipitation-view"><option value="single">Selected map</option><option value="all">All metrics</option></select></label>
+<label id="climate-share-control">Precipitation total <select id="climate-precip-mode" aria-describedby="climate-share-hint" disabled><option value="total">Total</option><option value="share">Share of annual</option></select></label>
+<span id="climate-share-hint">Share of annual is available for seasons.</span>
+</div>
+<p class="climate-view-status" id="climate-precipitation-status" role="status" aria-live="polite"></p>
+<div class="climate-map-grid" id="climate-precipitation-maps">
+<article class="dashboard-map-card climate-map-card" data-reference-card="precipitation" data-period="annual" data-metric="precipitation">
+<a href="../maps/generated/prism/regional-reference/1991-2020/annual-precipitation.png" target="_blank" rel="noopener"><img data-reference-map="annual-precipitation" src="../maps/generated/prism/regional-reference/1991-2020/annual-precipitation.png" alt="Annual (Jan-Dec): Precipitation total, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average precipitation total, in inches.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/annual-precipitation.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="precipitation" data-period="winter" data-metric="precipitation" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/winter-precipitation.png" target="_blank" rel="noopener"><img data-reference-map="winter-precipitation" src="../maps/generated/prism/regional-reference/1991-2020/winter-precipitation.png" alt="Winter (Jan-Mar): Precipitation total, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average precipitation total, in inches.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/winter-precipitation.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="precipitation" data-period="spring" data-metric="precipitation" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/spring-precipitation.png" target="_blank" rel="noopener"><img data-reference-map="spring-precipitation" src="../maps/generated/prism/regional-reference/1991-2020/spring-precipitation.png" alt="Spring (Apr-Jun): Precipitation total, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average precipitation total, in inches.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/spring-precipitation.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="precipitation" data-period="summer" data-metric="precipitation" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/summer-precipitation.png" target="_blank" rel="noopener"><img data-reference-map="summer-precipitation" src="../maps/generated/prism/regional-reference/1991-2020/summer-precipitation.png" alt="Summer (Jul-Sep): Precipitation total, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average precipitation total, in inches.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/summer-precipitation.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="precipitation" data-period="fall" data-metric="precipitation" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/fall-precipitation.png" target="_blank" rel="noopener"><img data-reference-map="fall-precipitation" src="../maps/generated/prism/regional-reference/1991-2020/fall-precipitation.png" alt="Fall (Oct-Dec): Precipitation total, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average precipitation total, in inches.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/fall-precipitation.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="precipitation" data-period="winter" data-metric="precipitation_share" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/winter-precipitation-share.png" target="_blank" rel="noopener"><img data-reference-map="winter-precipitation-share" src="../maps/generated/prism/regional-reference/1991-2020/winter-precipitation-share.png" alt="Winter (Jan-Mar): Share of annual precipitation, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Seasonal mean divided by the annual mean, times 100.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/winter-precipitation-share.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="precipitation" data-period="spring" data-metric="precipitation_share" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/spring-precipitation-share.png" target="_blank" rel="noopener"><img data-reference-map="spring-precipitation-share" src="../maps/generated/prism/regional-reference/1991-2020/spring-precipitation-share.png" alt="Spring (Apr-Jun): Share of annual precipitation, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Seasonal mean divided by the annual mean, times 100.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/spring-precipitation-share.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="precipitation" data-period="summer" data-metric="precipitation_share" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/summer-precipitation-share.png" target="_blank" rel="noopener"><img data-reference-map="summer-precipitation-share" src="../maps/generated/prism/regional-reference/1991-2020/summer-precipitation-share.png" alt="Summer (Jul-Sep): Share of annual precipitation, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Seasonal mean divided by the annual mean, times 100.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/summer-precipitation-share.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="precipitation" data-period="fall" data-metric="precipitation_share" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/fall-precipitation-share.png" target="_blank" rel="noopener"><img data-reference-map="fall-precipitation-share" src="../maps/generated/prism/regional-reference/1991-2020/fall-precipitation-share.png" alt="Fall (Oct-Dec): Share of annual precipitation, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Seasonal mean divided by the annual mean, times 100.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/fall-precipitation-share.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="precipitation" data-period="annual" data-metric="wet_days" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/annual-wet-days.png" target="_blank" rel="noopener"><img data-reference-map="annual-wet-days" src="../maps/generated/prism/regional-reference/1991-2020/annual-wet-days.png" alt="Annual (Jan-Dec): Wet days, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average days with at least 0.04 inch of precipitation.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/annual-wet-days.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="precipitation" data-period="annual" data-metric="wet_amount" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/annual-wet-amount.png" target="_blank" rel="noopener"><img data-reference-map="annual-wet-amount" src="../maps/generated/prism/regional-reference/1991-2020/annual-wet-amount.png" alt="Annual (Jan-Dec): Amount per wet day, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average precipitation on wet days (at least 0.04 inch), pooled over the reference years.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/annual-wet-amount.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="precipitation" data-period="annual" data-metric="heavy_days" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/annual-heavy-days.png" target="_blank" rel="noopener"><img data-reference-map="annual-heavy-days" src="../maps/generated/prism/regional-reference/1991-2020/annual-heavy-days.png" alt="Annual (Jan-Dec): Heavy-precipitation days, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average days with at least 1 inch of precipitation; this is an absolute threshold, not a local rarity ranking.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/annual-heavy-days.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="precipitation" data-period="winter" data-metric="wet_days" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/winter-wet-days.png" target="_blank" rel="noopener"><img data-reference-map="winter-wet-days" src="../maps/generated/prism/regional-reference/1991-2020/winter-wet-days.png" alt="Winter (Jan-Mar): Wet days, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average days with at least 0.04 inch of precipitation.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/winter-wet-days.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="precipitation" data-period="winter" data-metric="wet_amount" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/winter-wet-amount.png" target="_blank" rel="noopener"><img data-reference-map="winter-wet-amount" src="../maps/generated/prism/regional-reference/1991-2020/winter-wet-amount.png" alt="Winter (Jan-Mar): Amount per wet day, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average precipitation on wet days (at least 0.04 inch), pooled over the reference years.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/winter-wet-amount.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="precipitation" data-period="winter" data-metric="heavy_days" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/winter-heavy-days.png" target="_blank" rel="noopener"><img data-reference-map="winter-heavy-days" src="../maps/generated/prism/regional-reference/1991-2020/winter-heavy-days.png" alt="Winter (Jan-Mar): Heavy-precipitation days, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average days with at least 1 inch of precipitation; this is an absolute threshold, not a local rarity ranking.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/winter-heavy-days.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="precipitation" data-period="spring" data-metric="wet_days" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/spring-wet-days.png" target="_blank" rel="noopener"><img data-reference-map="spring-wet-days" src="../maps/generated/prism/regional-reference/1991-2020/spring-wet-days.png" alt="Spring (Apr-Jun): Wet days, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average days with at least 0.04 inch of precipitation.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/spring-wet-days.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="precipitation" data-period="spring" data-metric="wet_amount" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/spring-wet-amount.png" target="_blank" rel="noopener"><img data-reference-map="spring-wet-amount" src="../maps/generated/prism/regional-reference/1991-2020/spring-wet-amount.png" alt="Spring (Apr-Jun): Amount per wet day, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average precipitation on wet days (at least 0.04 inch), pooled over the reference years.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/spring-wet-amount.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="precipitation" data-period="spring" data-metric="heavy_days" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/spring-heavy-days.png" target="_blank" rel="noopener"><img data-reference-map="spring-heavy-days" src="../maps/generated/prism/regional-reference/1991-2020/spring-heavy-days.png" alt="Spring (Apr-Jun): Heavy-precipitation days, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average days with at least 1 inch of precipitation; this is an absolute threshold, not a local rarity ranking.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/spring-heavy-days.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="precipitation" data-period="summer" data-metric="wet_days" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/summer-wet-days.png" target="_blank" rel="noopener"><img data-reference-map="summer-wet-days" src="../maps/generated/prism/regional-reference/1991-2020/summer-wet-days.png" alt="Summer (Jul-Sep): Wet days, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average days with at least 0.04 inch of precipitation.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/summer-wet-days.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="precipitation" data-period="summer" data-metric="wet_amount" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/summer-wet-amount.png" target="_blank" rel="noopener"><img data-reference-map="summer-wet-amount" src="../maps/generated/prism/regional-reference/1991-2020/summer-wet-amount.png" alt="Summer (Jul-Sep): Amount per wet day, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average precipitation on wet days (at least 0.04 inch), pooled over the reference years.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/summer-wet-amount.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="precipitation" data-period="summer" data-metric="heavy_days" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/summer-heavy-days.png" target="_blank" rel="noopener"><img data-reference-map="summer-heavy-days" src="../maps/generated/prism/regional-reference/1991-2020/summer-heavy-days.png" alt="Summer (Jul-Sep): Heavy-precipitation days, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average days with at least 1 inch of precipitation; this is an absolute threshold, not a local rarity ranking.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/summer-heavy-days.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="precipitation" data-period="fall" data-metric="wet_days" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/fall-wet-days.png" target="_blank" rel="noopener"><img data-reference-map="fall-wet-days" src="../maps/generated/prism/regional-reference/1991-2020/fall-wet-days.png" alt="Fall (Oct-Dec): Wet days, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average days with at least 0.04 inch of precipitation.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/fall-wet-days.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="precipitation" data-period="fall" data-metric="wet_amount" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/fall-wet-amount.png" target="_blank" rel="noopener"><img data-reference-map="fall-wet-amount" src="../maps/generated/prism/regional-reference/1991-2020/fall-wet-amount.png" alt="Fall (Oct-Dec): Amount per wet day, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average precipitation on wet days (at least 0.04 inch), pooled over the reference years.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/fall-wet-amount.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="precipitation" data-period="fall" data-metric="heavy_days" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/fall-heavy-days.png" target="_blank" rel="noopener"><img data-reference-map="fall-heavy-days" src="../maps/generated/prism/regional-reference/1991-2020/fall-heavy-days.png" alt="Fall (Oct-Dec): Heavy-precipitation days, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average days with at least 1 inch of precipitation; this is an absolute threshold, not a local rarity ranking.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/fall-heavy-days.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+</div>
+</div>
+```
+
+## Temperature
+
+```{=html}
+<div data-climate-group="temperature">
+<div class="climate-controls">
+<label>Metric <select id="climate-temperature-metric"><option value="temperature">Mean temperature</option><option value="freeze_days">Freeze nights</option><option value="hot_days">Hot days</option></select></label>
+<label>View <select id="climate-temperature-view"><option value="single">Selected map</option><option value="all">All metrics</option></select></label>
+</div>
+<p class="climate-view-status" id="climate-temperature-status" role="status" aria-live="polite"></p>
+<div class="climate-map-grid" id="climate-temperature-maps">
+<article class="dashboard-map-card climate-map-card" data-reference-card="temperature" data-period="annual" data-metric="temperature">
+<a href="../maps/generated/prism/regional-reference/1991-2020/annual-mean-temperature.png" target="_blank" rel="noopener"><img data-reference-map="annual-temperature" src="../maps/generated/prism/regional-reference/1991-2020/annual-mean-temperature.png" alt="Annual (Jan-Dec): Mean temperature, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average temperature in degrees F; monthly means weighted by actual days within each reference year.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/annual-mean-temperature.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="temperature" data-period="winter" data-metric="temperature" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/winter-mean-temperature.png" target="_blank" rel="noopener"><img data-reference-map="winter-temperature" src="../maps/generated/prism/regional-reference/1991-2020/winter-mean-temperature.png" alt="Winter (Jan-Mar): Mean temperature, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average temperature in degrees F; monthly means weighted by actual days within each reference year.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/winter-mean-temperature.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="temperature" data-period="spring" data-metric="temperature" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/spring-mean-temperature.png" target="_blank" rel="noopener"><img data-reference-map="spring-temperature" src="../maps/generated/prism/regional-reference/1991-2020/spring-mean-temperature.png" alt="Spring (Apr-Jun): Mean temperature, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average temperature in degrees F; monthly means weighted by actual days within each reference year.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/spring-mean-temperature.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="temperature" data-period="summer" data-metric="temperature" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/summer-mean-temperature.png" target="_blank" rel="noopener"><img data-reference-map="summer-temperature" src="../maps/generated/prism/regional-reference/1991-2020/summer-mean-temperature.png" alt="Summer (Jul-Sep): Mean temperature, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average temperature in degrees F; monthly means weighted by actual days within each reference year.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/summer-mean-temperature.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="temperature" data-period="fall" data-metric="temperature" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/fall-mean-temperature.png" target="_blank" rel="noopener"><img data-reference-map="fall-temperature" src="../maps/generated/prism/regional-reference/1991-2020/fall-mean-temperature.png" alt="Fall (Oct-Dec): Mean temperature, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average temperature in degrees F; monthly means weighted by actual days within each reference year.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/fall-mean-temperature.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="temperature" data-period="annual" data-metric="freeze_days" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/annual-freeze-days.png" target="_blank" rel="noopener"><img data-reference-map="annual-freeze-days" src="../maps/generated/prism/regional-reference/1991-2020/annual-freeze-days.png" alt="Annual (Jan-Dec): Freeze nights, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average nights with minimum temperature at or below 32 F.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/annual-freeze-days.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="temperature" data-period="annual" data-metric="hot_days" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/annual-hot-days.png" target="_blank" rel="noopener"><img data-reference-map="annual-hot-days" src="../maps/generated/prism/regional-reference/1991-2020/annual-hot-days.png" alt="Annual (Jan-Dec): Hot days, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average days with maximum temperature at or above 90 F; this is not a heat-risk index.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/annual-hot-days.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="temperature" data-period="winter" data-metric="freeze_days" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/winter-freeze-days.png" target="_blank" rel="noopener"><img data-reference-map="winter-freeze-days" src="../maps/generated/prism/regional-reference/1991-2020/winter-freeze-days.png" alt="Winter (Jan-Mar): Freeze nights, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average nights with minimum temperature at or below 32 F.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/winter-freeze-days.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="temperature" data-period="winter" data-metric="hot_days" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/winter-hot-days.png" target="_blank" rel="noopener"><img data-reference-map="winter-hot-days" src="../maps/generated/prism/regional-reference/1991-2020/winter-hot-days.png" alt="Winter (Jan-Mar): Hot days, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average days with maximum temperature at or above 90 F; this is not a heat-risk index.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/winter-hot-days.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="temperature" data-period="spring" data-metric="freeze_days" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/spring-freeze-days.png" target="_blank" rel="noopener"><img data-reference-map="spring-freeze-days" src="../maps/generated/prism/regional-reference/1991-2020/spring-freeze-days.png" alt="Spring (Apr-Jun): Freeze nights, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average nights with minimum temperature at or below 32 F.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/spring-freeze-days.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="temperature" data-period="spring" data-metric="hot_days" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/spring-hot-days.png" target="_blank" rel="noopener"><img data-reference-map="spring-hot-days" src="../maps/generated/prism/regional-reference/1991-2020/spring-hot-days.png" alt="Spring (Apr-Jun): Hot days, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average days with maximum temperature at or above 90 F; this is not a heat-risk index.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/spring-hot-days.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="temperature" data-period="summer" data-metric="freeze_days" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/summer-freeze-days.png" target="_blank" rel="noopener"><img data-reference-map="summer-freeze-days" src="../maps/generated/prism/regional-reference/1991-2020/summer-freeze-days.png" alt="Summer (Jul-Sep): Freeze nights, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average nights with minimum temperature at or below 32 F.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/summer-freeze-days.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="temperature" data-period="summer" data-metric="hot_days" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/summer-hot-days.png" target="_blank" rel="noopener"><img data-reference-map="summer-hot-days" src="../maps/generated/prism/regional-reference/1991-2020/summer-hot-days.png" alt="Summer (Jul-Sep): Hot days, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average days with maximum temperature at or above 90 F; this is not a heat-risk index.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/summer-hot-days.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="temperature" data-period="fall" data-metric="freeze_days" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/fall-freeze-days.png" target="_blank" rel="noopener"><img data-reference-map="fall-freeze-days" src="../maps/generated/prism/regional-reference/1991-2020/fall-freeze-days.png" alt="Fall (Oct-Dec): Freeze nights, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average nights with minimum temperature at or below 32 F.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/fall-freeze-days.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+<article class="dashboard-map-card climate-map-card" data-reference-card="temperature" data-period="fall" data-metric="hot_days" hidden>
+<a href="../maps/generated/prism/regional-reference/1991-2020/fall-hot-days.png" target="_blank" rel="noopener"><img data-reference-map="fall-hot-days" src="../maps/generated/prism/regional-reference/1991-2020/fall-hot-days.png" alt="Fall (Oct-Dec): Hot days, 1991-2020" loading="lazy"></a>
+<p class="archive-map-description">Average days with maximum temperature at or above 90 F; this is not a heat-risk index.</p>
+<div class="dashboard-card-actions"><a class="btn btn-sm btn-outline-primary" href="../maps/generated/prism/regional-reference/1991-2020/fall-hot-days.png" target="_blank" rel="noopener">Open full-resolution PNG</a></div>
+</article>
+</div>
+</div>
+```
+
+## Seasonal comparison
+
+```{=html}
+<div data-climate-group="comparison">
+<div class="climate-controls">
+<label>Metric <select id="climate-comparison-metric"><option value="precipitation">Precipitation total</option><option value="precipitation_share">Share of annual precipitation</option><option value="wet_days">Wet days</option><option value="wet_amount">Amount per wet day</option><option value="heavy_days">Heavy-precipitation days</option><option value="temperature">Mean temperature</option><option value="freeze_days">Freeze nights</option><option value="hot_days">Hot days</option></select></label>
+</div>
+<p class="climate-view-status" id="climate-comparison-status" role="status" aria-live="polite"></p>
+<div class="climate-map-grid climate-comparison-grid" id="climate-comparison-maps"></div>
+</div>
+```
+
+:::
+
+```{=html}
+<details class="climate-reference-methods"><summary>How to read these maps</summary>
+<p><strong>Reference:</strong> Project-calculated PRISM grid averages for 1991-2020, not current anomalies, full-record rankings or official NOAA station normals. Grid cells are spatial estimates.</p>
+<p><strong>Periods:</strong> Annual is January-December; seasons are calendar quarters: winter January-March, spring April-June, summer July-September and fall October-December. Seasonal comparisons share the same scale within each metric. Annual precipitation totals and mean temperatures have separate scales.</p>
+<p><strong>Totals and temperature:</strong> Sum monthly precipitation within each year or quarter, then average the 30 complete totals. Monthly mean temperature is (mean daily maximum + mean daily minimum)/2, weighted by actual days including leap days within each year or quarter, then averaged equally across the 30 years.</p>
+<p><strong>Share of annual:</strong> 100 times seasonal mean precipitation divided by annual mean precipitation, not the average of yearly percentages. All four seasonal references and the annual reference require matched complete support. Zero annual totals are withheld. Supported shares sum to 100% within storage precision. Annual always displays totals; the seasonal choice is remembered.</p>
+<p><strong>Daily references:</strong> Wet days have precipitation &gt;=0.04 inch; heavy-precipitation days &gt;=1 inch; freeze nights have minimum temperature &lt;=32 F; hot days have maximum temperature &gt;=90 F. Counts average 30 complete periods. Amount per wet day pools precipitation on wet days and divides by the pooled wet-day count; it is unavailable if no wet days occur. These fixed thresholds do not measure local rarity or impacts.</p>
+<p><strong>Coverage:</strong> All 30 complete years or seasons are required separately by variable and period. Missing observations are not filled or interpolated. Zero counts are valid; beige means unavailable support. Numerical values are not capped by the open-ended display categories.</p>
+<p><a href="precipitation-ranks.html">Recent precipitation rankings</a> · <a href="temperature-rolling-ranks.html">Recent temperature rankings</a> · <a href="methods.html">About the data and methods</a></p>
+</details><script src="../assets/climate-reference.js"></script>
+```

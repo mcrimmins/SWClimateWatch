@@ -22,6 +22,10 @@ Under the production site base `https://cales.arizona.edu/climate/watch/`:
 | Monthly temperature | `maps/latest/monthly/temperature-12month.png` |
 | Monthly precipitation | `maps/latest/monthly/precipitation-12month.png` |
 | Monthly SPI | `maps/latest/monthly/spi-12month.png` |
+| Reference annual precipitation | `maps/latest/climate-region/annual-precipitation.png` |
+| Reference annual temperature | `maps/latest/climate-region/annual-mean-temperature.png` |
+| Reference summer precipitation share | `maps/latest/climate-region/summer-precipitation-share.png` |
+| Reference winter wet days | `maps/latest/climate-region/winter-wet-days.png` |
 | Latest daily precipitation | `maps/latest/daily/pcpn-observed.png` |
 | Latest daily mean temperature | `maps/latest/daily/tmean-observed.png` |
 | Latest 500-mb pattern | `maps/latest/weather/height500.png` |
@@ -39,6 +43,12 @@ versioned monthly releases, are unchanged; the catalog JSON includes the
 original source URL and checksum for provenance. Historical and individual-day
 URLs are date-specific; they can reflect a validated source revision for that
 same date. They do not become a later observation day.
+
+November 15 staging preparation: all 39 Climate of the Region maps receive
+`maps/latest/climate-region/<filename>.png` endpoints and catalog entries after
+deployment. These are fixed 1991–2020 reference maps, not current observations.
+The page and map labels retain the reference period. Production URLs are not
+available until this release is separately promoted.
 
 November 13 local archive increment: the seasonal snow anomaly companions are
 prepared for WY2005-WY2025, pending staging/production acceptance. They use the

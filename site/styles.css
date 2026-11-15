@@ -8,6 +8,50 @@
   --sw-sidebar-active: #f9ebe2;
 }
 
+/* Reference climate: keep period controls usable on narrow screens. */
+.climate-region-page .climate-reference-tabs > .nav-tabs {
+  flex-wrap: wrap;
+}
+.climate-region-page .climate-reference-methods {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--sw-sidebar-guide);
+}
+.climate-region-page .climate-reference-methods > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.climate-region-page .climate-precip-control {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .5rem .75rem;
+  margin: 1rem 0;
+}
+.climate-region-page .climate-precip-control[hidden],
+.climate-region-page [data-precip-view][hidden] { display: none !important; }
+.climate-region-page #climate-precip-mode { padding: .3rem .5rem; }
+.climate-region-page #climate-precip-hint { font-size: .88rem; color: #52646d; }
+.climate-region-page .climate-controls { display:flex; flex-wrap:wrap; align-items:end; gap:.7rem 1.2rem; margin:1rem 0; }
+.climate-region-page .climate-controls label { display:flex; flex-direction:column; gap:.3rem; font-weight:600; }
+.climate-region-page .climate-controls select { max-width:100%; padding:.4rem .6rem; border:1px solid var(--sw-sidebar-guide); border-radius:.3rem; background:var(--bs-body-bg); color:var(--bs-body-color); }
+.climate-region-page .climate-controls [hidden],
+.climate-region-page .climate-map-card[hidden] { display:none !important; }
+.climate-region-page .climate-map-grid { display:grid; grid-template-columns:minmax(0,1fr); gap:1rem; }
+.climate-region-page .climate-all-metrics,
+.climate-region-page .climate-comparison-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.climate-region-page .climate-map-card { min-width:0; overflow:hidden; }
+.climate-region-page .climate-map-card img { width:100%; height:auto; display:block; }
+.climate-region-page .climate-view-status,
+.climate-region-page #climate-period-hint,
+.climate-region-page #climate-share-hint { font-size:.9rem; color:var(--bs-secondary-color,#536670); }
+.climate-region-page .climate-comparison-season { font-size:1rem; padding:.7rem .8rem 0; margin:0; }
+@media(max-width:800px) {
+ .climate-region-page .climate-all-metrics,
+ .climate-region-page .climate-comparison-grid { grid-template-columns:minmax(0,1fr); }
+ .climate-region-page .climate-controls label { max-width:100%; }
+}
+
 body {
   color: var(--sw-ink);
 }

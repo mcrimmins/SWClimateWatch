@@ -8,6 +8,7 @@ project:
     - assets/snodas-seasonal-anomalies.json
     - assets/current-map-groups/**
     - maps/generated/prism/monthly/**
+    - maps/generated/prism/regional-reference/**
     - stations/**
     - daily-explorer/**
     - maps/generated/snodas/current/*.png
@@ -182,6 +183,8 @@ website:
               - href: pages/archive/wy1982.qmd
                 text: 1981-82 (WY1982)
       # END GENERATED HISTORIC YEARS
+      - href: pages/climate-of-region.qmd
+        text: Climate of the Region
       - href: pages/methods.qmd
         text: About
     footer: "This site is under active development. Features and presentation may change."

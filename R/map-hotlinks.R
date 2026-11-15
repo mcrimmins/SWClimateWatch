@@ -88,6 +88,12 @@ map_hotlink_rows <- function(root, products, metadata_dir="data/diagnostics") {
     add(paste0("monthly/",id),"Monthly Climate",label,source,paste0("maps/latest/monthly/",p$file),month,
       page="pages/monthly-climate.html",note="Completed months; revision-aware monthly updates.")
   }
+  reference_rows <- map_hotlink_regional_rows(root)
+  if(nrow(reference_rows)) for(i in seq_len(nrow(reference_rows))) {
+    p <- reference_rows[i,]
+    add(p$id,'Climate of the Region',p$label,p$source,p$alias,'1991-2020',
+      page='pages/climate-of-region.html',note='Fixed 1991-2020 reference climate; not current conditions.')
+  }
   # Historical pages already have stable year-specific paths. Catalog only maps
   # actually referenced by the published page, rather than every cached file.
   for(page in list.files(file.path(root,"pages/archive"),pattern="^wy[0-9]{4}[.]html$",full.names=TRUE)) {
@@ -163,6 +169,30 @@ map_hotlink_rows <- function(root, products, metadata_dir="data/diagnostics") {
   result<-result[!duplicated(result$id),,drop=FALSE]
   if(anyDuplicated(result$alias[nzchar(result$alias)]))stop("Duplicate stable map endpoint.")
   result[order(result$family,result$id),,drop=FALSE]
+}
+
+map_hotlink_regional_rows <- function(root) {
+  page <- file.path(root,'pages/climate-of-region.html')
+  if(!file.exists(page)) return(data.frame())
+  folder <- 'maps/generated/prism/regional-reference/1991-2020'
+  manifest <- jsonlite::read_json(file.path(root,folder,'manifest.json'),simplifyVector=TRUE)
+  products <- manifest$products
+  expected <- c(as.vector(outer(c('annual','winter','spring','summer','fall'),c('precipitation','temperature'),paste,sep='-')),
+    paste0(c('winter','spring','summer','fall'),'-precipitation-share'),
+    as.vector(outer(c('annual','winter','spring','summer','fall'),c('wet-days','wet-amount','heavy-days','freeze-days','hot-days'),paste,sep='-')))
+  if(!is.data.frame(products) || nrow(products)!=39L || anyDuplicated(products$id) || anyDuplicated(products$file) ||
+    !setequal(products$id,expected) || !isTRUE(manifest$start_year==1991L && manifest$end_year==2020L)) stop('Reference hotlinks require all 39 accepted maps.')
+  doc <- xml2::read_html(page)
+  rows <- lapply(seq_len(nrow(products)),function(i) {
+    p <- products[i,]; source <- paste0(folder,'/',p$file)
+    if(!map_hotlink_safe_path(source) || !map_hotlink_png(map_hotlink_path(root,source)) ||
+      !identical(unname(tools::md5sum(map_hotlink_path(root,source))),p$md5)) stop('Reference hotlink source differs from its manifest.')
+    image <- xml2::xml_find_all(doc,sprintf('//img[@data-reference-map="%s"]',p$id))
+    if(length(image)!=1L || !identical(xml2::xml_attr(image,'src'),paste0('../',source))) stop('Reference hotlink is not linked by the accepted page.')
+    data.frame(id=paste0('climate-region/',p$id),label=xml2::xml_attr(image,'alt'),source=source,
+      alias=paste0('maps/latest/climate-region/',p$file))
+  })
+  do.call(rbind,rows)
 }
 
 map_hotlink_install <- function(source,target) {
