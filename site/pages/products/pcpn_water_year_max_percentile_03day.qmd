@@ -1,6 +1,6 @@
 ---
 title: "Maximum 3-day percentile"
-description-meta: "The largest three-day precipitation total so far this water year is ranked against the largest three-day totals from complete water years 1991-2020. High ranks indicate an unusually large event; the current-year rank is provisional until September 30 because another event may raise the maximum."
+description-meta: "The largest three-day total since October 1 is ranked against each 1991-2020 reference water year through the same calendar date. High ranks identify unusually large events for this point in the year; only complete within-year windows count, February 29 uses interpolated references, and tied zeros can be near normal in a normally dry period."
 body-classes: product-page
 toc: false
 page-layout: full
@@ -11,7 +11,7 @@ page-layout: full
 :::
 
 ::: {.product-interpretation}
-The largest three-day precipitation total so far this water year is ranked against the largest three-day totals from complete water years 1991-2020. High ranks indicate an unusually large event; the current-year rank is provisional until September 30 because another event may raise the maximum.
+The largest three-day total since October 1 is ranked against each 1991-2020 reference water year through the same calendar date. High ranks identify unusually large events for this point in the year; only complete within-year windows count, February 29 uses interpolated references, and tied zeros can be near normal in a normally dry period.
 :::
 
 ::: {.product-actions}

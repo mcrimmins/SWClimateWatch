@@ -909,19 +909,24 @@ water_year_maps
 - `prism_maximum_rolling_total()` forms every complete rolling three-day total
   in a period and retains the largest value at each grid cell. Partial one- or
   two-day windows at the start of a water year are not used.
-- `build_prism_water_year_maximum_cache()` builds one maximum layer per
-  complete baseline water year and stores the 30-layer sample as `FLT8S` with a
-  version, processed-source signature, byte size, and checksum. Because the
-  standard baseline is fixed, routine daily updates reuse this cache.
+- `build_prism_water_year_maximum_cache(target_date=...)` builds maximum-to-date
+  samples through the matching calendar date in each baseline water year. The
+  FLT8S sample is keyed by month/day, with its own version, source signature,
+  byte size and checksum. A verified previous-day cache can advance using just
+  the new rolling endpoint; changed sources or absent/incompatible predecessors
+  trigger a direct build. February 29 interpolates February 28/March 1 maxima;
+  February 29 and March 1 build directly. Omitting `target_date` retains the
+  separate complete-water-year cache for completed-season uses.
 - `prism_current_water_year_maximum()` calculates the maximum-so-far from the
   active water year's October 1 through the latest date. The daily map plan
   defers the maximum, its rank, and concentration through October 1-2, while
   the site shows waiting pages. All three resume automatically with data
   through October 3; other current maps continue to update.
 - `calculate_current_prism_water_year_maximum_products()` writes the observed
-  maximum and its empirical type-8 rank against complete historical maxima.
-  The active-year rank is provisional until September 30 because additional
-  events can only maintain or increase the current maximum.
+  maximum and its empirical type-8 rank against matched maximum-to-date samples.
+  Reference and current rolling windows are confined to October 1 through the
+  same calendar date, preventing future monsoon storms from depressing early
+  water-year ranks. The empirical type-8 calculation itself is unchanged.
 - `build_current_prism_water_year_maximum_maps()` writes dated and stable
   `latest` maps. The observed map is capped visually at 8+ inches while the
   raster retains uncapped values.

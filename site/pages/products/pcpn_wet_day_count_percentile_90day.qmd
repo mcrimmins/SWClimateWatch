@@ -1,6 +1,6 @@
 ---
 title: "Wet-day-count percentile"
-description-meta: "The latest 90-day count of days with at least 0.04 inch is ranked against 1991-2020 counts in windows ending within two calendar days of this date. High ranks mean wet days have been unusually frequent and low ranks mean they have been unusually scarce."
+description-meta: "The latest 90-day count of days with at least 0.04 inch is ranked against 1991-2020 counts in windows ending within two calendar days of this date. High ranks mean wet days have been unusually frequent and low ranks mean they have been unusually scarce; ties share positions, so use the companion map for context."
 body-classes: product-page
 toc: false
 page-layout: full
@@ -11,7 +11,7 @@ page-layout: full
 :::
 
 ::: {.product-interpretation}
-The latest 90-day count of days with at least 0.04 inch is ranked against 1991-2020 counts in windows ending within two calendar days of this date. High ranks mean wet days have been unusually frequent and low ranks mean they have been unusually scarce.
+The latest 90-day count of days with at least 0.04 inch is ranked against 1991-2020 counts in windows ending within two calendar days of this date. High ranks mean wet days have been unusually frequent and low ranks mean they have been unusually scarce; ties share positions, so use the companion map for context.
 :::
 
 ::: {.product-actions}

@@ -1,6 +1,6 @@
 ---
 title: "Wet-day-intensity percentile"
-description-meta: "Mean precipitation per wet day is calculated from days with at least 0.04 inch in the latest 90 days and ranked against 1991-2020 periods ending within two calendar days of this date. High ranks mean unusually heavy wet days and low ranks mean unusually light wet days; cells with no qualifying wet days are blank."
+description-meta: "Mean precipitation per wet day in the latest 90 days is ranked against matching 1991-2020 periods; wet days have at least 0.04 inch. High ranks mean heavier wet days and low ranks lighter ones; ranks can be volatile with only one wet day, so consult wet-day counts, and blank cells lack qualifying events."
 body-classes: product-page
 toc: false
 page-layout: full
@@ -11,7 +11,7 @@ page-layout: full
 :::
 
 ::: {.product-interpretation}
-Mean precipitation per wet day is calculated from days with at least 0.04 inch in the latest 90 days and ranked against 1991-2020 periods ending within two calendar days of this date. High ranks mean unusually heavy wet days and low ranks mean unusually light wet days; cells with no qualifying wet days are blank.
+Mean precipitation per wet day in the latest 90 days is ranked against matching 1991-2020 periods; wet days have at least 0.04 inch. High ranks mean heavier wet days and low ranks lighter ones; ranks can be volatile with only one wet day, so consult wet-day counts, and blank cells lack qualifying events.
 :::
 
 ::: {.product-actions}

@@ -104,18 +104,18 @@ testthat::test_that("last-freeze cache is written and reused", {
 
 testthat::test_that("last-freeze climatology masks unreliable normals", {
   dates <- as.Date(c("1991-08-01", "1992-08-01", "1993-08-01", "1994-08-01"))
-  samples <- make_last_freeze_test_raster(c(220, 230, NA, 240), dates)
+  samples <- make_last_freeze_test_raster(c(220, 230, 0, 240), dates)
   reliable <- prism_last_freeze_climatology(samples, minimum_frequency = 0.75)
   masked <- prism_last_freeze_climatology(samples, minimum_frequency = 1)
   testthat::expect_equal(as.numeric(terra::values(reliable$frequency)), 0.75)
-  testthat::expect_equal(as.numeric(terra::values(reliable$median_day)), 230)
+  testthat::expect_equal(as.numeric(terra::values(reliable$median_day)), 225)
   testthat::expect_true(is.na(as.numeric(terra::values(masked$median_day))))
 })
 
 testthat::test_that("last-freeze departure is observed minus median date", {
   observed <- make_last_freeze_test_raster(250, as.Date("2027-04-07"))
   normal <- make_last_freeze_test_raster(235, as.Date("2000-01-01"))
-  result <- prism_last_freeze_departure_raster(observed, normal, "2027-04-07")
+  result <- prism_last_freeze_departure_raster(observed, normal, "2027-04-21")
   testthat::expect_equal(as.numeric(terra::values(result)), 15)
 })
 

@@ -1,4 +1,5 @@
 # Keep the Linux production runner/configuration usable after Windows checkout.
 scripts/run-production-daily.sh text eol=lf
 scripts/test-climate-of-region-staging.sh text eol=lf
+scripts/test-prism-comparison-staging.sh text eol=lf
 scripts/production.env.example text eol=lf

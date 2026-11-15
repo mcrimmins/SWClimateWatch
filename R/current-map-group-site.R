@@ -68,7 +68,7 @@ current_remaining_groups <- function() {
       row("rank","Event percentile","map","Water year","pcpn_water_year_max_percentile_03day"),
       row("concentration","Precipitation concentration","map","Water year","pcpn_water_year_concentration_03day")),
       "The largest three-day precipitation total since October 1, its historical context, and its share of water-year precipitation.",
-      tab_notes=list(rank="Provisional comparison: the current maximum is compared with maxima from completed 1991–2020 water years. This is not a date-matched season-to-date rank; the current water year is incomplete until September 30."))
+      tab_notes=list(rank="The current maximum is compared with each 1991–2020 water year's maximum through the same calendar date. All rolling three-day windows stay within the water year; this is a date-matched season-to-date rank."))
   )
 }
 

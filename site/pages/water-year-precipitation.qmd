@@ -26,7 +26,7 @@ toc: false
 </article>
 <article class="group-map" data-product="pcpn_water_year_percentile" data-tab="rank" data-variant="map" data-option="Water year to date"><h2 class="group-map-heading">Percentile rank</h2>
 <a href="../maps/generated/prism/precipitation/pcpn-water-year-percentile-rank-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/precipitation/pcpn-water-year-percentile-rank-latest.png" alt="Percentile rank" loading="lazy"></a>
-<p>Precipitation since October 1 is ranked against water-year 1991-2020 totals accumulated through the same calendar date. Low ranks indicate an unusually dry water year to date and high ranks an unusually wet one.</p>
+<p>Precipitation since October 1 is ranked against water-year 1991-2020 totals accumulated through the same calendar date. Low ranks indicate an unusually dry water year to date and high ranks an unusually wet one; ties share positions, so zero rainfall can be near normal in a normally dry period.</p>
 <p><a href="../maps/generated/prism/precipitation/pcpn-water-year-percentile-rank-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
 </article>
 </div></div><script src="../assets/current-map-groups/current-map-groups.js"></script>

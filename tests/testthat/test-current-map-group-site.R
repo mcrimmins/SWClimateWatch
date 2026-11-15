@@ -58,7 +58,7 @@ testthat::test_that("water-year grouped maps withhold stale images until October
   testthat::expect_match(xml2::xml_text(page),"October 3, 2026",fixed=TRUE)
   caveat <- xml2::xml_find_all(page,'//article[@data-tab="rank"]/*[contains(@class,"group-map-caution")]')
   testthat::expect_length(caveat,1L)
-  testthat::expect_match(xml2::xml_text(caveat),"completed 1991",fixed=TRUE)
+  testthat::expect_match(xml2::xml_text(caveat),"through the same calendar date",fixed=TRUE)
   manifest <- stage_current_map_groups(root,catalog,expected_data_dates=c(Precipitation="2026-10-03"))
   testthat::expect_true(all(manifest$available[manifest$product %in% ids]))
 })

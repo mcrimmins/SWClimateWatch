@@ -1,6 +1,7 @@
 # Calculate maximum rolling precipitation within a water year and its percentile.
 
 prism_water_year_maximum_cache_version <- 1L
+prism_water_year_to_date_maximum_cache_version <- 1L
 
 validate_prism_rolling_window <- function(window_days) {
   window_days <- as.integer(window_days)
@@ -105,6 +106,13 @@ prism_water_year_maxima_for_periods <- function(
     layers[[index]] <- prism_maximum_rolling_total(
       raster[[selected]], window_days, periods$end_date[[index]]
     )
+    if ('interpolation_end_date' %in% names(periods) && !is.na(periods$interpolation_end_date[index])) {
+      through <- seq(periods$start_date[index],periods$interpolation_end_date[index],by='day')
+      positions <- match(through,dates)
+      if(anyNA(positions)) stop('Leap-day maximum input is incomplete.')
+      upper <- prism_maximum_rolling_total(raster[[positions]],window_days,periods$interpolation_end_date[index])
+      layers[[index]] <- (layers[[index]] + upper)/2
+    }
     if (!quiet && (index %% progress_every == 0L || index == nrow(periods))) {
       message(
         "  Water-year maximum ", window_days, "-day totals: ", index, "/",
@@ -172,15 +180,21 @@ build_prism_water_year_maximum_cache <- function(
     manifest_path = prism_water_year_maximum_cache_manifest_path(processed_dir),
     overwrite = FALSE,
     progress_every = 5L,
-    quiet = FALSE) {
+    quiet = FALSE,
+    target_date = NULL) {
   window_days <- validate_prism_rolling_window(window_days)
-  periods <- prism_complete_water_year_periods(baseline_start, baseline_end)
-  source_dates <- prism_water_year_maximum_source_dates(periods)
+  matched <- !is.null(target_date)
+  periods <- if(matched) prism_water_year_reference_periods(target_date,baseline_start,baseline_end) else
+    prism_complete_water_year_periods(baseline_start, baseline_end)
+  if(any(as.integer(periods$end_date-periods$start_date)+1L<window_days)) stop('A complete rolling window is not yet available.')
+  source_dates <- if(matched) prism_water_year_source_dates(periods) else prism_water_year_maximum_source_dates(periods)
+  version <- if(matched) prism_water_year_to_date_maximum_cache_version else prism_water_year_maximum_cache_version
   selection <- select_prism_daily_sources("pcpn", source_dates, aoi_id, processed_manifest)
   source_signature <- prism_accumulation_source_signature(selection, processed_manifest)
   path <- prism_water_year_maximum_cache_path(
     window_days, baseline_start, baseline_end, aoi_id, processed_dir
   )
+  if(matched) path <- file.path(dirname(path),'calendar-day',paste0(format(as.Date(target_date),'%m-%d'),'.tif'))
   cache_manifest <- read_prism_manifest(manifest_path)
   existing <- if (nrow(cache_manifest) > 0L &&
       all(c("path", "source_signature", "cache_version", "md5") %in% names(cache_manifest))) {
@@ -190,11 +204,11 @@ build_prism_water_year_maximum_cache <- function(
   }
   current <- nrow(existing) > 0L && file.exists(path) &&
     identical(as.integer(tail(existing$cache_version, 1L)),
-              prism_water_year_maximum_cache_version) &&
+              version) &&
     identical(tail(existing$source_signature, 1L), source_signature) &&
     identical(tail(existing$md5, 1L), unname(tools::md5sum(path)))
   if (current && !overwrite) {
-    if (!quiet) message("Using current complete-water-year maximum cache.")
+    if (!quiet) message('Using current ',if(matched) 'matched-date' else 'complete-water-year',' maximum cache.')
     return(invisible(list(
       raster = read_prism_water_year_maximum_cache(path, periods$end_date),
       periods = periods,
@@ -206,27 +220,52 @@ build_prism_water_year_maximum_cache <- function(
 
   if (!quiet) {
     message(
-      "Building complete-water-year maximum ", window_days,
+      "Building ",if(matched) 'matched-date water-year' else 'complete-water-year'," maximum ", window_days,
       "-day cache from ", length(source_dates), " daily layers."
     )
   }
-  collection <- read_prism_best_daily_range(
-    "pcpn", source_dates, aoi_id, processed_manifest
-  )
-  maxima <- prism_water_year_maxima_for_periods(
-    collection$raster, collection$dates, periods,
-    window_days, progress_every, quiet
-  )
+  maxima <- NULL; build_method <- 'direct'
+  # Reuse yesterday's verified maximum-to-date and add only the new ending
+  # window. Leap interpolation/Mar 1 use a direct build to avoid mixed endpoints.
+  if(matched && !overwrite && !format(as.Date(target_date),'%m-%d') %in% c('02-29','03-01') &&
+      as.integer(as.Date(target_date)-prism_water_year_start(target_date))+1L>window_days) {
+    previous_date <- as.Date(target_date)-1L
+    previous_path <- file.path(dirname(path),paste0(format(previous_date,'%m-%d'),'.tif'))
+    previous <- if(nrow(cache_manifest) && all(c('path','md5','source_signature','cache_version') %in% names(cache_manifest)))
+      cache_manifest[cache_manifest$path==previous_path,,drop=FALSE] else data.frame()
+    if(nrow(previous)==1L && file.exists(previous_path) && identical(as.integer(previous$cache_version),version) &&
+       identical(previous$md5,unname(tools::md5sum(previous_path)))) {
+      prior_periods <- prism_water_year_reference_periods(previous_date,baseline_start,baseline_end)
+      prior_dates <- prism_water_year_source_dates(prior_periods)
+      prior_signature <- prism_accumulation_source_signature(select_prism_daily_sources('pcpn',prior_dates,aoi_id,processed_manifest),processed_manifest)
+      if(identical(previous$source_signature,prior_signature)) {
+        tails <- periods; tails$start_date <- tails$end_date-window_days+1L
+        tail_dates <- prism_water_year_maximum_source_dates(tails)
+        collection <- read_prism_best_daily_range('pcpn',tail_dates,aoi_id,processed_manifest)
+        ending <- prism_water_year_maxima_for_periods(collection$raster,collection$dates,tails,window_days,progress_every,TRUE)
+        prior <- read_prism_water_year_maximum_cache(previous_path,prior_periods$end_date)
+        maxima <- do.call(c,lapply(seq_len(nrow(periods)),function(i) terra::app(c(prior[[i]],ending[[i]]),max,na.rm=FALSE)))
+        names(maxima) <- names(ending); terra::time(maxima) <- periods$end_date
+        build_method <- 'incremental'
+      }
+    }
+  }
+  if(is.null(maxima)) {
+    collection <- read_prism_best_daily_range("pcpn", source_dates, aoi_id, processed_manifest)
+    maxima <- prism_water_year_maxima_for_periods(collection$raster, collection$dates, periods,window_days, progress_every, quiet)
+  }
   write_prism_processed_raster(maxima, path, datatype = "FLT8S")
   record <- data.frame(
-    product = "complete_water_year_maximum_rolling_sample",
-    cache_version = prism_water_year_maximum_cache_version,
+    product = if(matched) 'water_year_to_date_maximum_rolling_sample' else "complete_water_year_maximum_rolling_sample",
+    cache_version = version,
     aoi_id = aoi_id,
     variable = "pcpn",
     native_units = "inch",
     storage_datatype = "FLT8S",
     rolling_window_days = window_days,
-    method = "complete-water-years",
+    method = if(matched) 'matched-water-year-to-date' else "complete-water-years",
+    target_calendar_day = if(matched) format(as.Date(target_date),'%m-%d') else '09-30',
+    build_method = build_method,
     start_date = as.Date(baseline_start),
     end_date = as.Date(baseline_end),
     first_water_year = min(periods$water_year),
@@ -408,7 +447,7 @@ calculate_current_prism_water_year_maximum_products <- function(
   cache <- build_prism_water_year_maximum_cache(
     window_days, baseline_start, baseline_end, aoi_id, processed_dir,
     processed_manifest, overwrite = cache_overwrite,
-    progress_every = progress_every, quiet = quiet
+    progress_every = progress_every, quiet = quiet, target_date = date
   )
   rank <- prism_water_year_maximum_rank_raster(
     current, cache$raster, window_days, date
@@ -486,7 +525,7 @@ build_prism_water_year_maximum_map <- function(
     title <- paste0("Maximum ", window_days, "-day precipitation percentile rank")
     subtitle <- paste0(
       "Water year ", water_year, " through ", format_prism_map_date(date),
-      " | provisional relative to complete water years 1991-2020"
+      " | matched water-year-to-date reference ",prism_reference_year_label('percentile')
     )
     fill_label <- "Percentile rank"
   }

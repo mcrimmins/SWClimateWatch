@@ -116,3 +116,13 @@ initialize_swc_directories <- function(paths = swc_paths) {
   directories <- unname(unlist(paths[c("raw", "processed", "maps")]))
   invisible(vapply(directories, dir.create, logical(1), recursive = TRUE, showWarnings = FALSE))
 }
+
+prism_reference_year_label <- function(kind=c('normal','percentile'), config=swc_prism) {
+  kind <- match.arg(kind)
+  paste0(format(as.Date(config[[paste0(kind,'_start')]]),'%Y'),'-',
+    format(as.Date(config[[paste0(kind,'_end')]]),'%Y'))
+}
+prism_reference_baseline_label <- function(kind=c('normal','percentile'), centered=TRUE, config=swc_prism) {
+  kind <- match.arg(kind)
+  paste0(prism_reference_year_label(kind,config),if(centered) paste0(' | centered ',config$centered_window_days,'-day baseline') else '')
+}

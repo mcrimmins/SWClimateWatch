@@ -1,6 +1,6 @@
 ---
 title: "90-day percentile rank"
-description-meta: "The latest 90-day precipitation total is ranked against 1991-2020 90-day totals ending within two calendar days of this date. Low ranks indicate an unusually dry recent season-length period and high ranks an unusually wet one."
+description-meta: "The latest 90-day precipitation total is ranked against 1991-2020 90-day totals ending within two calendar days of this date. Low ranks indicate an unusually dry recent season-length period and high ranks an unusually wet one; ties share positions, so zero rainfall can be near normal in a normally dry period."
 body-classes: product-page
 toc: false
 page-layout: full
@@ -11,7 +11,7 @@ page-layout: full
 :::
 
 ::: {.product-interpretation}
-The latest 90-day precipitation total is ranked against 1991-2020 90-day totals ending within two calendar days of this date. Low ranks indicate an unusually dry recent season-length period and high ranks an unusually wet one.
+The latest 90-day precipitation total is ranked against 1991-2020 90-day totals ending within two calendar days of this date. Low ranks indicate an unusually dry recent season-length period and high ranks an unusually wet one; ties share positions, so zero rainfall can be near normal in a normally dry period.
 :::
 
 ::: {.product-actions}

@@ -1,6 +1,6 @@
 ---
 title: "Last-freeze departure"
-description-meta: "The observed last freeze in the displayed August 1-July 31 season is compared with the local median last-freeze date from 1991-2020. Negative values mean the last freeze was early and positive values mean it was late; a current-season result remains provisional until July 31."
+description-meta: "Last-freeze dates are compared with the censoring-aware 1991-2020 median; negative means early and positive means late. Before July 31, departures require the median date to have passed and 14 freeze-free days; gray marks the season in progress, and later freezes can change provisional results."
 body-classes: product-page
 toc: false
 page-layout: full
@@ -11,7 +11,7 @@ page-layout: full
 :::
 
 ::: {.product-interpretation}
-The observed last freeze in the displayed August 1-July 31 season is compared with the local median last-freeze date from 1991-2020. Negative values mean the last freeze was early and positive values mean it was late; a current-season result remains provisional until July 31.
+Last-freeze dates are compared with the censoring-aware 1991-2020 median; negative means early and positive means late. Before July 31, departures require the median date to have passed and 14 freeze-free days; gray marks the season in progress, and later freezes can change provisional results.
 :::
 
 ::: {.product-actions}

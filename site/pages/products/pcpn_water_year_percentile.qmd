@@ -1,6 +1,6 @@
 ---
 title: "Percentile rank"
-description-meta: "Precipitation since October 1 is ranked against water-year 1991-2020 totals accumulated through the same calendar date. Low ranks indicate an unusually dry water year to date and high ranks an unusually wet one."
+description-meta: "Precipitation since October 1 is ranked against water-year 1991-2020 totals accumulated through the same calendar date. Low ranks indicate an unusually dry water year to date and high ranks an unusually wet one; ties share positions, so zero rainfall can be near normal in a normally dry period."
 body-classes: product-page
 toc: false
 page-layout: full
@@ -11,7 +11,7 @@ page-layout: full
 :::
 
 ::: {.product-interpretation}
-Precipitation since October 1 is ranked against water-year 1991-2020 totals accumulated through the same calendar date. Low ranks indicate an unusually dry water year to date and high ranks an unusually wet one.
+Precipitation since October 1 is ranked against water-year 1991-2020 totals accumulated through the same calendar date. Low ranks indicate an unusually dry water year to date and high ranks an unusually wet one; ties share positions, so zero rainfall can be near normal in a normally dry period.
 :::
 
 ::: {.product-actions}

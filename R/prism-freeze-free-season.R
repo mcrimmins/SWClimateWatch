@@ -1,6 +1,6 @@
 # Calculate and map freeze-free season length from daily minimum temperature.
 
-prism_freeze_free_cache_version <- 1L
+prism_freeze_free_cache_version <- 2L
 
 prism_freeze_free_publishable <- function(
     date,
@@ -47,14 +47,21 @@ prism_freeze_free_length_index <- function(
     values,
     spring_indices,
     fall_indices,
-    threshold_f = 32) {
-  if (length(values) == 0L || anyNA(values) ||
+    threshold_f = 32,
+    preserve_censoring = FALSE) {
+  if (length(values) == 0L || any(!is.finite(values)) ||
       length(spring_indices) == 0L || length(fall_indices) == 0L) {
     return(NA_real_)
   }
   spring_freezes <- spring_indices[values[spring_indices] <= threshold_f]
   fall_freezes <- fall_indices[values[fall_indices] <= threshold_f]
-  if (length(spring_freezes) == 0L || length(fall_freezes) == 0L) return(NA_real_)
+  if (length(spring_freezes) == 0L || length(fall_freezes) == 0L) {
+    if(!preserve_censoring) return(NA_real_)
+    # Missing an endpoint gives a finite lower bound, not an infinite exact length.
+    spring <- if(length(spring_freezes)) tail(spring_freezes,1L) else 0L
+    fall <- if(length(fall_freezes)) fall_freezes[1L] else length(values)+1L
+    return(-as.numeric(fall-spring))
+  }
   fall_freezes[[1L]] - spring_freezes[[length(spring_freezes)]]
 }
 
@@ -62,7 +69,8 @@ prism_freeze_free_length_from_raster <- function(
     raster,
     year,
     threshold_f = 32,
-    observation_end = max(as.Date(terra::time(raster)))) {
+    observation_end = max(as.Date(terra::time(raster))),
+    preserve_censoring = FALSE) {
   year <- as.integer(year)
   year_start <- as.Date(sprintf("%d-01-01", year))
   observation_end <- as.Date(observation_end)
@@ -87,7 +95,7 @@ prism_freeze_free_length_from_raster <- function(
     fun = prism_freeze_free_length_index,
     spring_indices = spring_indices,
     fall_indices = fall_indices,
-    threshold_f = threshold_f
+    threshold_f = threshold_f, preserve_censoring=preserve_censoring
   )
   names(result) <- paste0("mint_freeze_free_length_", year, "_through_", observation_end)
   terra::time(result) <- observation_end
@@ -192,7 +200,7 @@ build_prism_freeze_free_cache <- function(
       collection$raster,
       periods$year[[index]],
       threshold_f,
-      periods$end_date[[index]]
+      periods$end_date[[index]], preserve_censoring=TRUE
     )
     if (!quiet && (index %% progress_every == 0L || index == nrow(periods))) {
       message(
@@ -217,6 +225,7 @@ build_prism_freeze_free_cache <- function(
     start_date = as.Date(baseline_start),
     end_date = as.Date(baseline_end),
     sample_layers = terra::nlyr(samples),
+    censoring_encoding = 'Positive = exact length; negative = lower bound on length; NA = incomplete observations',
     source_signature = source_signature,
     built_at = format(Sys.time(), tz = "UTC", usetz = TRUE),
     bytes = file.info(path)$size,
@@ -236,7 +245,7 @@ build_prism_freeze_free_cache <- function(
 }
 
 prism_freeze_free_climatology <- function(samples, minimum_frequency = 0.8) {
-  climatology <- prism_first_freeze_climatology(samples, minimum_frequency)
+  climatology <- prism_first_freeze_climatology(samples, minimum_frequency,censor='length')
   names(climatology$frequency) <- "mint_freeze_free_frequency"
   names(climatology$median_day) <- "mint_freeze_free_median_length"
   list(median_length = climatology$median_day, frequency = climatology$frequency)
@@ -377,8 +386,8 @@ build_prism_freeze_free_map <- function(
   } else {
     title <- paste0("Freeze-free season-length departure", status, ": ", year)
     subtitle <- paste0(
-      "Observed through ", format_prism_map_date(date),
-      " minus 1991-2020 median | cells with both freeze dates"
+      "Through ", format_prism_map_date(date),
+      " | vs ",prism_reference_year_label('normal')," median | uncertain historical comparisons omitted"
     )
     fill_label <- "Departure (days; negative = shorter)"
     palette <- c("#8c2d04", "#d95f0e", "#fec44f", "#f7f7f7", "#c7e9c0", "#41ab5d", "#006d2c")

@@ -43,6 +43,46 @@ make_water_year_maximum_fixture <- function() {
   list(processed_dir = processed_dir, manifest = manifest, periods = periods)
 }
 
+testthat::test_that('maximum-to-date excludes future storms and uses distinct reusable per-date caches', {
+  fixture <- make_water_year_maximum_fixture()
+  on.exit(unlink(fixture$processed_dir,recursive=TRUE),add=TRUE)
+  for(path in fixture$manifest$path) {
+    r <- terra::rast(path); v <- terra::values(r); v[1,(ncol(v)-2):ncol(v)] <- 100
+    terra::values(r) <- v
+    temp <- tempfile(fileext='.tif'); terra::writeRaster(r,temp,overwrite=TRUE)
+    file.copy(temp,path,overwrite=TRUE); unlink(temp)
+  }
+  fixture$manifest$md5 <- unname(tools::md5sum(fixture$manifest$path))
+  manifest <- file.path(fixture$processed_dir,'maximum.csv')
+  build <- function(date,overwrite=FALSE) build_prism_water_year_maximum_cache(3,'2019-01-01','2020-12-31',
+    processed_dir=fixture$processed_dir,processed_manifest=fixture$manifest,manifest_path=manifest,quiet=TRUE,target_date=date,overwrite=overwrite)
+  october <- build('2026-10-03')
+  testthat::expect_equal(as.numeric(terra::values(october$raster)),c(6,60))
+  testthat::expect_match(october$path,'calendar-day/10-03.tif',fixed=TRUE)
+  testthat::expect_equal(unique(terra::datatype(october$raster)),'FLT8S')
+  testthat::expect_false(build('2026-10-03')$refreshed)
+  incremental <- build('2026-10-04')
+  record <- read_prism_manifest(manifest)
+  testthat::expect_equal(record$build_method[record$path==incremental$path],'incremental')
+  values <- terra::values(incremental$raster)
+  direct <- build('2026-10-04',TRUE)
+  testthat::expect_equal(terra::values(direct$raster),values)
+  september <- build('2026-09-30')
+  testthat::expect_equal(as.numeric(terra::values(september$raster)),c(300,300))
+  february <- build('2024-02-29')
+  testthat::expect_equal(as.numeric(terra::values(february$raster)),c(6,60))
+  testthat::expect_equal(read_prism_manifest(manifest)$method[read_prism_manifest(manifest)$path==february$path],'matched-water-year-to-date')
+})
+
+testthat::test_that('matched maximum ranks remain centered across points in a simulated season', {
+  set.seed(711)
+  ranks <- vapply(c(3L,90L,365L),function(days) {
+    values <- replicate(300,{x <- matrix(rexp(31*days),nrow=31); rolling <- x[,seq_len(days-2),drop=FALSE]+x[,seq_len(days-2)+1L,drop=FALSE]+x[,seq_len(days-2)+2L,drop=FALSE]; maxima <- apply(rolling,1,max); prism_type8_percentile_rank(maxima[1],maxima[-1])})
+    median(values)
+  },numeric(1))
+  testthat::expect_true(all(ranks>40 & ranks<60))
+})
+
 testthat::test_that("complete water-year periods use October through September", {
   periods <- prism_complete_water_year_periods("1991-01-01", "2020-12-31")
   testthat::expect_equal(nrow(periods), 30L)
@@ -157,7 +197,7 @@ testthat::test_that("water-year maximum paths and maps are stable", {
   )
   testthat::expect_equal(value_plot$scales$scales[[1L]]$limits, c(0, 8))
   testthat::expect_equal(rank_plot$scales$scales[[1L]]$limits, c(0, 100))
-  testthat::expect_match(rank_plot$labels$subtitle, "provisional", fixed = TRUE)
+  testthat::expect_match(rank_plot$labels$subtitle, "matched water-year-to-date", fixed = TRUE)
   testthat::expect_equal(
     concentration_plot$scales$scales[[1L]]$limits, c(0, 100)
   )

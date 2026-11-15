@@ -128,10 +128,10 @@ map_product_categorical_classes <- function(
     boundaries <- c(-10, -5, -2, 2, 5, 10)
     labels <- c("<=-5", "-5--2", "-2-2", "2-5", ">5")
   } else if (product_id == "mint_first_freeze_date") {
-    boundaries <- c(1, 32, 93, 154, 213, 365)
+    boundaries <- c(.5, 31.5, 92.5, 153.5, 212.5, 366.5)
     labels <- c("August", "Sep-Oct", "Nov-Dec", "Jan-Feb", "Mar-Jul")
   } else if (product_id == "mint_last_freeze_date") {
-    boundaries <- c(1, 93, 154, 213, 274, 365)
+    boundaries <- c(.5, 92.5, 153.5, 212.5, 273.5, 366.5)
     labels <- c("By Oct", "Nov-Dec", "Jan-Feb", "Mar-Apr", "May-Jul")
   } else {
     boundaries <- sort(unique(c(limits, as.numeric(breaks))))

@@ -210,7 +210,7 @@ build_prism_water_year_map <- function(
   subtitle <- if (product == "total") {
     period
   } else {
-    paste0(period, " relative to water years 1991-2020")
+    paste0(period, " relative to water years ", prism_reference_year_label("percentile"))
   }
   southwest_raster_map(
     raster = raster,

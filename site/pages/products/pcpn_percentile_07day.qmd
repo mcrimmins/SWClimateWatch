@@ -1,6 +1,6 @@
 ---
 title: "7-day percentile rank"
-description-meta: "The latest seven-day precipitation total is ranked against 1991-2020 seven-day totals ending within two calendar days of this date. Low ranks indicate an unusually dry week and high ranks an unusually wet week for this time of year."
+description-meta: "The latest seven-day precipitation total is ranked against 1991-2020 seven-day totals ending within two calendar days of this date. Low ranks indicate an unusually dry week and high ranks an unusually wet week for this time of year; ties share positions, so zero rainfall can be near normal in a normally dry period."
 body-classes: product-page
 toc: false
 page-layout: full
@@ -11,7 +11,7 @@ page-layout: full
 :::
 
 ::: {.product-interpretation}
-The latest seven-day precipitation total is ranked against 1991-2020 seven-day totals ending within two calendar days of this date. Low ranks indicate an unusually dry week and high ranks an unusually wet week for this time of year.
+The latest seven-day precipitation total is ranked against 1991-2020 seven-day totals ending within two calendar days of this date. Low ranks indicate an unusually dry week and high ranks an unusually wet week for this time of year; ties share positions, so zero rainfall can be near normal in a normally dry period.
 :::
 
 ::: {.product-actions}

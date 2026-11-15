@@ -599,7 +599,7 @@ build_prism_accumulation_percentile_rank_map <- function(
     title = paste0(accumulation_days, "-day precipitation percentile rank"),
     subtitle = paste0(
       format_prism_map_period(start_date, date),
-      " relative to 1991-2020 | centered 5-day baseline"
+      " relative to ", prism_reference_baseline_label("percentile")
     ),
     caption = NULL,
     fill_label = "Percentile rank",
@@ -1123,7 +1123,7 @@ build_prism_accumulation_percent_normal_map <- function(
     title = paste0(accumulation_days, "-day precipitation percent of normal"),
     subtitle = paste0(
       format_prism_map_period(start_date, date),
-      " relative to 1991-2020 | centered 5-day baseline"
+      " relative to ", prism_reference_baseline_label("percentile")
     ),
     caption = NULL,
     fill_label = "Percent of normal",

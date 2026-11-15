@@ -21,7 +21,7 @@ toc: false
 </article>
 <article class="group-map" data-product="mint_first_freeze_departure" data-tab="first" data-variant="departure" data-option="Departure"><h2 class="group-map-heading">First-freeze departure</h2>
 <a href="../maps/generated/prism/temperature/mint-first-freeze-departure-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/mint-first-freeze-departure-latest.png" alt="First-freeze departure" loading="lazy"></a>
-<p>The observed first freeze in the displayed August 1-July 31 season is compared with the local median first-freeze date from 1991-2020. Negative values mean the first freeze arrived early and positive values mean it arrived late; areas without a reliable historical comparison are blank.</p>
+<p>Observed first-freeze dates are compared with the 1991-2020 median, including verified no-freeze seasons; negative means early and positive means late. Purple marks no freeze yet after the median date, indicating a delay lower bound rather than an observed date; unreliable or missing comparisons are blank.</p>
 <p><a href="../maps/generated/prism/temperature/mint-first-freeze-departure-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
 </article>
 <article class="group-map" data-product="mint_last_freeze_date" data-tab="last" data-variant="observed" data-option="Date"><h2 class="group-map-heading">Last-freeze date</h2>
@@ -31,7 +31,7 @@ toc: false
 </article>
 <article class="group-map" data-product="mint_last_freeze_departure" data-tab="last" data-variant="departure" data-option="Departure"><h2 class="group-map-heading">Last-freeze departure</h2>
 <a href="../maps/generated/prism/temperature/mint-last-freeze-departure-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/mint-last-freeze-departure-latest.png" alt="Last-freeze departure" loading="lazy"></a>
-<p>The observed last freeze in the displayed August 1-July 31 season is compared with the local median last-freeze date from 1991-2020. Negative values mean the last freeze was early and positive values mean it was late; a current-season result remains provisional until July 31.</p>
+<p>Last-freeze dates are compared with the censoring-aware 1991-2020 median; negative means early and positive means late. Before July 31, departures require the median date to have passed and 14 freeze-free days; gray marks the season in progress, and later freezes can change provisional results.</p>
 <p><a href="../maps/generated/prism/temperature/mint-last-freeze-departure-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
 </article>
 <article class="group-map" data-product="mint_freeze_free_length" data-tab="length" data-variant="observed" data-option="Length"><h2 class="group-map-heading">Freeze-free season length</h2>
@@ -41,7 +41,7 @@ toc: false
 </article>
 <article class="group-map" data-product="mint_freeze_free_departure" data-tab="length" data-variant="departure" data-option="Departure"><h2 class="group-map-heading">Freeze-free season departure</h2>
 <a href="../maps/generated/prism/temperature/mint-freeze-free-season-departure-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/mint-freeze-free-season-departure-latest.png" alt="Freeze-free season departure" loading="lazy"></a>
-<p>The displayed year's freeze-free season length is compared with the local median length from 1991-2020. Positive values mean a longer-than-median interval and negative values a shorter one; areas without both freeze dates or a reliable historical comparison are blank.</p>
+<p>The observed freeze-free interval is compared with a 1991-2020 median that includes censored historical bounds; positive means longer and negative means shorter. Areas lacking current endpoints, complete historical inputs or a uniquely identified median are blank.</p>
 <p><a href="../maps/generated/prism/temperature/mint-freeze-free-season-departure-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
 </article>
 </div></div><script src="../assets/current-map-groups/current-map-groups.js"></script>

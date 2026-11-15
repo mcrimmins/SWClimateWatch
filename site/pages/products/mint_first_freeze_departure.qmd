@@ -1,6 +1,6 @@
 ---
 title: "First-freeze departure"
-description-meta: "The observed first freeze in the displayed August 1-July 31 season is compared with the local median first-freeze date from 1991-2020. Negative values mean the first freeze arrived early and positive values mean it arrived late; areas without a reliable historical comparison are blank."
+description-meta: "Observed first-freeze dates are compared with the 1991-2020 median, including verified no-freeze seasons; negative means early and positive means late. Purple marks no freeze yet after the median date, indicating a delay lower bound rather than an observed date; unreliable or missing comparisons are blank."
 body-classes: product-page
 toc: false
 page-layout: full
@@ -11,7 +11,7 @@ page-layout: full
 :::
 
 ::: {.product-interpretation}
-The observed first freeze in the displayed August 1-July 31 season is compared with the local median first-freeze date from 1991-2020. Negative values mean the first freeze arrived early and positive values mean it arrived late; areas without a reliable historical comparison are blank.
+Observed first-freeze dates are compared with the 1991-2020 median, including verified no-freeze seasons; negative means early and positive means late. Purple marks no freeze yet after the median date, indicating a delay lower bound rather than an observed date; unreliable or missing comparisons are blank.
 :::
 
 ::: {.product-actions}

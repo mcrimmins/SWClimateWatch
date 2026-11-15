@@ -529,7 +529,7 @@ build_prism_dry_spell_map <- function(
     title <- "Current dry-spell length"
     subtitle <- paste0(
       "Through ", format_prism_map_date(date),
-      " | wet day threshold: 0.04 inch"
+      " | wet day threshold: ", format(swc_prism$wet_day_threshold_inches, trim=TRUE), " inch"
     )
     fill_label <- "Consecutive dry days"
     palette <- c("#1a9850", "#91cf60", "#d9ef8b", "#fee08b", "#fc8d59", "#d73027", "#7f0000")
@@ -541,7 +541,7 @@ build_prism_dry_spell_map <- function(
     title <- "Current dry-spell percentile rank"
     subtitle <- paste0(
       format_prism_map_date(date),
-      " relative to 1991-2020 | centered 5-day baseline"
+      " relative to ", prism_reference_baseline_label("percentile")
     )
     fill_label <- "Percentile rank"
     palette <- c("#2166ac", "#67a9cf", "#d1e5f0", "#f7f7f7", "#fddbc7", "#ef8a62", "#b2182b")

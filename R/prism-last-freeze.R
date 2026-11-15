@@ -1,6 +1,6 @@
 # Calculate and map last spring-freeze timing from daily minimum temperature.
 
-prism_last_freeze_cache_version <- 1L
+prism_last_freeze_cache_version <- 2L
 
 prism_last_freeze_publishable <- function(
     date,
@@ -23,7 +23,8 @@ prism_last_freeze_from_raster <- function(
     raster,
     season_start,
     threshold_f = 32,
-    observation_end = max(as.Date(terra::time(raster)))) {
+    observation_end = max(as.Date(terra::time(raster))),
+    preserve_no_freeze = FALSE) {
   season_start <- as.Date(season_start)
   observation_end <- as.Date(observation_end)
   dates <- as.Date(terra::time(raster))
@@ -38,7 +39,12 @@ prism_last_freeze_from_raster <- function(
   if (length(threshold_f) != 1L || !is.finite(threshold_f)) {
     stop("`threshold_f` must be one finite number.", call. = FALSE)
   }
-  result <- terra::app(raster, fun = prism_last_freeze_index, threshold_f = threshold_f)
+  result <- if(terra::nlyr(raster)==1L) terra::ifel(is.finite(raster),
+    terra::ifel(raster<=threshold_f,1,if(preserve_no_freeze) 0 else NA),NA) else terra::app(raster, fun = function(x,...) {
+    if(any(!is.finite(x))) return(NA_real_)
+    index <- prism_last_freeze_index(x,threshold_f)
+    if(is.na(index) && preserve_no_freeze) 0 else index
+  })
   names(result) <- paste0(
     "mint_last_freeze_day_", format(season_start, "%Y"), "_through_", observation_end
   )
@@ -144,7 +150,7 @@ build_prism_last_freeze_cache <- function(
       collection$raster,
       periods$start_date[[index]],
       threshold_f,
-      periods$end_date[[index]]
+      periods$end_date[[index]], preserve_no_freeze=TRUE
     )
     if (!quiet && (index %% progress_every == 0L || index == nrow(periods))) {
       message(
@@ -169,6 +175,7 @@ build_prism_last_freeze_cache <- function(
     start_date = as.Date(baseline_start),
     end_date = as.Date(baseline_end),
     sample_layers = terra::nlyr(samples),
+    no_freeze_encoding = '0 = verified no freeze; NA = incomplete observations',
     source_signature = source_signature,
     built_at = format(Sys.time(), tz = "UTC", usetz = TRUE),
     bytes = file.info(path)$size,
@@ -188,18 +195,22 @@ build_prism_last_freeze_cache <- function(
 }
 
 prism_last_freeze_climatology <- function(samples, minimum_frequency = 0.8) {
-  climatology <- prism_first_freeze_climatology(samples, minimum_frequency)
+  climatology <- prism_first_freeze_climatology(samples, minimum_frequency,censor='last')
   names(climatology$frequency) <- "mint_last_freeze_frequency"
   names(climatology$median_day) <- "mint_last_freeze_median_day"
   climatology
 }
 
-prism_last_freeze_departure_raster <- function(observed_day, normal_day, date) {
+prism_last_freeze_departure_raster <- function(observed_day, normal_day, date, minimum_freeze_free_days=14L) {
+  if(length(minimum_freeze_free_days)!=1L || !is.finite(minimum_freeze_free_days) || minimum_freeze_free_days<0 || minimum_freeze_free_days!=floor(minimum_freeze_free_days)) stop('minimum_freeze_free_days must be a non-negative integer.')
   if (terra::nlyr(observed_day) != 1L || terra::nlyr(normal_day) != 1L) {
     stop("Observed and normal last-freeze rasters must each contain one layer.", call. = FALSE)
   }
   terra::compareGeom(observed_day, normal_day, stopOnError = TRUE)
-  result <- observed_day - normal_day
+  current_day <- as.integer(as.Date(date)-prism_freeze_season_start(date))+1L
+  final <- as.Date(date)==as.Date(sprintf('%d-07-31',as.integer(format(prism_freeze_season_start(date),'%Y'))+1L))
+  eligible <- observed_day>0 & (final | (current_day>=normal_day & current_day-observed_day>=minimum_freeze_free_days))
+  result <- terra::ifel(eligible,observed_day-normal_day,NA)
   date <- as.Date(date)
   names(result) <- paste0("mint_last_freeze_departure_days_", date)
   terra::time(result) <- date
@@ -257,9 +268,11 @@ calculate_prism_last_freeze_products <- function(
   collection <- read_prism_best_daily_range(
     "mint", dates, aoi_id, processed_manifest
   )
-  observed <- prism_last_freeze_from_raster(
-    collection$raster, season_start, threshold_f, date
+  observed_sample <- prism_last_freeze_from_raster(
+    collection$raster, season_start, threshold_f, date,preserve_no_freeze=TRUE
   )
+  observed <- terra::ifel(observed_sample>0,observed_sample,NA)
+  names(observed) <- names(observed_sample); terra::time(observed) <- date
   cache <- build_prism_last_freeze_cache(
     threshold_f, baseline_start, baseline_end, aoi_id, processed_dir,
     processed_manifest, overwrite = cache_overwrite,
@@ -269,6 +282,9 @@ calculate_prism_last_freeze_products <- function(
   departure <- prism_last_freeze_departure_raster(
     observed, climatology$median_day, date
   )
+  final <- date==as.Date(sprintf('%d-07-31',as.integer(format(season_start,'%Y'))+1L))
+  pending <- terra::ifel(!final & !is.na(observed_sample) & !is.na(climatology$median_day) & is.na(departure),1,NA)
+  terra::time(pending) <- date; names(pending) <- paste0('mint_last_freeze_season_in_progress_',date)
   paths <- c(
     `observed-day` = prism_last_freeze_output_path(
       "observed-day", date, season_start, aoi_id, processed_dir
@@ -277,7 +293,8 @@ calculate_prism_last_freeze_products <- function(
       "departure", date, season_start, aoi_id, processed_dir
     )
   )
-  rasters <- list(`observed-day` = observed, departure = departure)
+  paths <- c(paths,`season-in-progress`=sub('/departure/','/season-in-progress/',paths[['departure']],fixed=TRUE))
+  rasters <- list(`observed-day` = observed, departure = departure,`season-in-progress`=pending)
   for (product in names(rasters)) {
     if (file.exists(paths[[product]]) && !overwrite) {
       stop("Last-freeze output already exists; set `overwrite = TRUE`: ", paths[[product]], call. = FALSE)
@@ -293,6 +310,7 @@ calculate_prism_last_freeze_products <- function(
     publishable = prism_last_freeze_publishable(date),
     observed_day = observed,
     departure = departure,
+    season_in_progress = pending,
     normal_day = climatology$median_day,
     frequency = climatology$frequency,
     paths = paths,
@@ -309,10 +327,11 @@ build_prism_last_freeze_map <- function(
     states = southwest_state_boundaries(),
     counties = southwest_county_boundaries(),
     countries = southwest_country_boundaries(),
-    cities = southwest_reference_cities()) {
+    cities = southwest_reference_cities(),status_raster=NULL) {
   product <- match.arg(product)
   date <- as.Date(date)
   season_start <- as.Date(season_start)
+  if(product=='observed-day') raster <- terra::app(raster,function(x,...) prism_freeze_plot_day_index(x,season_start))
   if (product == "observed-day") {
     title <- paste0("Last freeze observed so far: ", prism_first_freeze_season_label(season_start))
     subtitle <- paste0(
@@ -328,8 +347,8 @@ build_prism_last_freeze_map <- function(
   } else {
     title <- paste0("Last-freeze departure: ", prism_first_freeze_season_label(season_start))
     subtitle <- paste0(
-      "Observed through ", format_prism_map_date(date),
-      " minus 1991-2020 median | freeze-prone cells only"
+      "Through ", format_prism_map_date(date),
+      " | vs ",prism_reference_year_label('normal')," median | provisional; >=14 days since freeze"
     )
     fill_label <- "Departure (days; negative = early)"
     palette <- c("#313695", "#4575b4", "#abd9e9", "#f7f7f7", "#fdae61", "#d73027", "#7f0000")
@@ -338,7 +357,7 @@ build_prism_last_freeze_map <- function(
     breaks <- c(-60, -30, 0, 30, 60)
     labels <- c("-60", "-30", "0", "+30", "+60")
   }
-  southwest_raster_map(
+  plot <- southwest_raster_map(
     raster = raster,
     states = states,
     title = title,
@@ -360,6 +379,7 @@ build_prism_last_freeze_map <- function(
     ),
     mask_to_states = FALSE
   )
+  prism_freeze_status_overlay(plot,if(product=='departure') status_raster else NULL,'Season in progress','#b8bec3',template=raster)
 }
 
 build_current_prism_last_freeze_maps <- function(
@@ -413,7 +433,8 @@ build_current_prism_last_freeze_maps <- function(
     if (!quiet) message("Building last-freeze ", product, " map.")
     plot <- build_prism_last_freeze_map(
       rasters[[product]], product, products$date, products$season_start,
-      products$threshold_f, states, counties, countries, cities
+      products$threshold_f, states, counties, countries, cities,
+      status_raster=if(product=='departure') products$season_in_progress else NULL
     )
     dated_map <- prism_last_freeze_map_path(product, products$date, maps_dir)
     latest_map <- prism_last_freeze_map_path(product, maps_dir = maps_dir)
@@ -427,7 +448,9 @@ build_current_prism_last_freeze_maps <- function(
     if (!file.copy(dated_map, latest_map, overwrite = TRUE)) {
       stop("Could not update latest last-freeze map: ", latest_map, call. = FALSE)
     }
-    value_range <- range(terra::values(rasters[[product]]), na.rm = TRUE)
+    finite_values <- terra::values(rasters[[product]],mat=FALSE)
+    finite_values <- finite_values[is.finite(finite_values)]
+    value_range <- if(length(finite_values)) range(finite_values) else c(NA_real_,NA_real_)
     records[[index]] <- data.frame(
       date = products$date,
       season = products$season_label,

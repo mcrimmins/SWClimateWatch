@@ -145,11 +145,11 @@ testthat::test_that("freeze-free cache is written and reused", {
 
 testthat::test_that("freeze-free climatology masks unreliable normals", {
   dates <- as.Date(c("1991-01-01", "1992-01-01", "1993-01-01", "1994-01-01"))
-  samples <- make_freeze_free_test_raster(c(160, 180, NA, 200), dates)
+  samples <- make_freeze_free_test_raster(c(160, 180, -300, 200), dates)
   reliable <- prism_freeze_free_climatology(samples, minimum_frequency = 0.75)
   masked <- prism_freeze_free_climatology(samples, minimum_frequency = 1)
   testthat::expect_equal(as.numeric(terra::values(reliable$frequency)), 0.75)
-  testthat::expect_equal(as.numeric(terra::values(reliable$median_length)), 180)
+  testthat::expect_equal(as.numeric(terra::values(reliable$median_length)), 190)
   testthat::expect_true(is.na(as.numeric(terra::values(masked$median_length))))
 })
 

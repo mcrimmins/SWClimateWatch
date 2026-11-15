@@ -20,9 +20,9 @@ toc: false
 <p><a href="../maps/generated/prism/precipitation/pcpn-water-year-max-03day-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
 </article>
 <article class="group-map" data-product="pcpn_water_year_max_percentile_03day" data-tab="rank" data-variant="map" data-option="Water year"><h2 class="group-map-heading">Maximum 3-day percentile</h2>
-<p class="group-map-caution">Provisional comparison: the current maximum is compared with maxima from completed 1991–2020 water years. This is not a date-matched season-to-date rank; the current water year is incomplete until September 30.</p>
+<p class="group-map-caution">The current maximum is compared with each 1991–2020 water year's maximum through the same calendar date. All rolling three-day windows stay within the water year; this is a date-matched season-to-date rank.</p>
 <a href="../maps/generated/prism/precipitation/pcpn-water-year-max-percentile-rank-03day-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/precipitation/pcpn-water-year-max-percentile-rank-03day-latest.png" alt="Maximum 3-day percentile" loading="lazy"></a>
-<p>The largest three-day precipitation total so far this water year is ranked against the largest three-day totals from complete water years 1991-2020. High ranks indicate an unusually large event; the current-year rank is provisional until September 30 because another event may raise the maximum.</p>
+<p>The largest three-day total since October 1 is ranked against each 1991-2020 reference water year through the same calendar date. High ranks identify unusually large events for this point in the year; only complete within-year windows count, February 29 uses interpolated references, and tied zeros can be near normal in a normally dry period.</p>
 <p><a href="../maps/generated/prism/precipitation/pcpn-water-year-max-percentile-rank-03day-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
 </article>
 <article class="group-map" data-product="pcpn_water_year_concentration_03day" data-tab="concentration" data-variant="map" data-option="Water year"><h2 class="group-map-heading">Precipitation concentration</h2>
