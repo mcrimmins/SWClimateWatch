@@ -176,6 +176,10 @@ deploy_swc_site <- function(
     swc_deploy_run(rscript, "scripts/stage-cached-prism-monthly-site.R", "Stage cached Monthly Climate")
     swc_deploy_run(rscript, "scripts/stage-cached-climate-of-region.R", "Stage cached Climate of the Region")
     swc_deploy_run(rscript, "scripts/stage-cached-snodas-seasonal-anomalies.R", "Stage cached historical snow anomalies")
+    if (file.exists("site/pages/interactive-maps.qmd")) {
+      source(file.path("R","interactive-map-site.R"),local=TRUE)
+      validate_interactive_map_site()
+    }
     swc_cache_version_app(file.path("site","daily-explorer"))
     swc_cache_version_app(file.path("site","stations"))
     swc_deploy_run(quarto, c("render", "site"), "Render Quarto site")
@@ -194,6 +198,8 @@ deploy_swc_site <- function(
   swc_deploy_run(rscript, "scripts/check-prism-monthly-publication.R", "Validate Monthly Climate")
   swc_deploy_run(rscript, "scripts/check-climate-of-region-publication.R", "Validate Climate of the Region")
   swc_deploy_run(rscript, "scripts/check-snodas-seasonal-anomaly-publication.R", "Validate historical snow anomalies")
+  if (file.exists("site/pages/interactive-maps.qmd"))
+    swc_deploy_run(rscript,"scripts/check-interactive-map-publication.R","Validate Interactive Maps before upload")
   source(file.path("R", "daily-publish.R"), local = TRUE)
   swc_daily_publish_validate_explorer(output_dir)
   source(file.path("R", "conditions-synopsis-site.R"), local = TRUE)

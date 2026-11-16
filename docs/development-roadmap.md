@@ -18,6 +18,10 @@ November 13 operational review: the station update, monthly manifest and browser
 freshness repairs are complete in production. The scheduled daily run succeeded;
 see the completion evidence below. Continue routine source/cache monitoring.
 
+November 15 production confirmation: the PRISM comparison code-review fixes
+have completed local review, staging, production cache rebuilds and publication.
+No further promotion step remains for this increment.
+
 The user confirmed the November 4 morning production run published release
 `e4ec458d049417e567ba182eb824d4070b8d4e0e`. Production runs daily on the AWS VM;
 the laptop remains the development environment, with a separate VM staging
@@ -234,6 +238,26 @@ source gaps to monitor through the existing retry mechanism, not snow-release
 validation failures. This was a site-only publication, not a new measurement of
 the full daily update or station refresh.
 
+### November 15 PRISM comparison fixes: complete in production
+
+The user confirmed the production release after successful staging review and
+the production cache rebuild/publication steps. Completed changes include:
+
+- Water-year maximum three-day precipitation ranks now compare matching
+  October 1–calendar-date windows, with separately versioned, validated caches.
+- Freeze comparisons distinguish verified no-freeze seasons from missing data;
+  revised reference caches preserve event-frequency and coverage safeguards.
+- Spring last-freeze departures have provisional-season guards. Overdue first
+  freezes have separate delay lower bounds without inventing observed dates.
+- Freeze category boundaries, leap-calendar display and configured reference
+  labels are corrected; tied-zero precipitation ranks have clearer explanations.
+
+Targeted regression tests and synthetic visual reviews preceded staging and
+production review. Monitor subsequent daily runs for cache reuse and seasonal
+freeze behavior. The optional higher minimum wet-day count for intensity ranks
+remains deferred pending a coverage/runtime assessment; the current minimum and
+percentile algorithm are unchanged. See [assessment and cache migration notes](prism-code-review-fixes.md).
+
 ## Priority order and working sequence
 
 This is the proposed working order, with one feature increment active at a time.
@@ -244,7 +268,7 @@ that work ahead of discretionary features.
 | Priority | Work | Next bounded step and completion evidence |
 | --- | --- | --- |
 | P0 — ongoing operations | Monitor the confirmed production release | November 13 full run passed; November 14 snow promotion passed in 4m 44s. The latest site-only report has two Explorer dates without weather maps (28/30 recent; 72/74 Explorer). Monitor automatic retries, deferred means, source freshness and raster warnings. Confirm GA4 Realtime and the next monthly cycle separately. |
-| P1 — local corrections ready for review | PRISM comparison code-review fixes | Correct matched-date water-year maximum ranks, no-freeze/missing-data medians, provisional last-freeze and overdue first-freeze display; repair categorical boundaries and config-driven labels. Targeted tests and synthetic visual checks passed. Rebuild real cached maps and retained freeze comparisons locally, then stage before promotion; a higher wet-day-intensity minimum remains optional. See [assessment](prism-code-review-fixes.md). |
+| Complete — monitor | PRISM comparison code-review fixes | User confirmed production November 15 after staging and cache rebuilds. Matched-date maximum ranks, freeze support/season guards, overdue lower bounds, category boundaries and configured labels are live. Monitor cache reuse and freeze-season behavior; a higher wet-day-intensity minimum remains optional. See [assessment](prism-code-review-fixes.md). |
 | Complete — monitor | Station loader, monthly manifest and browser freshness repairs | Production publication/header checks and the November 13 scheduled run close all three fixes. Retain automatic cache-policy handling, release reconciliation and station-loading regression checks. |
 | Complete — monitor | Template conditions synopsis | Seasonal snow narrative, dated supporting evidence and matching weekly-temperature maps are confirmed live November 9. Retain seasonal tests, reference/coverage guards and successful-publication comparisons. AI and the daily AI page remain deferred. See [scope](conditions-synopsis-scope.md). |
 | Complete — monitor | Stable URLs for all published map images | User confirmed production promotion November 10. Predictable latest endpoints, dated links, searchable HTML/CSV/JSON catalog and publication integrity checks are live. External project embedding and any Arizona-only export remain separate follow-ups. See [contract](map-hotlinks.md). |
@@ -257,16 +281,18 @@ that work ahead of discretionary features.
 | Deferred until spring 2027 | Station heat metrics | Scope station-appropriate temperature thresholds, counts and departures; reuse existing hot-day/warm-night screening. No implementation before spring 2027. |
 | Alongside increments | Operational maintenance | Track freshness and source revisions, station audit age, raster warnings and measured cache/runtime behavior. Address specific failures promptly; schedule broader profiling as its own bounded task. |
 | Later — scope before building | New sources and statistical extensions | Local storm reports/hazard polygons, gauge conditions, historical odds, completed-year Explorer/historic-season integration, custom station dates, ENSO composites and further SPI products. Each needs its own source/method/performance assessment. |
-| Later — feasibility exploration | Interactive raster map page | Explore selectable existing raster products over a basemap, adjustable transparency, zoom/pan and pixel-value queries. Benchmark a small static-site pilot before selecting delivery methods or scheduling implementation. See [scope](#new-exploration-interactive-raster-map-page). Existing commitments and agreed climatology order remain unchanged. |
+| P1 — local pilot for review | Interactive raster map page | User authorized the three-product pilot November 15. Local precipitation/temperature-ranking/SPI-12 preview uses saved October products, native-cell canvas display and exact cell queries. Build/encoding, grid-edge and category checks pass; responsive browser review performed. Phone, throttled-connection and full performance acceptance remain before staging. See [local commands](interactive-map-pilot.md) and [scope](#new-exploration-interactive-raster-map-page). |
 | Later — polish | Consistency and optional interactions | Shared city-label styling, historic RONI labels at the next archive refresh, custom Analytics events and remaining documentation reconciliation. |
 
 November 15 status: station enhancements, monthly
 climatology, daily weather means/retries, operational repairs and historic snow
 anomaly companions are confirmed live. Climate of the Region and all 39
 reference maps have also completed local review, staging and production
-promotion. No further release step remains for that increment. The subsequent
-PRISM comparison review is now the active local correction task; the
-interactive raster pilot remains a separate later increment. Heat metrics stay
+promotion. The PRISM comparison fixes have also completed staging, production
+cache rebuilds and publication, confirmed November 15. No further release step
+remains for either increment. The user selected the interactive raster pilot
+for the next local increment; local review and performance assessment precede
+any staging integration. Heat metrics stay
 deferred until spring 2027. External dashboard links/Arizona-only exports, GA4
 Realtime and the first automatic December monthly cycle remain follow-ups.
 
@@ -398,6 +424,44 @@ those pages are next refreshed.
 | Hydroclimate home dashboard | Dashboard layout, map-matched summaries, linked condition cards and RONI/CPC context are live. Separately scope regional cumulative precipitation versus normal with cached calculations and a runtime benchmark. | Live layout; regional evolution chart moderate |
 
 ## New exploration: interactive raster map page
+
+November 15 update: the user authorized the initial three-product local pilot.
+The standalone preview, compact source-cell payloads and verification scripts
+are built; see [build, preview and acceptance notes](interactive-map-pilot.md).
+The user accepted the standalone pilot and requested local website integration:
+an Interactive Maps page, sidebar entry after Monthly Climate, embedded explorer
+and full-screen link are now prepared for local review. Terrain/satellite
+backgrounds and optional roads/place labels are included. The user requested
+the full monthly suite: 28 combinations now cover precipitation totals,
+rankings, departures and SPI plus temperature means, rankings and departures,
+each at 1/3/6/12 months. Linked Variable/Metric/Period controls, exact source-cell
+encoding checks and all-combination browser review are implemented locally;
+the browser retains at most three data bundles. The user then requested daily
+precipitation and temperature integration: a local Daily/Monthly selector,
+linked calendar-date/back/forward controls and seven daily views are prepared
+for review over a bounded 30-day local cache. Daily source/reference verification,
+paired means, exact difference encoding and explicit missing-date behavior are
+included. Automatic daily publication and expanded payload/storage assessment
+remain follow-ups. The user next authorized the first Current Conditions
+increment: 15 existing recent-precipitation and water-year precipitation/
+temperature products, linked valid-period choices, exact per-product dates,
+static-product links and source/mask checks are prepared for local review.
+November 16: a Measure selector and 11 more Current Conditions snapshots are
+prepared locally: 7/30/90-day mean-temperature percentiles, 30-day high/mean/low
+departures, 14-day change in 30-day precipitation percentile, and current/180-day
+longest dry-spell lengths and percentiles. Exact-date companion queries are
+restricted to the same measure; dry-spell percentiles have duration labels and
+rank changes use percentile points. The local catalog now has 39 snapshots, including a further 13 temperature-extreme, rainfall-character and water-year three-day-extreme maps with paired same-measure/date point tables.
+Daily History and Monthly Climate remain separate views; first/last freeze dates,
+freeze-free season and snow are deferred to later increments. Public deployment and
+daily publication integration remain separate; the preview uses the fixed
+October 2026 release. Performance
+targets below remain acceptance targets, not completed sign-off.
+The staging handoff now includes a monthly-only seed archive, exact cached
+daily/current rebuilding on the VM, versioned viewer assets and source/rendered
+checks that stop upload if viewer files are missing or corrupt. See
+[staging handoff](interactive-map-staging.md). Daily-run rebuilding and rolling
+monthly release selection remain a separate follow-up before production.
 
 Requested November 8, 2026: explore a dedicated interactive map page where users
 select existing map-data rasters, display them semi-transparently over a basemap,
@@ -1237,8 +1301,8 @@ The November 13 full run closes the station/monthly/cache repair checks.
 The November 14 production report closes historical seasonal snow anomalies.
 Climate of the Region and all 39 maps were confirmed in production November 15,
 including cached publication checks, catalog registration and stable links.
-This increment is complete. The subsequent independent PRISM review is now the
-active local correction increment; see [assessment and migration notes](prism-code-review-fixes.md). Remaining
+The PRISM comparison fixes are also confirmed complete in production November
+15, including the cache rebuild steps; see [assessment and migration notes](prism-code-review-fixes.md). No promotion remains for either increment. Remaining
 station extensions follow separately. External dashboard embedding/Arizona-only
 exports remain separate. Heat metrics stay deferred until spring 2027; AI
 synthesis remains deferred. Move one bounded increment through local review,

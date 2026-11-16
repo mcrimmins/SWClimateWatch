@@ -11,6 +11,7 @@ project:
     - maps/generated/prism/regional-reference/**
     - stations/**
     - daily-explorer/**
+    - interactive-maps/**
     - maps/generated/snodas/current/*.png
 
 website:
@@ -81,6 +82,8 @@ website:
         text: Station Conditions
       - href: pages/monthly-climate.qmd
         text: Monthly Climate
+      - href: pages/interactive-maps.qmd
+        text: Interactive Maps
       # BEGIN GENERATED HISTORIC YEARS
       - section: Historic Years
         contents:
