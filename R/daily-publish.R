@@ -198,6 +198,11 @@ swc_daily_publish_summary_lines <- function(record, prism = NULL, snow = NULL,
     sprintf("Interactive Maps: %s; %d daily bundles through %s; %d current products (%d unavailable); monthly through %s.",
       tolower(interactive$status),interactive$daily_bundles,interactive$daily_through,interactive$current_products,
       interactive$current_unavailable,interactive$monthly_end))
+  if (is.list(interactive) && !is.null(interactive$snow_status)) lines <- c(lines,
+    if (interactive$snow_status %in% c("READY", "REUSED"))
+      sprintf("Interactive Snow: %s; through %s; seven-day change %s.", tolower(interactive$snow_status),
+        interactive$snow_date, if (isTRUE(interactive$snow_change_available)) "available" else "unavailable") else
+      paste0("Interactive Snow: ", tolower(interactive$snow_status), "."))
   if (is.list(validation) &&
       all(c("current_passed", "current_total", "archive_passed",
             "archive_total") %in% names(validation))) {

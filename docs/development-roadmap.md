@@ -333,10 +333,10 @@ Numerical grids, masks, references and comparison caches are unchanged. No
 release step remains. Observe the next scheduled run separately. See
 [findings and rebuild guide](raster-plot-geometry.md).
 
-The Snow pilot below is authorized for local development. The other proposals
+The Snow workflow below is authorized for implementation and release testing. The other proposals
 remain recommendations, not approval to implement:
 
-1. **Snow in Interactive Maps — local pilot ready for review:** cached-source
+1. **Snow in Interactive Maps — staging viewer accepted; automatic workflow ready for daily-cycle testing:** cached-source
    assessment covers observed SWE, departure, supported percent of median and
    exact seven-day change. Native 30-arcsecond grid has 1,297,116 cells; lossless
    gzip bundles measured 0.104 MiB for the local published October 7 snapshot and
@@ -349,11 +349,14 @@ remain recommendations, not approval to implement:
    downloads or publication. Local combined-page integration now packages gzip
    payloads with receipts, validates masks/values and metric/date links, and
    includes managed asset cleanup. Daily Snow refresh and operational release
-   binding have a staging-only opt-in prepared: it validates the VM's source
-   release and images, stages one current Snow snapshot and excludes historical
-   examples. Production and persistent daily enablement remain off pending
-   staging review. No laptop cache transfer is required when Current Snow is
-   verified on the VM. See [staging commands](interactive-map-snow-staging.md)
+   binding passed manual staging at `050c7ec` (November 16 snapshot, including
+   seven-day change). Automatic refresh is now implemented by default in the
+   shared daily/site-only viewer step. It reuses unchanged payloads, follows
+   date/source/endpoint changes, repairs reset generated pages through the
+   normal cached Snow map quality gate, and excludes old-season snapshots
+   while waiting for a new season. Daily-cycle staging verification and
+   production promotion remain; neither is claimed complete. No cache transfer
+   or cron edit is required. See [daily workflow and promotion commands](interactive-map-snow-daily.md)
    and [local preview and assessment](interactive-map-snow-pilot.md).
 2. **Historic Years from monthly PRISM:** a larger separate increment. Pilot
    comparable existing years, choose/label historical ranking samples and review

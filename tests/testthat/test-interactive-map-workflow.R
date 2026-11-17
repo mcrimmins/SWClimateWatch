@@ -78,18 +78,20 @@ testthat::test_that("viewer runs before unchanged detection and failures stop pu
   on.exit(unlink(root,recursive=TRUE),add=TRUE)
   marker <- file.path(root,"success.csv");swc_daily_publish_write_marker(marker,"old")
   calls <- character(); fingerprint <- "old"; published <- 0L
-  report <- list(status="READY",daily_bundles=120L,daily_through="2026-11-15",current_products=39L,current_unavailable=0L,monthly_end="2026-10")
+  report <- list(status="READY",daily_bundles=120L,daily_through="2026-11-15",current_products=43L,current_unavailable=0L,monthly_end="2026-10",
+    snow_status="REUSED",snow_date="2026-11-15",snow_change_available=TRUE)
   args <- list(today=as.Date("2026-11-16"),dry_run=FALSE,marker_path=marker,log_path=NULL,
     prism_update=function()list(summary=data.frame(data_changed=FALSE)),explorer_update=function()list(status="STAGED"),
-    weather_update=function(today)list(status="DISABLED"),snow_update=function(today)list(maps=list(status="OUT_OF_SEASON")),
+    weather_update=function(today)list(status="DISABLED"),snow_update=function(today){calls<<-c(calls,"snow");list(maps=list(status="OUT_OF_SEASON"))},
     station_update=function(today)list(status="UPDATED"),monthly_update=function(today){calls<<-c(calls,"monthly");list(status="DISABLED")},
     interactive_update=function(today){calls<<-c(calls,"viewer");fingerprint<<-"new";report},
     site_fingerprint=function(){calls<<-c(calls,"fingerprint");fingerprint},
     publish=function(dry_run){published<<-published+1L;list()},notify=function(...)NULL)
   result <- do.call(run_swc_daily_publish,args)
-  testthat::expect_equal(calls[1:3],c("monthly","viewer","fingerprint"))
+  testthat::expect_equal(calls[1:4],c("snow","monthly","viewer","fingerprint"))
   testthat::expect_equal(published,1L)
   testthat::expect_true(any(grepl("Interactive Maps:",result$summary_lines,fixed=TRUE)))
+  testthat::expect_true(any(grepl("Interactive Snow: reused; through 2026-11-15; seven-day change available.",result$summary_lines,fixed=TRUE)))
   testthat::expect_equal(do.call(run_swc_daily_publish,args)$status,"SKIPPED_UNCHANGED")
   testthat::expect_equal(published,1L)
   args$interactive_update <- function(today)stop("viewer failed")

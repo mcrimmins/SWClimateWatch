@@ -1,5 +1,10 @@
 # Interactive Snow: staging test
 
+The initial manual opt-in at `050c7ec` passed staging review. For the automatic
+daily workflow and production promotion, use the superseding
+[daily release guide](interactive-map-snow-daily.md). The commands below record
+the initial manual staging trial.
+
 This release adds the reviewed Snow viewer and local combined-page build. The
 manual staging publication opts into a single verified Current Snow snapshot.
 It excludes the laptop's historical example and does not enable production or

@@ -1,5 +1,9 @@
 # Interactive Snow pilot
 
+The reviewed single-date Snow viewer passed staging at `050c7ec`. Automatic
+refresh is now implemented for daily and site-only publication; its workflow
+test and promotion commands are in the [daily release guide](interactive-map-snow-daily.md).
+
 Local review only. The production daily runner does not build Snow payloads yet. No SNODAS downloads occur.
 
 ## Combined Interactive Maps page preview
@@ -15,7 +19,7 @@ Open <http://127.0.0.1:8791/pages/interactive-maps.html> and keep R open. The co
 
 The regular preview renders the site in place with `--no-clean`, validates the rendered viewer, and reuses the local server if it is already running. For a quicker single-page render, set `options(swc.interactive.full_site = FALSE)` before previewing. Source and rendered validation include compressed byte counts, integrity receipts, exact decoded lengths, field layout, grid geometry, masks, ratio support, derived values, and metric/date links. Snow gzip files are included in the versioned asset inventory and obsolete managed Snow bundles are cleaned up only within the viewer's source folder.
 
-This is the same reviewed Snow selection within the standard site page, including the explicitly labeled historical example. Snow operational refresh, release binding, mobile testing, staging publication and production promotion remain separate steps. The standard automatic PRISM build does not add Snow yet. Use the combined builder above when reviewing Snow.
+This review builder retains the explicitly labeled historical example for local inspection. Operational builds instead use one verified Current Snow snapshot, automatically refreshed by the shared viewer step. Mobile review, the full staging daily-cycle test and production promotion remain release checks. Use the combined builder above when specifically reviewing historical examples.
 
 ## Standalone pilot
 
@@ -47,4 +51,4 @@ The default dates are the date recorded in the local Current Snow publication re
 
 The assessment CSV is `data/diagnostics/interactive-map-snow-pilot/snow-payload-assessment.csv`. All exported fields undergo full lossless round-trip checks. Node checks also cover every decoded cell, category boundaries, selector transitions and payload truncation. Small R fixtures exercise support thresholds and zero/missing values.
 
-Managed-site copying, receipts, validation and cleanup for gzip bundles are now available for local page review. Before staging publication: review mobile memory and drawing performance; choose production retention/cache limits; implement automatic Snow refresh and bind operational selections to the verified published release. This pilot deliberately does not claim those remaining workflow steps are complete.
+Managed-site copying, receipts, validation and cleanup for gzip bundles, operational release binding and automatic refresh are implemented. The manual viewer staging trial passed. Complete the full staging daily-cycle test and production promotion using the daily release guide; retain mobile memory/drawing assessment as an operational review target.
