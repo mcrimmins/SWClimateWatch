@@ -20,6 +20,12 @@ testthat::test_that("site packaging versions controls and validates complete ren
   testthat::expect_match(index, 'pilot-[0-9a-f]{12}\\.js')
   testthat::expect_match(index, '../pages/monthly-climate.html', fixed = TRUE)
   testthat::expect_false(file.exists(file.path(site, "interactive-maps/test.bin.md5")))
+  obsolete <- file.path(site,"interactive-maps/current-old_product-1234567890abcdef.bin")
+  writeBin(as.raw(1:4),obsolete)
+  unrelated <- file.path(site,"interactive-maps/notes.txt");writeLines("retain",unrelated)
+  stage_interactive_map_site(pilot,site)
+  testthat::expect_false(file.exists(obsolete))
+  testthat::expect_true(file.exists(unrelated))
   # Rebuilding after a control change must generate a new browser asset URL.
   writeLines("changed fixture", file.path(pilot, "pilot.js"))
   stage_interactive_map_site(pilot, site)

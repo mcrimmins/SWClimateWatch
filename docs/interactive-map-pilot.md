@@ -1,5 +1,25 @@
 # Interactive climate map viewer
 
+## Automatic publication refresh (November 16)
+
+The viewer now refreshes within the existing daily workflow and site-only
+publisher. Daily/current inputs follow the VM caches; monthly payloads follow
+the verified accepted Monthly Climate release, including same-month revisions.
+The old fixed October seed is no longer used by publication. Matching verified
+monthly viewer caches may be retained when numerical sources are temporarily
+incomplete. A new accepted release without matching viewer data blocks upload.
+The ordinary monthly update window/request limits are unchanged. See
+[workflow testing and VM steps](interactive-map-staging.md).
+
+Refresh runs before unchanged-site detection. Source signatures and complete
+asset checks reuse unchanged preparation, while new dates, source revisions,
+recovered files and changed references or viewer code invalidate it. The
+publication path checks source and rendered assets before S3 upload. The status
+CSV is `data/diagnostics/interactive-map-pilot/workflow-status.csv`.
+
+The following sections also preserve the earlier local pilot's review history;
+their fixed-October references describe that initial snapshot.
+
 ## Current Conditions local preview
 
 The initial view is now Current Conditions, followed by Daily History and

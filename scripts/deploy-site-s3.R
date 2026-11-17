@@ -177,6 +177,7 @@ deploy_swc_site <- function(
     swc_deploy_run(rscript, "scripts/stage-cached-climate-of-region.R", "Stage cached Climate of the Region")
     swc_deploy_run(rscript, "scripts/stage-cached-snodas-seasonal-anomalies.R", "Stage cached historical snow anomalies")
     if (file.exists("site/pages/interactive-maps.qmd")) {
+      swc_deploy_run(rscript,"scripts/stage-cached-interactive-map-site.R","Refresh cached Interactive Maps")
       source(file.path("R","interactive-map-site.R"),local=TRUE)
       validate_interactive_map_site()
     }

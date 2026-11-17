@@ -1,11 +1,13 @@
 # Static, local-only raster exploration. Reads completed monthly products only.
-interactive_pilot_definitions <- function() {
-  end <- "2026-10"
-  rank_root <- file.path("data/diagnostics/prism-monthly-ranking-pilots", end)
+interactive_pilot_definitions <- function(end = format(as.Date(format(Sys.Date(),"%Y-%m-01"))-1L,"%Y-%m"),
+    ranking_dir="data/diagnostics/prism-monthly-ranking-pilots",spi_dir="data/diagnostics/prism-monthly-spi-pilots") {
+  if(length(end)!=1L || is.na(end) || !grepl("^[0-9]{4}-(0[1-9]|1[0-2])$",end)) stop("Invalid monthly ending month.")
+  rank_root <- file.path(ranking_dir, end)
+  end_label <- format(as.Date(paste0(end,"-01")),"%B %Y")
   definitions <- list()
   for (family in c("precipitation", "temperature", "spi")) for (duration in c(1L, 3L, 6L, 12L)) {
     first <- seq(as.Date(paste0(end, "-01")), by = "-1 month", length.out = duration)[duration]
-    period <- if (duration == 1L) "October 2026" else paste(format(first, "%B %Y"), "to October 2026")
+    period <- if (duration == 1L) end_label else paste(format(first, "%B %Y"), "to",end_label)
     fields <- switch(family,
       precipitation = c(total_precipitation_inches = "float32", percentile = "float32", departure_inches = "float32",
         wet_rank = "float32", sample_years = "uint16", record = "uint8"),
@@ -14,7 +16,7 @@ interactive_pilot_definitions <- function() {
       spi = c(spi = "float32", spi_status = "uint8", sample_years = "uint16"))
     id <- sprintf("%s-%02dmonth", family, duration)
     definitions[[id]] <- list(family = family, duration = duration, period = period,
-      folder = if (family == "spi") file.path("data/diagnostics/prism-monthly-spi-pilots", end, sprintf("%02dmonth", duration)) else
+      folder = if (family == "spi") file.path(spi_dir, end, sprintf("%02dmonth", duration)) else
         file.path(rank_root, family, sprintf("%02dmonth", duration)), fields = fields,
       reference = if (family == "spi") "Fixed 1895-2020 calibration; gamma maximum likelihood with zero-precipitation adjustment" else
         "Rankings: matching complete monthly windows in the available record beginning in 1895. Departures: matching 1991-2020 windows (at least 27 years).")
@@ -29,11 +31,13 @@ interactive_pilot_copy <- function(from, to) {
   }
 }
 
-build_interactive_map_pilot <- function(output_dir = "data/diagnostics/interactive-map-pilot") {
+build_interactive_map_pilot <- function(output_dir = "data/diagnostics/interactive-map-pilot",
+    end = format(as.Date(format(Sys.Date(),"%Y-%m-01"))-1L,"%Y-%m"),
+    ranking_dir="data/diagnostics/prism-monthly-ranking-pilots",spi_dir="data/diagnostics/prism-monthly-spi-pilots") {
   started <- proc.time()[["elapsed"]]
-  definitions <- interactive_pilot_definitions()
+  definitions <- interactive_pilot_definitions(end,ranking_dir,spi_dir)
   dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
-  manifest <- list(schema = 2L, source = "PRISM Climate Group via RCC-ACIS", end_month = "2026-10",
+  manifest <- list(schema = 2L, source = "PRISM Climate Group via RCC-ACIS", end_month = end,
     variables = list(
       precipitation = list(label = "Precipitation", metrics = list(total = "Total", ranking = "Percentile ranking", departure = "Departure from normal", spi = "SPI")),
       temperature = list(label = "Temperature", metrics = list(mean = "Mean temperature", ranking = "Percentile ranking", departure = "Departure from normal"))),

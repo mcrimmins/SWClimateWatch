@@ -4,14 +4,18 @@ This release adds the Interactive Maps page/navigation, 39 Current Conditions
 views with Measure controls, seven Daily History views over a retained 30-day
 cache, and 28 Monthly Climate choices. It is for staging testing first.
 
-Only the twelve reviewed October 2026 monthly binary payloads, their integrity
-receipts, the monthly manifest and geographic boundaries need transferring.
-Daily/current data are rebuilt from the VM's own caches. Do not transfer laptop
+Automatic refresh uses the VM's monthly product grids, daily grids, Current Maps
+status and reference caches. No new data transfer is required after the original
+staging trial. Do not transfer laptop
 PRISM/SNODAS PNGs, station pages, the full processed cache or rendered `_site`.
-The monthly seed is deliberately a fixed October review snapshot; this release
-does not select subsequent monthly releases or automate daily viewer rebuilding.
-Repeat the cached staging preparation after a staging data refresh when testing
-new dates. Automatic refresh is a follow-up before production promotion.
+The first staging trial used a fixed October seed; the automatic workflow no
+longer uses it. Monthly selection follows the accepted Monthly Climate page,
+not the system calendar or an unaccepted partially built month. Its numerical
+markers and PNG hashes must agree with that release. A matching verified viewer
+cache may be retained after an incomplete refresh; without one publication stops.
+Monthly downloads/revisions still follow the existing monthly updater's window
+and request limits. The viewer makes no upstream requests. No new cron job or
+environment toggle is needed when the Interactive Maps page is present.
 
 ## Laptop
 
@@ -20,16 +24,16 @@ deployment validation and related documentation. Leave generated Home/synopsis
 edits, unrelated IVT work and stray untracked files out of the commit. Push the
 reviewed `codex/daily-explorer` commit and record `git rev-parse HEAD`.
 
-In R, from the project root:
+The original seed packaging commands remain available for standalone snapshots.
+They are unnecessary for automatic daily workflow testing. For local review:
 
 ```r
-source("scripts/package-interactive-map-staging-seed.R")
+source("scripts/build-interactive-map-site-preview.R")
+options(swc.interactive.full_site=FALSE)
+source("scripts/preview-interactive-map-site.R")
 ```
 
-This creates `data/diagnostics/swc-interactive-monthly-seed.tar.gz` and its
-`.sha256` companion using R's Windows-safe internal tar implementation.
-Transfer both to `/home/crimmins/incoming/` on the staging VM. The reviewed
-archive is approximately 3.6 MiB. Generated data and archives stay out of Git.
+This uses the same accepted-release refresh path as publication, with no uploads.
 
 ## VM
 
@@ -44,13 +48,13 @@ preparation and publication. Save generated tracked site content in a named
 stash, require the remaining tracked tree to be clean, fetch and detach at the
 exact recorded laptop commit. Leave production's checkout/environment alone.
 
-Verify the transfer with `sha256sum -c` in `/home/crimmins/incoming`, then extract
-the archive into `data/processed/interactive-map-monthly-seed`. Rebuild the map
-catalog/status before preparing the viewer, to bind Current Conditions to the
-VM's verified images and exact numerical dates:
+To test preparation alone after checkout, rebuild the map catalog/status before
+preparing the viewer, to bind Current Conditions to the VM's verified images and
+exact numerical dates:
 
 ```bash
 Rscript scripts/build-map-product-site.R
+Rscript scripts/stage-cached-prism-monthly-site.R
 Rscript scripts/stage-cached-interactive-map-site.R
 Rscript -e 'source("R/interactive-map-site.R"); validate_interactive_map_site()'
 Rscript scripts/publish-site-s3.R
@@ -60,6 +64,17 @@ Rscript scripts/check-interactive-map-publication.R
 Preparation verifies every payload against its source values/missing mask and
 reports missing daily inputs or unavailable Current Conditions products without
 substituting older dates. No climate downloads occur in these viewer steps.
+The daily runner prepares the viewer after the monthly step and before deciding
+whether the site is unchanged. A recovered grid or changed reference therefore
+triggers reconsideration. Site-only publication also refreshes the viewer before
+rendering. The input signature and complete source asset checks reuse unchanged
+preparation, including the second call during publication. Invalid output assets
+are rebuilt. The default retention is 30 days; missing cells/dates retain their
+explicit unavailable behavior without substitution or zero filling.
+
+The run log includes an Interactive Maps summary. Details are in
+`data/diagnostics/interactive-map-pilot/workflow-status.csv`; monthly numerical
+release caches are in `data/processed/interactive-map-monthly-releases/`.
 Normal publication still renders/validates all other products. Viewer source
 checks occur before rendering and source/rendered checksum checks occur before
 any S3 upload. Controls and styles have content-versioned URLs.
@@ -72,5 +87,5 @@ arrows, representative point values, dry-spell percentile direction, freeze
 count/anomaly pairing, rainfall units and the three water-year extreme stats.
 Test Terrain/Satellite with roads/place labels and None without hosted tiles.
 Check a narrow screen, repeat switches and reloads. Monthly should still show
-October 2026; Current Conditions and Daily History should show their own VM
+the same ending month as Monthly Climate; Current Conditions and Daily History should show their own VM
 cache dates. Complete phone/performance acceptance before production promotion.

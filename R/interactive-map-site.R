@@ -43,7 +43,20 @@ stage_interactive_map_site <- function(pilot_dir = "data/diagnostics/interactive
   jsonlite::write_json(assets, temp, auto_unbox = TRUE, pretty = TRUE)
   interactive_pilot_copy(temp, file.path(folder, "assets.json")); unlink(temp)
   message("Interactive Maps staged locally: ", folder, ". No publication.")
-  invisible(validate_interactive_map_site(site_dir))
+  checked <- validate_interactive_map_site(site_dir)
+  # Keep the managed source folder bounded. Remote old immutable assets remain
+  # available because publication does not delete objects absent locally.
+  root <- normalizePath(folder,winslash="/",mustWork=TRUE)
+  candidates <- list.files(folder,full.names=TRUE)
+  managed <- grepl("^(current-[a-z0-9_]+|daily-[a-z]+-[0-9-]+|(precipitation|temperature|spi)-[0-9]{2}month)-[a-f0-9]{16}\\.bin$",basename(candidates)) |
+    grepl("^(pilot|leaflet)-[a-f0-9]{12}\\.(js|css)$",basename(candidates))
+  obsolete <- candidates[managed & !basename(candidates) %in% c(files,"assets.json")]
+  if(length(obsolete)) {
+    resolved <- normalizePath(obsolete,winslash="/",mustWork=TRUE)
+    if(any(dirname(resolved)!=root)||any(file.info(resolved)$isdir)) stop("Refusing unsafe viewer asset cleanup.")
+    unlink(resolved)
+  }
+  invisible(checked)
 }
 
 validate_interactive_map_site <- function(site_dir = "site", rendered = FALSE) {

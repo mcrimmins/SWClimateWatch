@@ -457,11 +457,16 @@ freeze-free season and snow are deferred to later increments. Public deployment 
 daily publication integration remain separate; the preview uses the fixed
 October 2026 release. Performance
 targets below remain acceptance targets, not completed sign-off.
-The staging handoff now includes a monthly-only seed archive, exact cached
-daily/current rebuilding on the VM, versioned viewer assets and source/rendered
-checks that stop upload if viewer files are missing or corrupt. See
-[staging handoff](interactive-map-staging.md). Daily-run rebuilding and rolling
-monthly release selection remain a separate follow-up before production.
+Automatic refresh is now implemented locally for staging verification: daily
+and current inputs are refreshed before unchanged-site detection, and Monthly
+Climate follows the verified accepted release and its revisions. The existing
+monthly request window and fallback policy are unchanged. Matching viewer
+monthly releases are cached for incomplete-refresh retention; no matching valid
+release stops publication. Input signatures and output checksums avoid duplicate
+preparation during rendering and repair corrupt assets. Both daily and site-only
+publication use this path. Source/rendered checks run before S3 uploads. See
+[staging handoff](interactive-map-staging.md). Full daily staging verification
+and performance acceptance remain before production promotion.
 
 Requested November 8, 2026: explore a dedicated interactive map page where users
 select existing map-data rasters, display them semi-transparently over a basemap,

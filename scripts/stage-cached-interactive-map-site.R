@@ -1,8 +1,11 @@
-# VM staging preparation only. No climate downloads or S3 changes.
+# Refresh the viewer from the accepted monthly release and cached daily/current grids.
 source("R/interactive-map-pilot.R")
 source("scripts/load-daily-explorer.R")
 source("R/interactive-map-daily.R")
 source("R/interactive-map-current.R")
 source("R/interactive-map-site.R")
 source("R/interactive-map-staging.R")
-interactive_staging <- stage_cached_interactive_map_site()
+source("scripts/load-prism-monthly.R")
+source("R/prism-monthly-site.R")
+source("R/interactive-map-workflow.R")
+interactive_staging <- refresh_interactive_map_site()

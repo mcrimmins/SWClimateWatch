@@ -9,10 +9,10 @@ or satellite backgrounds. Select a map, then click or tap a location for the
 value of its original PRISM grid cell.
 
 ::: {.callout-note appearance="simple"}
-Local review: Current Conditions shows each cached product's own date and period.
-Monthly Climate uses the **October 2026 release**, with **1-, 3-, 6-
-and 12-month periods**. Daily mode uses the latest retained local cache; its dates
-can lag the public site. Dates and reference periods follow the selection.
+Current Conditions shows each product's own date and period. Monthly Climate
+follows the latest verified Monthly Climate release, with **1-, 3-, 6-
+and 12-month periods**. Daily History shows the latest 30 days in the retained
+data cache. Dates and reference periods follow the selection.
 Recent PRISM data are preliminary and may be revised.
 :::
 

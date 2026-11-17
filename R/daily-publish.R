@@ -108,7 +108,7 @@ swc_daily_publish_summary_lines <- function(record, prism = NULL, snow = NULL,
                                             stations = NULL, validation = NULL,
                                             failed_stage = NULL,
                                             destination = swc_daily_publish_live_destination(),
-                                            explorer = NULL, weather = NULL, monthly = NULL) {
+                                            explorer = NULL, weather = NULL, monthly = NULL, interactive = NULL) {
   status <- switch(record$status[[1L]],
                    PUBLISHED = "Published", PREVIEW = "Preview complete",
                    SKIPPED_UNCHANGED = "Update complete; upload skipped",
@@ -194,6 +194,10 @@ swc_daily_publish_summary_lines <- function(record, prism = NULL, snow = NULL,
           means$periods,means$maps,means$built,means$reused,means$deferred,means$unavailable,swc_publish_elapsed(means$seconds)))
   }
   lines <- c(lines,swc_monthly_summary_line(monthly))
+  if(is.list(interactive)&&length(interactive$status)==1L&&interactive$status %in% c("READY","REUSED")) lines <- c(lines,
+    sprintf("Interactive Maps: %s; %d daily bundles through %s; %d current products (%d unavailable); monthly through %s.",
+      tolower(interactive$status),interactive$daily_bundles,interactive$daily_through,interactive$current_products,
+      interactive$current_unavailable,interactive$monthly_end))
   if (is.list(validation) &&
       all(c("current_passed", "current_total", "archive_passed",
             "archive_total") %in% names(validation))) {
@@ -603,6 +607,21 @@ swc_daily_publish_sync <- function(
   result
 }
 
+swc_daily_publish_update_interactive <- function(today=Sys.Date(),enabled=file.exists("site/pages/interactive-maps.qmd"),
+    .run=function() {
+      rscript <- file.path(R.home("bin"),if(.Platform$OS.type=="windows")"Rscript.exe" else "Rscript")
+      for(script in c("scripts/build-map-product-site.R","scripts/stage-cached-prism-monthly-site.R","scripts/stage-cached-interactive-map-site.R")) {
+        status <- system2(rscript,shQuote(script))
+        if(status!=0L) stop("Interactive Maps preparation failed: ",script)
+      }
+      as.list(read.csv("data/diagnostics/interactive-map-pilot/workflow-status.csv",stringsAsFactors=FALSE)[1,,drop=FALSE])
+    }) {
+  if(!isTRUE(enabled)) return(list(status="DISABLED"))
+  result <- .run()
+  if(!is.list(result)||length(result$status)!=1L||!result$status %in% c("READY","REUSED")) stop("Interactive Maps refresh returned an invalid result.")
+  result
+}
+
 run_swc_daily_publish <- function(
     today = Sys.Date(), dry_run = TRUE, force_publish = FALSE,
     destination = swc_daily_publish_destination(),
@@ -617,7 +636,8 @@ run_swc_daily_publish <- function(
     notify = swc_ntfy_notify,
     explorer_update = swc_daily_publish_update_explorer,
     weather_update = swc_daily_publish_update_weather,
-    monthly_update = swc_daily_publish_update_monthly) {
+    monthly_update = swc_daily_publish_update_monthly,
+    interactive_update = swc_daily_publish_update_interactive) {
   if (!is.logical(dry_run) || length(dry_run) != 1L || is.na(dry_run) ||
       !is.logical(force_publish) || length(force_publish) != 1L ||
       is.na(force_publish)) {
@@ -649,14 +669,14 @@ run_swc_daily_publish <- function(
     if (!dry_run) swc_ntfy_send_safe(event, message, notify = notify)
     invisible(NULL)
   }
-  prism <- snow <- stations <- explorer <- weather <- monthly <- publication <- NULL
+  prism <- snow <- stations <- explorer <- weather <- monthly <- interactive <- publication <- NULL
   finish <- function(event, failed_stage = NULL) {
     record$elapsed_seconds <<- round(as.numeric(difftime(
       Sys.time(), started, units = "secs")), 3)
     lines <- swc_daily_publish_summary_lines(
       record, prism, snow, stations,
       if (is.list(publication)) publication$validation else NULL,
-      failed_stage = failed_stage, destination = destination, explorer = explorer, weather = weather, monthly = monthly)
+      failed_stage = failed_stage, destination = destination, explorer = explorer, weather = weather, monthly = monthly, interactive = interactive)
     message(paste(lines, collapse = "\n"))
     if (!is.null(event)) send(event, paste(lines, collapse = "\n"))
     lines
@@ -758,6 +778,10 @@ run_swc_daily_publish <- function(
       if (record$prism_data_changed) "changed" else "unchanged",
       "; SNODAS: ", record$snow_status,
       "; stations: ", stations$status, "."))
+    stage <- "interactive viewer update"
+    interactive <- interactive_update(today)
+    if(!is.list(interactive)||length(interactive$status)!=1L||!interactive$status %in% c("READY","REUSED","DISABLED"))
+      stop("Interactive Maps refresh failed; publication stopped.")
     stage <- "site publication"
     current <- site_fingerprint()
     previous <- swc_daily_publish_read_marker(marker_path)
@@ -769,7 +793,7 @@ run_swc_daily_publish <- function(
       message("Site source is unchanged since the last successful sync; upload skipped.")
       lines <- finish("success")
       return(invisible(list(status = record$status, prism = prism,
-                            snow = snow, stations = stations, explorer = explorer, weather = weather, monthly = monthly,
+                            snow = snow, stations = stations, explorer = explorer, weather = weather, monthly = monthly, interactive = interactive,
                             destination = destination,
                             published = FALSE,
                             elapsed_seconds = record$elapsed_seconds,
@@ -794,7 +818,7 @@ run_swc_daily_publish <- function(
     }
     lines <- finish(if (dry_run) NULL else "success")
     invisible(list(status = record$status, prism = prism, snow = snow,
-                   stations = stations, explorer = explorer, weather = weather, monthly = monthly,
+                   stations = stations, explorer = explorer, weather = weather, monthly = monthly, interactive = interactive,
                    destination = destination,
                    published = record$published,
                    validation = if (is.list(publication)) publication$validation

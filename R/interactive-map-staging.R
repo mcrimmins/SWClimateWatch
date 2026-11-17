@@ -1,9 +1,9 @@
 # Transfer only the reviewed monthly payloads; rebuild daily/current data on the VM.
-copy_interactive_monthly_seed <- function(from, to) {
+copy_interactive_monthly_seed <- function(from, to, verify_only=FALSE) {
+  if(!file.exists(file.path(from,"manifest.json"))) stop("Monthly viewer manifest missing: ",from)
   manifest <- jsonlite::read_json(file.path(from,"manifest.json"))
-  expected <- names(interactive_pilot_definitions())
-  if (!identical(manifest$end_month,"2026-10") || !all(expected %in% names(manifest$layers)))
-    stop("The reviewed October 2026 monthly seed is incomplete.")
+  expected <- names(interactive_pilot_definitions(manifest$end_month))
+  if (!all(expected %in% names(manifest$layers))) stop("Monthly viewer seed is incomplete.")
   layers <- manifest$layers[expected]
   for (layer in layers) {
     if (!identical(basename(layer$file),layer$file)) stop("Unsafe monthly seed filename.")
@@ -13,6 +13,7 @@ copy_interactive_monthly_seed <- function(from, to) {
       stop("Unverified monthly seed: ",layer$file)
   }
   if (!file.exists(file.path(from,"boundaries.json"))) stop("Monthly seed boundaries missing.")
+  if(isTRUE(verify_only)) return(invisible(list(manifest=manifest)))
   dir.create(to,recursive=TRUE,showWarnings=FALSE)
   for (layer in layers) for (name in c(layer$file,paste0(layer$file,".md5")))
     interactive_pilot_copy(file.path(from,name),file.path(to,name))
