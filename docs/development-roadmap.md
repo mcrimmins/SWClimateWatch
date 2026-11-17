@@ -29,12 +29,24 @@ remains for this feature. Confirm the first subsequent scheduled production
 refresh and next automatic monthly rollover separately; no new production
 run timing or source-coverage report was supplied today.
 
+November 17 raster plotting completion: the user confirmed staging and production
+review of release `d00e5b9794a22cbf4c69222a913f31bccf00a2fe`. Freeze-free season
+length and departure PNGs were promoted with the shared native-cell geometry
+fix and cached-only rebuild tools. No rendering-fix promotion remains. Monitor
+the next scheduled run for plotting warnings; no new production timing or
+warning-count log was supplied with this confirmation.
+
 The user confirmed the November 4 morning production run published release
 `e4ec458d049417e567ba182eb824d4070b8d4e0e`. Production runs daily on the AWS VM;
 the laptop remains the development environment, with a separate VM staging
 checkout and S3 prefix for testing releases.
 
 Live features include:
+
+- Native-cell plotting for sparse/missing-axis grids, confirmed in production
+  November 17. Freeze-free season length and departure maps were rebuilt from
+  cached derived grids. Dense grids retain the raster fast path; numerical
+  values, masks and comparison caches are unchanged.
 
 - Interactive Maps, production confirmed November 17: 39 Current Conditions
   choices, seven Daily History views over 30 retained days and 28 Monthly Climate
@@ -282,7 +294,8 @@ that work ahead of discretionary features.
 
 | Priority | Work | Next bounded step and completion evidence |
 | --- | --- | --- |
-| P0 — ongoing operations | Monitor the confirmed production release | Interactive Maps promotion confirmed November 17. Check the first subsequent scheduled run for its viewer summary, daily/current dates, cache reuse and accepted monthly release. Continue weather retries/freshness checks, GA4 Realtime confirmation and the first automatic December monthly cycle. Earlier timing/coverage figures are historical snapshots. |
+| P0 — ongoing operations | Monitor the confirmed production release | Interactive Maps and raster plotting fixes are confirmed in production November 17. Check subsequent scheduled runs for viewer dates/cache reuse, plotting warnings, accepted monthly releases and weather retries/freshness. GA4 Realtime and the first automatic December monthly cycle still need confirmation. Earlier timing/coverage figures are historical snapshots. |
+| Complete — monitor | Raster plotting geometry fixes | User confirmed staging and production November 17 at `d00e5b9794a22cbf4c69222a913f31bccf00a2fe`. Native-size tiles protect sparse/singleton axes; dense maps retain the fast path. The two freeze-free products were rebuilt from cached grids. Local 63-field audit, seven-pair comparison and geometry/current/freeze/snow regression checks passed. No statistical-cache migration. See [findings and rebuild guide](raster-plot-geometry.md). |
 | Complete — monitor | PRISM comparison code-review fixes | User confirmed production November 15 after staging and cache rebuilds. Matched-date maximum ranks, freeze support/season guards, overdue lower bounds, category boundaries and configured labels are live. Monitor cache reuse and freeze-season behavior; a higher wet-day-intensity minimum remains optional. See [assessment](prism-code-review-fixes.md). |
 | Complete — monitor | Station loader, monthly manifest and browser freshness repairs | Production publication/header checks and the November 13 scheduled run close all three fixes. Retain automatic cache-policy handling, release reconciliation and station-loading regression checks. |
 | Complete — monitor | Template conditions synopsis | Seasonal snow narrative, dated supporting evidence and matching weekly-temperature maps are confirmed live November 9. Retain seasonal tests, reference/coverage guards and successful-publication comparisons. AI and the daily AI page remain deferred. See [scope](conditions-synopsis-scope.md). |
@@ -306,37 +319,48 @@ Observe subsequent scheduled-run behavior and monthly rollover separately.
 Heat metrics remain deferred until spring 2027; AI remains deferred. External
 dashboard embedding/Arizona-only exports and GA4 Realtime remain follow-ups.
 
-### Next increments — selected work and recommendations
+### Next increments — recommendations pending selection
 
-The raster plotting investigation is selected below. Snow and monthly-based
-archive work remain recommendations pending user selection.
+**Raster plotting fixes are complete in production.** The user accepted local,
+staging and production review November 17 at
+`d00e5b9794a22cbf4c69222a913f31bccf00a2fe`. The shared helper uses native-size
+tiles for sparse/singleton axes and the raster fast path for dense grids. The
+local 63-field audit eliminated six raw shared-helper warnings; first/last-freeze
+maps already had explicit geometry. Freeze-free length and its departure were
+rebuilt from cached derived grids for publication. Seven before/after pairs
+included pixel-identical dense controls and a synthetic silent-spacing failure.
+Numerical grids, masks, references and comparison caches are unchanged. No
+release step remains. Observe the next scheduled run separately. See
+[findings and rebuild guide](raster-plot-geometry.md).
 
-November 17 follow-up: the user selected the raster plotting investigation for
-local implementation. The shared helper now uses native-size tiles for sparse
-or singleton axes and keeps the raster fast path for dense grids. The local
-63-field audit reproduces six raw warnings and eliminates them after the fix.
-First/last-freeze maps already had explicit geometry; the two remaining affected
-published products are freeze-free length and its departure. A seven-pair local
-gallery covers both display modes, pixel-identical dense controls and a synthetic
-silent-spacing failure. Input grids/statistics are unchanged. The user accepted
-local review November 17; staging publication/testing remains pending. A cached-only
-rebuild command prepares the two affected products without recalculating grids
-or references, verifies their input hashes and updates dated/latest PNGs. No
-laptop image/data transfer is needed. Nothing is promoted yet. See
-[findings, R commands and staging steps](raster-plot-geometry.md).
+The Snow pilot below is authorized for local development. The other proposals
+remain recommendations, not approval to implement:
 
-1. **Raster plotting warnings:** identify affected builders, check plotting
-   geometry against native grid cells and compare before/after maps. Preserve
-   all numerical values, reference periods and statistical methods. Recommended
-   next small task: warnings explicitly mention potential pixel shifts, which
-   merits checking alongside the new point viewer.
-2. **Snow in Interactive Maps:** inventory existing observed SWE, departure,
-   supported percent of median and exact seven-day change grids. Measure native
-   resolution/payloads and design mask-aware point tables before a local pilot.
-   Distinguish low typical snow from missing or unsupported comparisons.
-3. **Historic Years from monthly PRISM:** a larger separate increment. Pilot
+1. **Snow in Interactive Maps — local pilot ready for review:** cached-source
+   assessment covers observed SWE, departure, supported percent of median and
+   exact seven-day change. Native 30-arcsecond grid has 1,297,116 cells; lossless
+   gzip bundles measured 0.104 MiB for the local published October 7 snapshot and
+   1.224 MiB for the explicitly labeled February 15, 2025 winter example.
+   Decoded data are 53.19 MiB per snapshot, plus browser working arrays; mobile
+   memory/performance remains a review target. Linked metrics and point tables
+   distinguish low typical snow, unsupported references, zero SWE and missing
+   exact endpoints. Existing operational screening and quality gates remain.
+   Full-cell round trips and browser decoding/controller checks passed. No
+   downloads or publication. Local combined-page integration now packages gzip
+   payloads with receipts, validates masks/values and metric/date links, and
+   includes managed asset cleanup. Daily Snow refresh and operational release
+   binding have a staging-only opt-in prepared: it validates the VM's source
+   release and images, stages one current Snow snapshot and excludes historical
+   examples. Production and persistent daily enablement remain off pending
+   staging review. No laptop cache transfer is required when Current Snow is
+   verified on the VM. See [staging commands](interactive-map-snow-staging.md)
+   and [local preview and assessment](interactive-map-snow-pilot.md).
+2. **Historic Years from monthly PRISM:** a larger separate increment. Pilot
    comparable existing years, choose/label historical ranking samples and review
    differences before replacing archive maps or extending the record.
+3. **Operational performance:** profile consecutive daily runs and outstanding
+   viewer mobile/network targets, using measured cache/runtime/payload evidence
+   before changing product cadence or delivery architecture.
 
 November 13 local snow increment: the reviewed three-year anomaly maps now have
 an isolated full Historic Years page preview with four snow cards, original
@@ -444,7 +468,7 @@ those pages are next refreshed.
 | Historical odds of reaching precipitation thresholds (requested November 1, 2026) | Pilot CW3E-style climatological probabilities of reaching fractions of full water-year normal given precipitation already observed. Validate Southwest seasonality, historical samples and uncertainty; benchmark cached historical remainder distributions before selecting monthly or daily updates and maps. | Moderate-large; methods validation first |
 | Google Analytics (requested November 1, 2026) | Tag G-XS7RFBPW01 is included in the confirmed production release, gated to the production hostname/path and top-level views. Local/staging exclusions and embedded deduplication tested; GA4 Realtime collection still needs confirmation. See site-analytics.md. Custom interaction events remain deferred. | Collection verification pending |
 | Historical snow anomaly companions | Complete in production November 14: WY2005-WY2025, 42 companion maps, 84 total snow images with rendered integrity checks. Preserve source/method guards, masks, cached staging and stable dated links; future source revisions/new years remain separate work. | Complete; monitor |
-| Raster plotting warnings | Locate affected builders and correct the rendering geometry without altering climate statistics. Compare before/after maps. | Small-moderate |
+| Raster plotting warnings | Confirmed in production November 17: sparse/singleton cell geometry corrected; freeze-free length and departure PNGs rebuilt from cached grids. Dense controls remain pixel-identical and numerical caches unchanged. Monitor subsequent daily rendering. | Complete; monitor |
 | Daily-update speed | Profile several consecutive new-date runs, cache-hit/miss behavior, costly PRISM reference work, and station processing. Benchmark before removing products or changing cadence. | Moderate |
 | SNODAS source revisions | Define a bounded recheck policy for already processed archives, provenance changes, and affected reference/map invalidation. | Moderate |
 | Completed-year Daily Explorer | Decide what remains public at water-year rollover, then test dated manifests, navigation, retention, storage and rebuild costs before historical backfill. | Moderate-large |
@@ -1325,9 +1349,9 @@ and [production guidance](https://developers.openai.com/api/docs/guides/producti
 
 Follow the [priority order above](#priority-order-and-working-sequence).
 Interactive Maps and automatic refresh are confirmed live November 17; no
-promotion remains. The next recommended small task is the raster plotting
-warning audit, followed by separate snow-viewer and monthly-based archive
-pilots if selected by the user.
+promotion remains. The raster plotting fixes are also confirmed live November 17; no promotion
+remains. The next recommended feature is a bounded snow-viewer source/payload
+assessment and local pilot, followed by monthly-based archive work if selected.
 Station seasonal histories, daily chart/CSV/layout enhancements, monthly
 climatology and 7-/30-day weather means/retries are confirmed in production.
 The November 13 full run closes the station/monthly/cache repair checks.

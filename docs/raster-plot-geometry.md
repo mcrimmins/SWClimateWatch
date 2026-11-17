@@ -1,4 +1,11 @@
-# Raster plotting geometry: local investigation
+# Raster plotting geometry: completed production fix
+
+Production confirmed November 17, 2026, at
+`d00e5b9794a22cbf4c69222a913f31bccf00a2fe`, after local and VM staging review.
+The two affected freeze-free products were rebuilt from cached grids. No
+statistical-cache migration or further promotion is pending. Confirm the next
+scheduled production run separately; local audit counts below are not a new
+production log.
 
 November 17, 2026: the shared `southwest_raster_map()` helper removed missing
 cells and handed the remaining centers to `geom_raster()`. Missing entire rows
@@ -60,9 +67,9 @@ tests cover missing rows/columns, uniformly thinned axes, single cells, empty
 rasters, category preservation, native bounds and floating-point coordinate
 roundoff; existing current-temperature/freeze tests also pass.
 
-This step does not overwrite operational PNGs, recompute comparison caches,
-update the website or publish. After local approval, regenerate the two affected
-products from cached derived grids on staging and validate the usual map pages.
+The local review step does not overwrite operational PNGs, recompute comparison caches,
+update the website or publish. The subsequent approved staging/production
+rebuild used cached derived grids and the normal publication validation.
 No statistical-cache migration is needed for this rendering-only change.
 
 ## Staging rebuild after local approval

@@ -9,3 +9,9 @@ source("scripts/load-prism-monthly.R")
 source("R/prism-monthly-site.R")
 source("R/interactive-map-workflow.R")
 interactive_staging <- refresh_interactive_map_site()
+if (tolower(Sys.getenv("SWC_INTERACTIVE_SNOW", "false")) == "true") {
+  source("scripts/load-snodas-current-site.R")
+  source("R/interactive-map-snow-pilot.R")
+  source("R/interactive-map-snow-current.R")
+  interactive_snow_staging <- stage_interactive_snow_current()
+}

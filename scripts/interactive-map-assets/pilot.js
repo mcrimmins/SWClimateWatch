@@ -46,7 +46,24 @@
   styles['current-precipitation-share']={current:true,kind:'binned',field:'value',title:'Share of precipitation',bounds:[0,10,25,50,75,90,100],colors:['#f7fcfd','#e0ecf4','#bfd3e6','#9ebcda','#8c96c6','#8856a7','#810f7c'],labels:['0%','>0–10%','>10–25%','>25–50%','>50–75%','>75–90%','>90–100%']};
   styles['current-precipitation-maximum']={...styles['current-precipitation-total'],title:'Maximum 3-day precipitation'};
   styles['current-rain-character-ranking']={current:true,kind:'binned',field:'value',title:'Historical percentile',bounds:[2,10,33,67,90,98,100],colors:['#f1eef6','#d7b5d8','#df65b0','#f7f7f7','#74a9cf','#2b8cbe','#045a8d'],labels:['≤2: exceptionally low','>2–10: very low','>10–33: low','>33–67: near middle','>67–90: high','>90–98: very high','>98: exceptionally high']};
+  const snowMissing='#ede8df',snowLow='#d2d6d8';
+  const snowStyles={
+    swe:{kind:'snow',field:'observed',title:'Snow water equivalent',bounds:[0,.1,1,2,4,8,12,20,30,Infinity],
+      colors:['transparent','#f7fbff','#deebf7','#c6dbef','#9ecae1','#6baed6','#4292c6','#2171b5','#08519c','#08306b',snowMissing],
+      labels:['0 in. — no snowpack (transparent)','>0–0.1 in.','>0.1–1','>1–2','>2–4','>4–8','>8–12','>12–20','>20–30','>30 in.','Unavailable']},
+    departure:{kind:'snow',field:'departure',mask:'departure_status',title:'SWE departure from median',bounds:[-16,-8,-4,-1,1,4,8,16,Infinity],
+      colors:['#753b22','#a05c31','#ce8e54','#ebcba5','#f7f7f4','#e1eef2','#aad3e5','#559acc','#40569e',snowLow,snowMissing],
+      labels:['≤−16 in.','>−16 to −8','>−8 to −4','>−4 to −1','>−1 to +1','>+1–4','>4–8','>8–16','>16 in.','Typical SWE <1 inch','Unavailable']},
+    percent:{kind:'snow',field:'percent',mask:'percent_status',leftClosed:true,title:'SWE percent of median',bounds:[50,75,90,110,125,150,200,Infinity],
+      colors:['#8c510a','#bf812d','#dfc27d','#f7f7f4','#d1e5f0','#92c5de','#4393c3','#081d58',snowLow,snowMissing],
+      labels:['<50%','50–<75%','75–<90%','90–<110%','110–<125%','125–<150%','150–<200%','≥200%','Typical SWE <1 inch','Unavailable']},
+    change:{kind:'snow',field:'change',leftClosed:true,title:'7-day net SWE change',bounds:[-4,-2,-1,-.25,.25,1,2,4,Infinity],
+      colors:['#8c510a','#bf812d','#dfc27d','#f1e0b5','#f7f7f4','#d1e5f0','#92c5de','#4393c3','#081d58',snowMissing],
+      labels:['<−4 in.','−4 to <−2','−2 to <−1','−1 to <−0.25','−0.25 to <+0.25','+0.25 to <1','1 to <2','2 to <4','≥4 in.','Unavailable']}
+  };
+  function snowPeriod(selection,layer){return selection.metric==='change'?`${displayDate(shiftDate(layer.date,-7))} to ${displayDate(layer.date)}`:displayDate(layer.date);}
   function styleFor(selection){
+    if(selection.variable==='snow')return snowStyles[selection.metric];
     if(selection.frequency==='current'&&['dry_spell','longest_dry_spell'].includes(selection.measure)&&selection.metric==='ranking')return styles['current-dry-spell-ranking'];
     if(selection.frequency==='current'&&['wet_frequency','wet_intensity','very_wet_share','wy_extremes'].includes(selection.measure)&&selection.metric==='ranking')return styles['current-rain-character-ranking'];
     if(selection.frequency==='current'&&selection.measure==='warm_days')return {...styles['current-temperature-count'],colors:['#fff5eb','#fee6ce','#fdd0a2','#fdae6b','#fd8d3c','#e6550d','#a63603']};
@@ -72,7 +89,7 @@
       const period=periods[requested.period]?requested.period:Object.keys(periods)[0];
       const product=Object.keys(current.products).find(id=>{const p=current.products[id];return p.variable===variable&&p.measure===measure&&p.metric===metric&&p.period===period;});
       if(!product)throw Error('Unsupported Current Conditions combination.');
-      const id=`current-${product}`,descriptor=current.products[product];
+      const descriptor=current.products[product],id=descriptor.layer_id||`current-${product}`;
       return {frequency:'current',variable,measure,metric,period,product,id,available:!!manifest.layers[id]&&descriptor.available};
     }
     if(requested.frequency==='daily'){
@@ -119,8 +136,22 @@
     if(layer.derived_departure)data.departure=Float64Array.from(data.observed,(v,i)=>v-data.normal[i]);
     return data;
   }
+  async function decodePayload(buffer,layer){
+    if(layer.compression==='gzip'){
+      if(buffer.byteLength!==layer.transfer_bytes)throw Error('Unexpected compressed snow payload length.');
+      if(typeof DecompressionStream==='undefined')throw Error('Snow maps need a browser with gzip decompression support. Use the static Snow Conditions maps.');
+      buffer=await new Response(new Blob([buffer]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+    }
+    return decode(buffer,layer);
+  }
   function category(style, d, i) {
     if (i < 0) return -1;
+    if(style.kind==='snow'){
+      if(style.mask){const status=d[style.mask][i];if(status===2)return style.colors.length-2;if(status===3)return style.colors.length-1;}
+      const v=d[style.field][i];
+      if(!Number.isFinite(v))return style.colors.length-1;
+      return style.leftClosed?style.bounds.findIndex(x=>v<x):style.bounds.findIndex(x=>v<=x);
+    }
     if (style.kind === 'binned') {
       const v=d[style.field][i];
       return Number.isFinite(v)?style.bounds.findIndex(x=>v<=x):-1;
@@ -139,6 +170,7 @@
   const fmt=(v,n=2)=>Number.isFinite(v)?v.toFixed(n):'Unavailable';
   // Companion statistics must describe the identical window, never a nearby release.
   function companions(manifest,selection,layer){
+    if(selection.variable==='snow')return [];
     if(selection.frequency==='current')return Object.entries(manifest.current.products)
       .filter(([id,p])=>p.available&&p.variable===selection.variable&&p.measure===selection.measure&&p.period===selection.period&&`current-${id}`!==selection.id)
       .map(([id,p])=>({id:`current-${id}`,metric:p.metric}))
@@ -154,6 +186,15 @@
     const unit=(v,suffix,n=2)=>Number.isFinite(v)?`${fmt(v,n)} ${suffix}`:'Unavailable';
     const departure=(v,suffix,n)=>Number.isFinite(v)?`${v>0?'+':''}${fmt(v,n)} ${suffix}`:'Unavailable';
     let note='',reference='';
+    if(selection.variable==='snow'){
+      rows.push(['Snow water equivalent',unit(data.observed[i],'in.')],['Date-specific median',unit(data.median[i],'in.')],
+        ['Departure from median',departure(data.departure[i],'in.',2)],
+        ['Percent of median',data.percent_status[i]===2?'Withheld: typical SWE <1 inch':data.percent_status[i]===3?'Unavailable: observation or reference unsupported':unit(data.percent[i],'%',1)],
+        ['7-day net SWE change',departure(data.change[i],'in.',2)],['Reference years',fmt(data.years[i],0)]);
+      note=!Number.isFinite(data.observed[i])?'Observed SWE unavailable at this cell.':data.percent_status[i]===2?'Percentage withheld because typical SWE is below 1 inch; observed snow can still be present.':data.percent_status[i]===3?'Percentage lacks the required observation or 18-year reference support.':'';
+      reference='Modeled snowpack water, not snow depth. Net seven-day change is not snowfall or melt alone. Reference: WY2005–WY2025 centered five-day median.';
+      return {rows,note,reference};
+    }
     if(selection.frequency==='current'){
       const values={...context,[selection.metric]:data.value[i]};
       const valueMetric=temperature?'mean':'total';
@@ -205,7 +246,7 @@
     }
     return {rows,note,reference};
   }
-  const api={cellAt,decode,category,styles,styleFor,resolveSelection,shiftDate,pointStats,companions};
+  const api={cellAt,decode,decodePayload,category,styles,styleFor,resolveSelection,shiftDate,pointStats,companions};
   if (typeof module !== 'undefined') module.exports=api;
   if (!root.document) return;
   if(new URLSearchParams(location.search).get('embedded')==='1')document.body.classList.add('embedded');
@@ -231,6 +272,25 @@
       const nw=map.unproject(origin,coords.z),se=map.unproject(far,coords.z);
       const r0=Math.max(0,Math.floor((g.north-nw.lat)/g.dy)),r1=Math.min(g.rows-1,Math.floor((g.north-se.lat)/g.dy));
       const c0=Math.max(0,Math.floor((nw.lng-g.west)/g.dx)),c1=Math.min(g.cols-1,Math.floor((se.lng-g.west)/g.dx));
+      if(style.kind==='snow'){
+        // Merge only adjacent cells of exactly the same display category.
+        // Native edge coordinates and query values are unchanged; no resampling.
+        const edges=[];
+        for(let c=c0;c<=c1+1;c++)edges.push(map.project([0,g.west+c*g.dx],coords.z).x-origin.x);
+        for(let r=r0;r<=r1;r++){
+          const y0=map.project([g.north-r*g.dy,0],coords.z).y-origin.y;
+          const y1=map.project([g.north-(r+1)*g.dy,0],coords.z).y-origin.y;
+          let start=c0,k=category(style,data,r*g.cols+c0);
+          for(let c=c0+1;c<=c1+1;c++){
+            const next=c<=c1?category(style,data,r*g.cols+c):-2;
+            if(next!==k){
+              if(k>=0){ctx.fillStyle=style.colors[k];ctx.fillRect(Math.floor(edges[start-c0]),Math.floor(y0),Math.ceil(edges[c-c0])-Math.floor(edges[start-c0]),Math.ceil(y1)-Math.floor(y0));}
+              start=c;k=next;
+            }
+          }
+        }
+        return tile;
+      }
       // Project each native cell's edges. Display and queries share the same geographic grid.
       for(let r=r0;r<=r1;r++){
         const y0=map.project([g.north-r*g.dy,0],coords.z).y-origin.y;
@@ -249,7 +309,7 @@
     if(!cache.has(id)){
       while(cache.size>=3)cache.delete(cache.keys().next().value);
       const layer=manifest.layers[id];
-      const pending=fetch(layer.file).then(r=>{if(!r.ok)throw Error('Local climate file unavailable. Rebuild the pilot.');return r.arrayBuffer();}).then(b=>decode(b,layer)).catch(e=>{if(cache.get(id)===pending)cache.delete(id);throw e;});
+      const pending=fetch(layer.file).then(r=>{if(!r.ok)throw Error('Local climate file unavailable. Rebuild the pilot.');return r.arrayBuffer();}).then(b=>decodePayload(b,layer)).catch(e=>{if(cache.get(id)===pending)cache.delete(id);throw e;});
       cache.set(id,pending);
     }
     const promise=cache.get(id);cache.delete(id);cache.set(id,promise);return promise;
@@ -261,7 +321,7 @@
     selected=latlng;
     if(selectionBox)map.removeLayer(selectionBox);
     const coord=`${latlng.lat.toFixed(3)}°, ${latlng.lng.toFixed(3)}°`;
-    const period=selection.frequency==='daily'?displayDate(selection.date):selection.frequency==='current'?selection.period==='current'?`As of ${displayDate(layer.date)}`:`${displayDate(layer.start_date)} to ${displayDate(layer.date)}`:layer.period;
+    const period=selection.variable==='snow'?snowPeriod(selection,layer):selection.frequency==='daily'?displayDate(selection.date):selection.frequency==='current'?selection.period==='current'?`As of ${displayDate(layer.date)}`:`${displayDate(layer.start_date)} to ${displayDate(layer.date)}`:layer.period;
     if(i<0){$('readout').innerHTML=`<h3>${coord}</h3><p>Outside this product’s source grid.</p>`;return;}
     const r=Math.floor(i/g.cols),c=i%g.cols;
     selectionBox=L.rectangle([[g.north-(r+1)*g.dy,g.west+c*g.dx],[g.north-r*g.dy,g.west+(c+1)*g.dx]],{color:'#172e3d',weight:2,fill:false,interactive:false}).addTo(map);
@@ -296,22 +356,22 @@
       const {id}=selection,style=styleFor(selection);
       const layer=manifest.layers[id],tick=performance.now(),cached=cache.has(id);
       const descriptor=selection.frequency==='current'?manifest.current.products[selection.product]:null;
-      const period=selection.frequency==='daily'?displayDate(selection.date):descriptor&&layer?selection.period==='current'?`As of ${displayDate(layer.date)}`:`${displayDate(layer.start_date)} to ${displayDate(layer.date)}`:layer?.period||(descriptor?descriptor.period_label:'Period unavailable');
+      const period=selection.variable==='snow'?snowPeriod(selection,layer):selection.frequency==='daily'?displayDate(selection.date):descriptor&&layer?selection.period==='current'?`As of ${displayDate(layer.date)}`:`${displayDate(layer.start_date)} to ${displayDate(layer.date)}`:layer?.period||(descriptor?descriptor.period_label:'Period unavailable');
       $('layer-title').textContent=descriptor?descriptor.title:style.kind==='spi'?`SPI-${selection.duration}`:style.title;$('layer-period').textContent=descriptor&&layer?`${descriptor.period_label} · ${period}`:period;
       $('legend').innerHTML=style.labels.map((label,i)=>`<div><span class="swatch" style="background:${style.colors[i]}"></span>${label}</div>`).join('');
       $('reference').textContent=(layer?.reference||descriptor?.description||'Daily PRISM cache; no date substitution or zero filling.')+(selection.frequency==='daily'?` Local cache: ${displayDate(manifest.daily.first_date)} to ${displayDate(manifest.daily.latest_date)}.`:'');
-      $('product-link').hidden=!descriptor;
-      if(descriptor)$('product-link').href=location.pathname.includes('/interactive-maps/')?descriptor.product_page:descriptor.public_url;
+      $('product-link').hidden=!descriptor||!descriptor.public_url;
+      if(descriptor?.public_url)$('product-link').href=location.pathname.includes('/interactive-maps/')?descriptor.product_page:descriptor.public_url;
       if(!selection.available){
         $('resolution').textContent='';
         $('status').textContent=descriptor?`${descriptor.title} is unavailable in the local cache. ${descriptor.note} No other date has been substituted.`:`No verified ${style.title.toLowerCase()} map for ${period}. No other date has been substituted.`;
-        $('readout').innerHTML=descriptor?'<h3>Location details</h3><p>This snapshot is unavailable. Choose another metric or period, or follow the static product link.</p>':'<h3>Location details</h3><p>Selected date or reference data unavailable. Choose another date or metric.</p>';
+        $('readout').innerHTML=descriptor?`<h3>Location details</h3><p>This snapshot is unavailable. Choose another metric or period${descriptor.public_url?', or follow the static product link':''}.</p>`:'<h3>Location details</h3><p>Selected date or reference data unavailable. Choose another date or metric.</p>';
         return;
       }
       const data=await loadData(id);if(token!==sequence)return;
       active={id,layer,data,style,selection};
       overlay=new NativeGrid({payload:active,zIndex:200,opacity:Number($('opacity').value)/100,noWrap:true,bounds,updateWhenIdle:true,keepBuffer:1}).addTo(map);
-      $('resolution').textContent=`Native grid: ${(layer.grid.dx*60).toFixed(1)} arc-minutes (about 4 km). Zooming does not add climate detail.`;
+      $('resolution').textContent=`Native grid: ${(layer.grid.dx*60).toFixed(1)} arc-minutes (${selection.variable==='snow'?'about 1 km':'about 4 km'}). Zooming does not add climate detail.`;
       $('status').textContent='';
       $('readout').innerHTML='<h3>Location details</h3><p>Select a location on the map.</p>';
       if(selected)query(selected);
@@ -355,11 +415,12 @@
     try{
       manifest=await fetch('manifest.json').then(r=>{if(!r.ok)throw Error('Manifest unavailable. Build the local pilot first.');return r.json();});
       if(manifest.schema!==5)throw Error('Rebuild the viewer to prepare Current Conditions measures.');
+      if(manifest.current.variables.snow){map.attributionControl.addAttribution('Snow: NOAA/NSIDC SNODAS');if($('snow-help'))$('snow-help').hidden=false;if($('snow-review-note'))$('snow-review-note').hidden=manifest.snow_mode==='verified_current';}
       $('variable').replaceChildren(...Object.entries(manifest.variables).map(([value,v])=>new Option(v.label,value)));
       $('period').replaceChildren(...manifest.durations.map(n=>new Option(`${n} month${n===1?'':'s'}`,String(n))));
       $('date').min=manifest.daily.first_date;$('date').max=manifest.daily.latest_date;$('date').value=manifest.daily.latest_date;
       modeState.daily.date=manifest.daily.latest_date;
-      syncSelectors(modeState.current);
+      syncSelectors(manifest.initial_selection||modeState.current);
       for(const id of ['frequency','variable','measure','metric','period','date'])$(id).disabled=false;
       let base=null;
       let referenceLayers=[], referenceGeneration=0;

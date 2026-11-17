@@ -6,7 +6,7 @@ toc: false
 
 Explore Current Conditions, Daily History, or Monthly Climate with roads, terrain
 or satellite backgrounds. Select a map, then click or tap a location for the
-value of its original PRISM grid cell.
+value of its original source grid cell.
 
 [Open interactive maps full screen](../interactive-maps/index.html){.btn .btn-sm .btn-outline-primary}
 
