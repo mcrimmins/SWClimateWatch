@@ -4,6 +4,27 @@ southwest_context_states <- c(
   "arizona", "california", "colorado", "nevada", "new mexico", "texas", "utah"
 )
 
+# Missing whole rows/columns (or a singleton axis) prevent geom_raster from
+# reliably inferring the native pixel spacing. Even uniformly skipped columns
+# can silently produce oversized pixels without a warning.
+southwest_raster_geometry <- function(data, resolution) {
+  regular <- function(values, step) {
+    axis <- sort(unique(values))
+    if(length(axis)<2L) return(FALSE)
+    tolerance <- max(abs(step)*1e-7,64*.Machine$double.eps*max(1,abs(axis)))
+    all(abs(diff(axis)-step)<=tolerance)
+  }
+  list(engine=if(regular(data$x,resolution[1L])&&regular(data$y,resolution[2L]))"raster" else "tile",
+    width=unname(resolution[1L]),height=unname(resolution[2L]))
+}
+
+southwest_raster_layer <- function(data,mapping,resolution,show.legend=NA) {
+  geometry <- southwest_raster_geometry(data,resolution)
+  if(geometry$engine=="raster") return(ggplot2::geom_raster(data=data,mapping=mapping,show.legend=show.legend))
+  ggplot2::geom_tile(data=data,mapping=mapping,width=geometry$width,height=geometry$height,
+    show.legend=show.legend,linewidth=0)
+}
+
 #' Build a Southwest raster map
 #'
 #' @param raster A single-layer terra SpatRaster.
@@ -205,16 +226,16 @@ southwest_raster_map <- function(
       right = TRUE
     )
     plot <- ggplot2::ggplot() +
-      ggplot2::geom_raster(
+      southwest_raster_layer(
         data = raster_df,
-        ggplot2::aes(x = x, y = y, fill = category),
+        ggplot2::aes(x = x, y = y, fill = category), resolution=terra::res(raster_region),
         show.legend = TRUE
       )
   } else {
     plot <- ggplot2::ggplot() +
-      ggplot2::geom_raster(
+      southwest_raster_layer(
         data = raster_df,
-        ggplot2::aes(x = x, y = y, fill = value)
+        ggplot2::aes(x = x, y = y, fill = value), resolution=terra::res(raster_region)
       )
   }
 
