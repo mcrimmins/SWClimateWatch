@@ -1,0 +1,32 @@
+.temperature-normal-legend{font-size:.76rem;color:#526671;margin:.2rem 0 .35rem}
+.temperature-normal-legend .normal-high{color:#a85130;font-weight:650}
+.temperature-normal-legend .normal-low{color:#326a9e;font-weight:650}
+.temperature-normal-note{font-size:.74rem;line-height:1.4;color:#637580;margin:.3rem 0 .5rem}
+.chart-normal{pointer-events:none}
+
+.temperature-record-legend{font-size:.74rem;color:#667782;margin:.2rem 0}
+.chart-record,.chart-new-record,.chart-tied-record{pointer-events:none}
+
+.temperature-readout-heading{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;margin-bottom:.35rem}
+.detail-charts>figure{min-width:0}
+.chart-readout.temperature-readout{min-width:0;max-width:100%;box-sizing:border-box}
+.temperature-day-table{width:100%;min-width:0;max-width:100%;border-collapse:collapse;font-size:.81rem;table-layout:fixed}
+.temperature-day-table th,.temperature-day-table td{padding:.32rem .25rem;border-bottom:1px solid #dbe6e9;vertical-align:top;text-align:center;white-space:normal;overflow-wrap:anywhere}
+.temperature-day-table th{position:static;top:auto;z-index:auto;background:transparent}
+.temperature-day-table th:first-child{width:34%;text-align:left;font-weight:500}
+.temperature-day-table thead th{font-weight:650;background:transparent}
+.temperature-day-table small{display:block;font-size:.72rem;color:#637580;font-weight:400;overflow-wrap:anywhere}
+.temperature-day-table .normal-high{color:#a85130}.temperature-day-table .normal-low{color:#326a9e}
+.temperature-delta{font-weight:650}.temperature-delta.warm{color:#a74626}.temperature-delta.cool{color:#23668e}
+.temperature-record-badge{font-size:.72rem;font-weight:650;padding:.12rem .35rem;border-radius:4px;background:#fff1d6;color:#815018}
+.temperature-coverage{margin-top:.4rem;font-size:.73rem;color:#526974}
+.temperature-coverage summary{cursor:pointer}.temperature-coverage p{margin:.3rem 0}
+
+.precipitation-day-table th:first-child{width:44%}
+.precipitation-observed{color:#236f91}
+.precipitation-chart-key{font-size:.76rem;line-height:1.6;color:#506878;margin:.25rem 0 .4rem}
+.precipitation-chart-key>span{display:inline-block;margin-right:.65rem}
+.precip-key{display:inline-block;width:11px;height:10px;vertical-align:middle;margin-right:3px;background:#327eaa}
+.precip-key.record{background:#703b86}
+.precip-key.tied{background:repeating-linear-gradient(135deg,#703b86 0 3px,#eee3f3 3px 5px)}
+.precipitation-chart-key .precip-period-key{color:#76513c}

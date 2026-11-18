@@ -303,6 +303,15 @@ pattern solely to ENSO.
 Although the composite fields are calculated from PRISM, ENSO classification
 requires an external index and therefore is not a strictly PRISM-only product.
 
+## Consolidated development backlog
+
+The [October 2026 development roadmap](development-roadmap.md) tracks remaining
+snow, station, Daily Explorer, performance, reliability and documentation work.
+It also adds [daily weather/circulation diagnostics](weather-circulation-scope.md)
+as an exploration item, including 500-mb patterns, upper-level jets, wind events
+and an efficient NOAA CORe versus ERA5 data-access pilot. This does not enable
+new operational products or replace the existing PRISM maps.
+
 ## Phase 4: advanced drought indices
 
 - SPI-1, SPI-3, SPI-6, and SPI-12 may be valuable, but they require a separately

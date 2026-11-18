@@ -19,7 +19,8 @@ snodas_current_site_latest_date <- function(plan, today = Sys.Date()) {
   if (!length(available)) as.Date(NA_character_) else max(available)
 }
 
-snodas_current_site_page_text <- function(water_year, date = as.Date(NA_character_)) {
+snodas_current_site_page_text <- function(water_year, date = as.Date(NA_character_),
+    change_available = FALSE, change_note = "Exact prior endpoint is missing or unverified.") {
   if (length(water_year) != 1L || !is.numeric(water_year) ||
       is.na(water_year) || water_year != floor(water_year) ||
       water_year < 2005L) {
@@ -64,15 +65,25 @@ snodas_current_site_page_text <- function(water_year, date = as.Date(NA_characte
     card("swe-departure.png",
          "Snow water equivalent departure from the seasonal median",
          "Observed SWE minus the centered-five-day WY2005-WY2025 median for this calendar date, in inches. Positive values indicate more snow water than the reference median."),
+    card("swe-percent-median.png",
+         "Snow water equivalent as a percent of the date-specific median",
+         "Observed SWE divided by the centered-five-day WY2005-WY2025 median, times 100. Ratios require a median of at least 1 inch and at least 18 reference years. Gray indicates a valid median below 1 inch; beige indicates unavailable data or insufficient reference support. This is not a percentile."),
+    if (change_available) card("swe-change-7day.png",
+         "Seven-day net change in snow water equivalent",
+         paste0("Net SWE change from ", date - 7L, " to ", date,
+                ", in inches. Positive values mean a net gain in modeled snowpack water, not snowfall; losses are not a measure of melt alone.")),
     ":::", "",
+    if (!change_available) paste0("Seven-day SWE change unavailable (", date - 7L,
+      " to ", date, "): ", change_note, " No date substitution or zero filling is used."),
     "SNODAS is a modeled 06:00 UTC snowpack snapshot supplied by NOAA/NSIDC.",
     "The departure is an absolute difference, not a percentile or snowfall total.")
 }
 
 write_snodas_current_site_page <- function(
     water_year, date = as.Date(NA_character_),
-    page_path = file.path("site", "pages", "current-snow.qmd")) {
-  lines <- snodas_current_site_page_text(water_year, date)
+    page_path = file.path("site", "pages", "current-snow.qmd"),
+    change_available = FALSE, change_note = "Exact prior endpoint is missing or unverified.") {
+  lines <- snodas_current_site_page_text(water_year, date, change_available, change_note)
   if (file.exists(page_path) &&
       identical(readLines(page_path, warn = FALSE), lines)) {
     return(invisible(FALSE))
@@ -92,12 +103,22 @@ snodas_current_site_source_signature <- function(
   paths <- c(swe = snodas_processed_path(date, "swe", processed_dir),
              depth = snodas_processed_path(date, "depth", processed_dir),
              median_swe = reference[["median_swe"]],
+             sample_years = reference[["sample_years"]],
              reference_marker = reference[["complete"]])
   if (!all(file.exists(paths))) {
     stop("Current SNODAS maps need verified daily and reference files.",
          call. = FALSE)
   }
-  digest::digest(c(as.character(date), unname(tools::md5sum(paths))),
+  prior_paths <- vapply(c("swe", "depth"), function(v)
+    snodas_processed_path(date - 7L, v, processed_dir), character(1))
+  checked <- snodas_cool_season_processed(data.frame(date = date - 7L,
+    path = prior_paths[[1L]], complete = TRUE), processed_dir)
+  code <- c("R/snodas-current-site.R", "R/snodas-current-comparisons.R",
+    "R/snodas-daily-comparison-pilot.R", "R/snodas-seasonal-anomaly.R",
+    "R/snodas-map-pilot.R", "R/snodas-map-quality.R", "R/map-southwest.R")
+  digest::digest(list(version = 2L, date = as.character(date),
+    inputs = unname(tools::md5sum(paths)), prior = unname(tools::md5sum(prior_paths)),
+    prior_verified = isTRUE(checked$complete[[1L]]), code = unname(tools::md5sum(code))),
                  algo = "sha256")
 }
 
@@ -115,11 +136,21 @@ snodas_current_site_manifest <- function(path) {
 snodas_current_site_is_current <- function(
     water_year, date, signature, paths, page_path, manifest_path) {
   row <- snodas_current_site_manifest(manifest_path)
-  if (is.null(row) || !all(file.exists(c(paths, page_path))) ||
+  if (is.null(row) || !all(c("percent_md5", "change_available", "change_md5") %in% names(row)))
+    return(FALSE)
+  if (!is.logical(row$change_available) || is.na(row$change_available[[1L]]) ||
+      is.na(row$percent_md5[[1L]]) ||
+      (isTRUE(row$change_available[[1L]]) && is.na(row$change_md5[[1L]]))) return(FALSE)
+  if (isTRUE(row$change_available[[1L]]))
+    paths <- c(paths, change = file.path(dirname(paths[[1L]]), "swe-change-7day.png"))
+  if (!all(file.exists(c(paths, page_path))) ||
       row$water_year[[1L]] != water_year ||
       row$date[[1L]] != as.character(date) ||
       row$source_signature[[1L]] != signature) return(FALSE)
-  identical(unname(tools::md5sum(paths[["observed"]])),
+  identical(unname(tools::md5sum(paths[["percent"]])), row$percent_md5[[1L]]) &&
+    (!isTRUE(row$change_available[[1L]]) ||
+       identical(unname(tools::md5sum(paths[["change"]])), row$change_md5[[1L]])) &&
+    identical(unname(tools::md5sum(paths[["observed"]])),
             row$observed_md5[[1L]]) &&
     identical(unname(tools::md5sum(paths[["departure"]])),
               row$departure_md5[[1L]]) &&
@@ -139,7 +170,7 @@ update_snodas_current_site <- function(
         date = date, output_dir = output_dir,
         processed_dir = processed_dir, climatology_root = climatology_root,
         overwrite = TRUE, scale_type = "categorical")
-    }) {
+    }, build_comparisons = build_snodas_current_comparisons) {
   season <- snodas_update_season(today)
   if (is.null(season)) return(list(status = "OUT_OF_SEASON"))
   manifest_path <- file.path(diagnostics_dir, "publication.csv")
@@ -156,11 +187,13 @@ update_snodas_current_site <- function(
   signature <- snodas_current_site_source_signature(
     date, processed_dir, climatology_root)
   paths <- setNames(file.path(site_map_dir,
-                              c("swe-observed.png", "swe-departure.png")),
-                    c("observed", "departure"))
+                              c("swe-observed.png", "swe-departure.png", "swe-percent-median.png")),
+                    c("observed", "departure", "percent"))
   if (snodas_current_site_is_current(
         season$water_year, date, signature, paths, page_path,
         manifest_path)) {
+    if (isTRUE(prior$change_available[[1L]]))
+      paths <- c(paths, change = file.path(site_map_dir, "swe-change-7day.png"))
     return(list(status = "UNCHANGED", water_year = season$water_year,
                 date = date, paths = paths))
   }
@@ -183,12 +216,25 @@ update_snodas_current_site <- function(
     stop("SNODAS map build omitted an image.", call. = FALSE)
   }
   sources <- pilot$paths[c("observed", "departure")]
+  comparisons <- build_comparisons(date, file.path(diagnostics_dir, "latest"),
+                                    processed_dir, climatology_root)
+  if (!is.list(comparisons) || !is.logical(comparisons$change_available) ||
+      length(comparisons$change_available) != 1L || is.na(comparisons$change_available) ||
+      !is.character(comparisons$change_note) || length(comparisons$change_note) != 1L ||
+      is.na(comparisons$change_note) || !"percent" %in% names(comparisons$paths) ||
+      (comparisons$change_available && !"change" %in% names(comparisons$paths)))
+    stop("SNODAS comparison build omitted its images or availability information.")
+  sources <- c(sources, comparisons$paths["percent"])
+  if (comparisons$change_available) {
+    sources <- c(sources, comparisons$paths["change"])
+    paths <- c(paths, change = file.path(site_map_dir, "swe-change-7day.png"))
+  }
   if (!all(file.exists(sources)) ||
       any(file.info(sources)$size <= 0) ||
       any(vapply(sources, function(path) {
         inherits(try(magick::image_read(path), silent = TRUE), "try-error")
       }, logical(1)))) {
-    stop("SNODAS map build did not produce two readable PNGs.",
+    stop("SNODAS map build did not produce readable PNGs.",
          call. = FALSE)
   }
   dir.create(site_map_dir, recursive = TRUE, showWarnings = FALSE)
@@ -199,13 +245,21 @@ update_snodas_current_site <- function(
       stop("Could not stage SNODAS current map: ", name, call. = FALSE)
     }
   }
-  write_snodas_current_site_page(season$water_year, date, page_path)
+  stale <- file.path(site_map_dir, "swe-change-7day.png")
+  if (!comparisons$change_available && file.exists(stale) && !file.remove(stale))
+    stop("Could not remove stale seven-day SWE change map.")
+  write_snodas_current_site_page(season$water_year, date, page_path,
+    comparisons$change_available, comparisons$change_note)
   dir.create(diagnostics_dir, recursive = TRUE, showWarnings = FALSE)
   row <- data.frame(
     water_year = season$water_year, date = as.character(date),
     source_signature = signature,
     observed_md5 = unname(tools::md5sum(paths[["observed"]])),
     departure_md5 = unname(tools::md5sum(paths[["departure"]])),
+    percent_md5 = unname(tools::md5sum(paths[["percent"]])),
+    change_available = comparisons$change_available,
+    change_note = comparisons$change_note,
+    change_md5 = if (comparisons$change_available) unname(tools::md5sum(paths[["change"]])) else "",
     page_md5 = unname(tools::md5sum(page_path)),
     published_utc = format(Sys.time(), "%Y-%m-%d %H:%M:%S UTC", tz = "UTC"))
   utils::write.csv(row, manifest_path, row.names = FALSE)

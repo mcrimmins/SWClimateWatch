@@ -1,5 +1,52 @@
 source(file.path(project_root, "R", "daily-publish.R"))
 
+testthat::test_that("optional weather update failure does not block publication", {
+  published <- FALSE
+  withr::local_envvar(c(SWC_WEATHER_MAPS="false"))
+  result <- run_swc_daily_publish(dry_run=TRUE,force_publish=TRUE,marker_path=tempfile(),log_path=NULL,
+    prism_update=function() list(summary=data.frame(data_changed=FALSE)),
+    explorer_update=function() list(status="STAGED"),
+    weather_update=function(today) stop("weather upstream unavailable"),
+    snow_update=function(today) list(maps=list(status="OUT_OF_SEASON")),
+    station_update=function(today) list(status="UPDATED"),
+    site_fingerprint=function() "fixture",publish=function(dry_run) {published <<- TRUE; list()})
+  testthat::expect_true(published)
+  testthat::expect_equal(result$status,"PREVIEW")
+  testthat::expect_equal(result$weather$status,"ERROR")
+  testthat::expect_true(any(grepl("core publishing continued",result$summary_lines,fixed=TRUE)))
+})
+
+testthat::test_that("weather rendered failures disable only the optional panel", {
+  root <- tempfile(); dir.create(file.path(root,"daily-explorer"),recursive=TRUE)
+  on.exit(unlink(root,recursive=TRUE),add=TRUE)
+  jsonlite::write_json(list(circulation_enabled=TRUE,days=list(list(date="2026-10-01"))),
+    file.path(root,"daily-explorer","daily-data.json"),auto_unbox=TRUE)
+  testthat::expect_warning(result <- swc_daily_publish_validate_weather(root,source_dir=file.path(root,"absent")),"panel disabled")
+  testthat::expect_false(result)
+  payload <- jsonlite::read_json(file.path(root,"daily-explorer","daily-data.json"))
+  testthat::expect_false(payload$circulation_enabled)
+  testthat::expect_equal(payload$days[[1]]$date,"2026-10-01")
+})
+
+daily_publish_explorer_fixture <- function() {
+  list(status = "STAGED", days = 90L, maps = 630L, built = 1L, reused = 89L)
+}
+
+testthat::test_that("explorer failure stops before S3 and leaves the success marker alone", {
+  directory <- tempfile(); dir.create(directory)
+  on.exit(unlink(directory, recursive = TRUE), add = TRUE)
+  marker <- file.path(directory, "success.csv")
+  swc_daily_publish_write_marker(marker, "previous")
+  published <- FALSE
+  testthat::expect_error(run_swc_daily_publish(dry_run = TRUE,
+    marker_path = marker, log_path = NULL,
+    prism_update = function() list(summary = data.frame(data_changed = FALSE)),
+    explorer_update = function() stop("explorer failed"),
+    publish = function(dry_run) published <<- TRUE), "explorer failed")
+  testthat::expect_false(published)
+  testthat::expect_identical(swc_daily_publish_read_marker(marker), "previous")
+})
+
 daily_publish_prism_fixture <- function(changed = FALSE) {
   function() list(summary = data.frame(data_changed = changed))
 }
@@ -118,6 +165,7 @@ testthat::test_that("live publish records success and skips an unchanged rerun",
                marker_path = marker, log_path = log,
                prism_update = daily_publish_prism_fixture(FALSE),
                snow_update = daily_publish_snow_fixture,
+               explorer_update = daily_publish_explorer_fixture,
                station_update = daily_publish_station_fixture,
                site_fingerprint = function() "source-a", publish = publish,
                notify = function(event, message) invisible(NULL))
@@ -140,6 +188,7 @@ testthat::test_that("dry run and failed sync never advance the success marker", 
                marker_path = marker, log_path = log,
                prism_update = daily_publish_prism_fixture(TRUE),
                snow_update = daily_publish_snow_fixture,
+               explorer_update = daily_publish_explorer_fixture,
                station_update = daily_publish_station_fixture,
                site_fingerprint = function() "source-b",
                publish = function(dry_run) testthat::expect_true(dry_run),
@@ -165,6 +214,7 @@ testthat::test_that("snow failure is logged without blocking updated PRISM maps"
     log_path = file.path(directory, "runs.csv"),
     prism_update = daily_publish_prism_fixture(TRUE),
     snow_update = function(today) stop("snow source unavailable"),
+    explorer_update = daily_publish_explorer_fixture,
     station_update = daily_publish_station_fixture,
     site_fingerprint = function() "prism-map-change",
     publish = function(dry_run) called <<- TRUE,
@@ -188,6 +238,7 @@ testthat::test_that("station failure retains beta snapshot and does not block ot
     log_path = file.path(directory, "runs.csv"),
     prism_update = daily_publish_prism_fixture(TRUE),
     snow_update = daily_publish_snow_fixture,
+    explorer_update = daily_publish_explorer_fixture,
     station_update = function(today) stop("ACIS unavailable"),
     site_fingerprint = function() "other-map-change",
     publish = function(dry_run) called <<- TRUE,
@@ -208,6 +259,7 @@ testthat::test_that("PRISM failure stops publication", {
     log_path = file.path(directory, "runs.csv"),
     prism_update = function() stop("PRISM failed"),
     snow_update = daily_publish_snow_fixture,
+    explorer_update = daily_publish_explorer_fixture,
     station_update = daily_publish_station_fixture,
     site_fingerprint = function() "new",
     publish = function(dry_run) called <<- TRUE,
@@ -227,6 +279,7 @@ testthat::test_that("live workflow reports milestones and a success", {
     log_path = file.path(directory, "runs.csv"),
     prism_update = daily_publish_prism_fixture(TRUE),
     snow_update = daily_publish_snow_fixture,
+    explorer_update = daily_publish_explorer_fixture,
     station_update = daily_publish_station_fixture,
     site_fingerprint = function() "new-site",
     publish = function(dry_run) invisible(NULL),
@@ -244,7 +297,8 @@ testthat::test_that("final notices report elapsed time and fresh run statistics"
   notices <- list()
   prism <- function() list(summary = data.frame(
     data_changed = TRUE, downloaded = 27L, downloaded_changed = 3L,
-    processed = 3L, maps_rebuilt = TRUE))
+    processed = 3L, maps_rebuilt = TRUE), availability = data.frame(
+      status = "FALLBACK", selected_date = "2026-09-30"))
   publish <- function(dry_run) list(validation = list(
     current_passed = 51L, current_total = 51L,
     archive_passed = 352L, archive_total = 352L,
@@ -254,6 +308,7 @@ testthat::test_that("final notices report elapsed time and fresh run statistics"
                log_path = file.path(directory, "runs.csv"),
                prism_update = prism,
                snow_update = daily_publish_snow_fixture,
+               explorer_update = daily_publish_explorer_fixture,
                station_update = function(today) list(
                  status = "UPDATED", stations = 62L, mapped = 51L,
                  pending = 0L),
@@ -265,6 +320,7 @@ testthat::test_that("final notices report elapsed time and fresh run statistics"
   success <- tail(notices, 1L)[[1L]]$message
   testthat::expect_match(success, "Published in [0-9]+[smh]")
   testthat::expect_match(success, "PRISM: 27 checked, 3 changed, 3 processed; maps rebuilt")
+  testthat::expect_match(success, "PRISM date: 2026-09-30 (fallback; latest complete set retained).", fixed = TRUE)
   testthat::expect_match(success, "Stations: updated; 62 records \\(51 mapped\\)")
   testthat::expect_match(success, "51/51 current, 352/352 historic passed")
   testthat::expect_false(grepl("legacy", success, fixed = TRUE))
@@ -290,6 +346,7 @@ testthat::test_that("failure notice includes elapsed time and stage, not raw err
     log_path = file.path(directory, "runs.csv"),
     prism_update = daily_publish_prism_fixture(FALSE),
     snow_update = daily_publish_snow_fixture,
+    explorer_update = daily_publish_explorer_fixture,
     station_update = daily_publish_station_fixture,
     site_fingerprint = function() "new-site",
     publish = function(dry_run) stop("private render detail"),
@@ -311,6 +368,7 @@ testthat::test_that("invalid PRISM result still reports the original failure", {
     log_path = file.path(directory, "runs.csv"),
     prism_update = function() list(summary = data.frame(other = TRUE)),
     snow_update = daily_publish_snow_fixture,
+    explorer_update = daily_publish_explorer_fixture,
     station_update = daily_publish_station_fixture,
     site_fingerprint = function() "unchanged",
     publish = function(dry_run) stop("should not publish"),
@@ -356,6 +414,7 @@ testthat::test_that("dry runs do not send phone alerts", {
     log_path = file.path(directory, "runs.csv"),
     prism_update = daily_publish_prism_fixture(TRUE),
     snow_update = daily_publish_snow_fixture,
+    explorer_update = daily_publish_explorer_fixture,
     station_update = daily_publish_station_fixture,
     site_fingerprint = function() "new-site",
     publish = function(dry_run) invisible(NULL),
@@ -374,6 +433,7 @@ testthat::test_that("publication errors alert without hiding the original failur
     log_path = file.path(directory, "runs.csv"),
     prism_update = daily_publish_prism_fixture(TRUE),
     snow_update = daily_publish_snow_fixture,
+    explorer_update = daily_publish_explorer_fixture,
     station_update = daily_publish_station_fixture,
     site_fingerprint = function() "new-site",
     publish = function(dry_run) stop("render failed"),
@@ -392,6 +452,7 @@ testthat::test_that("ntfy delivery errors do not fail publication", {
     log_path = file.path(directory, "runs.csv"),
     prism_update = daily_publish_prism_fixture(TRUE),
     snow_update = daily_publish_snow_fixture,
+    explorer_update = daily_publish_explorer_fixture,
     station_update = daily_publish_station_fixture,
     site_fingerprint = function() "new-site",
     publish = function(dry_run) invisible(NULL),
@@ -415,10 +476,12 @@ testthat::test_that("rendered snow page must link its current images", {
   writeLines("<p>waiting for a listed archive</p>", rendered)
   testthat::expect_invisible(swc_daily_publish_validate_snow(directory, page))
   links <- paste0("../maps/generated/snodas/current/",
-                  c("swe-observed.png", "swe-departure.png"))
+                  c("swe-observed.png", "swe-departure.png", "swe-percent-median.png"))
   writeLines(c("**Latest map date: October 1, 2026**",
+               "Seven-day SWE change unavailable (2026-09-24 to 2026-10-01)",
                paste0("![](", links, ")")), page)
   rendered_links <- function(paths) c("<p>October 1, 2026</p>",
+    "<p>Seven-day SWE change unavailable (2026-09-24 to 2026-10-01)</p>",
     paste0('<img src="', paths, '">'),
     paste0('<a href="', paths, '">Open full-resolution PNG</a>'))
   writeLines(rendered_links(links), rendered)
@@ -428,6 +491,7 @@ testthat::test_that("rendered snow page must link its current images", {
   dir.create(image_dir, recursive = TRUE)
   writeBin(as.raw(1L), file.path(image_dir, "swe-observed.png"))
   writeBin(as.raw(1L), file.path(image_dir, "swe-departure.png"))
+  writeBin(as.raw(1L), file.path(image_dir, "swe-percent-median.png"))
   testthat::expect_invisible(swc_daily_publish_validate_snow(directory, page))
   writeLines(sub("October 1, 2026", "old date", rendered_links(links)), rendered)
   testthat::expect_error(swc_daily_publish_validate_snow(directory, page),
@@ -435,4 +499,14 @@ testthat::test_that("rendered snow page must link its current images", {
   writeLines(rendered_links(sub("^\\.\\./", "../../", links)), rendered)
   testthat::expect_error(swc_daily_publish_validate_snow(directory, page),
                          "unlinked")
+  links <- c(links, "../maps/generated/snodas/current/swe-change-7day.png")
+  writeLines(c("**Latest map date: October 1, 2026**",
+    "Net SWE change from 2026-09-24 to 2026-10-01",
+    paste0("![](", links, ")")), page)
+  writeLines(rendered_links(links), rendered)
+  testthat::expect_error(swc_daily_publish_validate_snow(directory, page), "images are missing")
+  writeBin(as.raw(1L), file.path(image_dir, "swe-change-7day.png"))
+  testthat::expect_invisible(swc_daily_publish_validate_snow(directory, page))
+  writeLines(sub("2026-09-24", "2026-09-23", rendered_links(links)), rendered)
+  testthat::expect_error(swc_daily_publish_validate_snow(directory, page), "comparison dates are stale")
 })

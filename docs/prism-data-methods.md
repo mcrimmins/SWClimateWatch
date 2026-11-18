@@ -30,6 +30,94 @@ calendar-month request therefore contains one variable, and each daily value is
 stored as a separate GeoTIFF band. Band dates are read from GDAL `Date`
 metadata rather than inferred from layer order alone.
 
+## Opportunistic one-day operational lag
+
+The normal revision/gap planner targets today minus two days. After that queue
+completes, `sync_prism()` also tries yesterday as an optional complete set.
+[PRISM's update calendar](https://prism.oregonstate.edu/calendar/) states that
+the first model run occurs about 24 hours after the PRISM day ends at 12 UTC
+(05:00 Arizona time). RCC-ACIS ingestion may add further delay; availability
+must be checked at the time of the scheduled update.
+
+Run this isolated audit from the project root, preferably around 08:00 Arizona
+time on several days:
+
+```r
+source("scripts/audit-prism-availability.R")
+prism_availability_audit$dates
+```
+
+On the VM the equivalent command is:
+
+```bash
+TZ=America/Phoenix Rscript scripts/audit-prism-availability.R
+```
+
+The audit makes nine bounded requests (three days, three variables), validates
+GeoTIFF dates and geometry, checks finite values against configured plausible
+ranges, and requires at least 99.9% coverage of the same variable's valid cells
+in the three-day-old control. This is an availability screen, not a scientific
+quality certification. Dry precipitation grids containing valid zeros qualify;
+all-missing grids, partial coverage, invalid values, and request errors do not.
+If the control cannot be read or contains no valid cells, the candidate cannot
+qualify. Temporary grids are removed; operational grids, manifests, maps and
+S3 are untouched. Each request has a 45-second timeout and no automatic retries.
+
+Reports are written under `data/diagnostics/prism-availability/`: timestamped
+`*-fields.csv` retain each run, and `latest-fields.csv` / `latest-dates.csv`
+summarize the latest check. Request failures are recorded separately from
+missing data so connectivity problems are not interpreted as source latency.
+
+Initial live check on October 30, 2026 at 10:14 MST: October 27, 28 and 29
+all qualified for precipitation, maximum temperature and minimum temperature.
+Nine requests completed in 16.9 seconds. This establishes one-day availability
+at that time, but does not yet establish reliable availability at 08:00.
+
+### Operational acceptance and fallback
+
+Yesterday is accepted only when maximum temperature, minimum temperature and
+precipitation all pass dated-band, geometry, plausible-range and coverage
+validation. Coverage must include at least 99.9% of each variable's valid
+two-day-old control footprint. All three downloads stay in a temporary staging
+directory until validation succeeds; only then are they installed and registered
+in one manifest update. A local installation error rolls back the set and remains
+fatal, rather than being mislabeled as upstream unavailability.
+
+An HTTP error, timeout, malformed/misdated response, all-missing grid, invalid
+range or insufficient coverage rejects the optional set. Normal processing and
+publication continue using the completed two-day-old set. A prior verified
+yesterday set from an earlier same-day run is retained when a refresh fails;
+its checksums and validity are rechecked before retaining it. Optional fields
+are never admitted individually. The existing revision ages and gap recovery
+remain unchanged; their errors retain the existing failure policy.
+
+This adds at most three requests, each with a 45-second timeout and no retries,
+after the normal queue. The same request cap covers both queues; fewer than
+three slots remaining defers the whole optional set. A custom subset-variable
+update or missing control set skips this optional step. The two-day-old control
+is a validation reference, not a delay imposed on maps when yesterday qualifies.
+
+Console output and `data/diagnostics/prism-availability/update-status.csv` report
+`ACCEPTED`, `FALLBACK`, `RETAINED`, `DEFERRED`, or `SKIPPED`, with candidate and
+selected dates, optional request count, and reason. The daily update result
+exposes the report as `$availability`; the final console/ntfy summary includes
+the selected date and availability outcome. Existing verified data are kept if
+the optional check is skipped. Set `SWC_PRISM_TRY_YESTERDAY=false` before sourcing
+configuration (or in the VM environment file) to restore two-day-only behavior.
+
+Run the small isolated integration test without rendering or uploading:
+
+```r
+source("scripts/test-prism-latest-fallback.R")
+```
+
+It downloads three two-day-old control fields into temporary storage, simulates
+an unavailable yesterday to verify fallback, then tries yesterday against the
+live service. The live outcome may legitimately be `FALLBACK` early in the day.
+Temporary grids are removed and a small `live-smoke.csv` report is retained.
+On October 30, 2026 this test verified both simulated fallback to October 28
+and live acceptance of all three October 29 fields.
+
 ## Periods of record
 
 The archive period and statistical baselines serve different purposes and must
@@ -643,6 +731,31 @@ previous calendar-day cache exists, a normal daily update reads only the newly
 required historical daily layers, while still checking the parent's source
 signature and file checksum.
 
+### `R/prism-water-year-temperature.R`
+
+The temperature companion uses daily `(maxt + mint)/2`, averaged from October 1
+through the latest common maximum/minimum-temperature date. Departures subtract
+the mean of matching water-year-to-date averages for WY1991–WY2020; ranks use
+the same type-8 empirical-percentile helper as the existing temperature maps.
+Each reference year is divided by its own actual day count. Missing daily
+values or inverted maximum/minimum pairs withhold the affected cell; no missing
+days are filled. February 29 references interpolate the February 28 and March 1
+cumulative means, rather than interpolating raw temperature sums.
+
+A single FLT8S reference-sum raster and checksum-verified state file are retained
+under the AOI's climatology directory in `water-year-temperature/`. Unchanged
+references are reused; later cutoffs can add the intervening daily layers,
+including gaps between update runs. Earlier source revisions, October rollover,
+or a February 29 interpolation transition cause a direct rebuild. This avoids
+retaining a separate thirty-layer cache for every calendar day.
+
+For a local build and page review, with no downloads or publication:
+
+```r
+source("scripts/build-water-year-temperature.R")
+source("scripts/preview-water-year-temperature.R")
+```
+
 ### `R/build-current-prism-water-year-maps.R`
 
 - `prism_current_water_year_total()` accumulates the current processed daily
@@ -796,19 +909,24 @@ water_year_maps
 - `prism_maximum_rolling_total()` forms every complete rolling three-day total
   in a period and retains the largest value at each grid cell. Partial one- or
   two-day windows at the start of a water year are not used.
-- `build_prism_water_year_maximum_cache()` builds one maximum layer per
-  complete baseline water year and stores the 30-layer sample as `FLT8S` with a
-  version, processed-source signature, byte size, and checksum. Because the
-  standard baseline is fixed, routine daily updates reuse this cache.
+- `build_prism_water_year_maximum_cache(target_date=...)` builds maximum-to-date
+  samples through the matching calendar date in each baseline water year. The
+  FLT8S sample is keyed by month/day, with its own version, source signature,
+  byte size and checksum. A verified previous-day cache can advance using just
+  the new rolling endpoint; changed sources or absent/incompatible predecessors
+  trigger a direct build. February 29 interpolates February 28/March 1 maxima;
+  February 29 and March 1 build directly. Omitting `target_date` retains the
+  separate complete-water-year cache for completed-season uses.
 - `prism_current_water_year_maximum()` calculates the maximum-so-far from the
   active water year's October 1 through the latest date. The daily map plan
   defers the maximum, its rank, and concentration through October 1-2, while
   the site shows waiting pages. All three resume automatically with data
   through October 3; other current maps continue to update.
 - `calculate_current_prism_water_year_maximum_products()` writes the observed
-  maximum and its empirical type-8 rank against complete historical maxima.
-  The active-year rank is provisional until September 30 because additional
-  events can only maintain or increase the current maximum.
+  maximum and its empirical type-8 rank against matched maximum-to-date samples.
+  Reference and current rolling windows are confined to October 1 through the
+  same calendar date, preventing future monsoon storms from depressing early
+  water-year ranks. The empirical type-8 calculation itself is unchanged.
 - `build_current_prism_water_year_maximum_maps()` writes dated and stable
   `latest` maps. The observed map is capped visually at 8+ inches while the
   raster retains uncapped values.

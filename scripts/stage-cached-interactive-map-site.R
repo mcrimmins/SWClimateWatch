@@ -1,0 +1,16 @@
+# Refresh the viewer from the accepted monthly release and cached daily/current grids.
+source("R/interactive-map-pilot.R")
+source("scripts/load-daily-explorer.R")
+source("R/interactive-map-daily.R")
+source("R/interactive-map-current.R")
+source("R/interactive-map-site.R")
+source("R/interactive-map-staging.R")
+source("scripts/load-prism-monthly.R")
+source("R/prism-monthly-site.R")
+source("R/interactive-map-workflow.R")
+interactive_staging <- refresh_interactive_map_site()
+source("scripts/load-snodas-current-site.R")
+source("R/interactive-map-snow-pilot.R")
+source("R/interactive-map-snow-current.R")
+interactive_staging <- refresh_interactive_snow_workflow(interactive_staging,
+  enabled = tolower(Sys.getenv("SWC_INTERACTIVE_SNOW", "true")) == "true")

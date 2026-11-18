@@ -15,6 +15,20 @@ testthat::test_that("configured display modes can be supplied for an update run"
 })
 
 testthat::test_that("categorical families use interpretable climate classes", {
+  spi <- map_product_categorical_classes("monthly_spi", c(.5, 8.5), c(.5, 8.5))
+  testthat::expect_equal(length(spi$labels), 8)
+  testthat::expect_true("Not\nestimated" %in% spi$labels)
+  monthly <- map_product_categorical_classes("monthly_temperature_percentile", c(0, 100), c(0, 100))
+  testthat::expect_true("33-67\nnear middle" %in% monthly$labels)
+  rain <- map_product_categorical_classes("monthly_precipitation_percentile", c(0, 100), c(0, 100))
+  testthat::expect_true("<=2\nexceptionally dry" %in% rain$labels)
+  testthat::expect_true(">98\nexceptionally wet" %in% rain$labels)
+  records <- map_product_categorical_classes("monthly_precipitation_record_percentile", c(0, 101), c(0, 101))
+  testthat::expect_equal(length(records$labels), 9)
+  testthat::expect_equal(head(records$labels, 1), "Record\ndry*")
+  testthat::expect_equal(tail(records$labels, 2), c(">98\nnear-record wet", "Record\nwet*"))
+  record_temp <- map_product_categorical_classes("monthly_temperature_record_percentile", c(0, 101), c(0, 101))
+  testthat::expect_equal(tail(record_temp$labels, 1), "Record\nwarm*")
   percentile <- map_product_categorical_classes(
     "pcpn_percentile_30day", c(0, 10, 25, 50, 75, 90, 100), c(0, 100)
   )

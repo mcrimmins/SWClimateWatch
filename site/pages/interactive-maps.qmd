@@ -1,0 +1,39 @@
+---
+title: "Interactive Maps"
+page-layout: full
+toc: false
+---
+
+Explore Current Conditions, Daily History, or Monthly Climate with roads, terrain
+or satellite backgrounds. Select a map, then click or tap a location for the
+value of its original source grid cell.
+
+[Open interactive maps full screen](../interactive-maps/index.html){.btn .btn-sm .btn-outline-primary}
+
+<iframe id="interactive-map-frame" src="../interactive-maps/index.html?embedded=1" title="Current conditions, daily history and monthly climate maps with source-cell values" style="width:100%;height:1450px;border:0;display:block" loading="eager"></iframe>
+
+<script>
+(() => {
+  const frame = document.getElementById("interactive-map-frame");
+  // An explicit no-basemap URL is useful for local offline/automated review.
+  const requested = new URLSearchParams(window.location.search).get("basemap");
+  if (["off", "none", "street", "terrain", "satellite"].includes(requested)) {
+    const source = new URL(frame.src, window.location.href);
+    source.searchParams.set("basemap", requested);
+    frame.src = source.href;
+  }
+  let observer;
+  frame.addEventListener("load", () => {
+    observer?.disconnect();
+    const body = frame.contentDocument?.body;
+    if (!body) return;
+    const resize = () => {
+      const height = Math.max(550, Math.ceil(body.getBoundingClientRect().height) + 16);
+      if (frame.style.height !== `${height}px`) frame.style.height = `${height}px`;
+    };
+    resize();
+    observer = new ResizeObserver(resize);
+    observer.observe(body);
+  });
+})();
+</script>

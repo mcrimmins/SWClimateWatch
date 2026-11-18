@@ -673,19 +673,39 @@ acis_station_explorer_daily_detail <- function(station, cache, as_of) {
 
 write_acis_station_explorer_details <- function(
     stations, caches, as_of,
-    output_dir = file.path(swc_acis_station_dir, "station-explorer-prototype")) {
+    output_dir = file.path(swc_acis_station_dir, "station-explorer-prototype"),
+    module_dir = "R",
+    reference_cache_dir = file.path("data","processed","acis-stations","temperature-normals"),
+    monthly_cache_dir = file.path("data","processed","acis-stations","monthly-climatology")) {
   if (length(caches) != nrow(stations) || anyDuplicated(stations$uid)) {
     stop("Station detail caches do not match the station list.")
   }
   directory <- file.path(output_dir, "station-details")
   dir.create(directory, recursive = TRUE, showWarnings = FALSE)
+  references <- new.env(parent=environment())
+  for (module in c("acis-station-temperature-normals.R",
+                   "acis-station-temperature-records.R",
+                   "acis-station-precipitation-records.R","acis-station-monthly-climatology.R"))
+    sys.source(file.path(module_dir,module),envir=references)
   paths <- vapply(seq_len(nrow(stations)), function(i) {
     detail <- acis_station_explorer_daily_detail(
       stations[i, , drop = FALSE], caches[[i]], as_of)
+    normals <- references$read_or_build_acis_temperature_normals(
+      caches[[i]],stations$uid[[i]],
+      reference_cache_dir)
+    detail <- references$acis_attach_temperature_normals(detail,normals$reference)
+    detail <- references$acis_attach_temperature_records(detail,caches[[i]])
+    detail <- references$acis_attach_precipitation_records(detail,caches[[i]])
+    monthly <- references$prepare_acis_station_monthly_reference(
+      caches[[i]],stations$uid[[i]],as_of,monthly_cache_dir)
+    detail$monthly_climatology <- monthly$reference
+    references$validate_acis_station_monthly_detail(detail,stations$uid[[i]],as_of)
     path <- file.path(directory, paste0(as.integer(stations$uid[[i]]), ".json"))
     writeLines(as.character(jsonlite::toJSON(
-      detail, dataframe = "rows", na = "null", auto_unbox = TRUE,
+      detail, dataframe = "rows", na = "null", null = "null", auto_unbox = TRUE,
       digits = 7)), path, useBytes = TRUE)
+    if (i %% 10L == 0L || i == nrow(stations))
+      message(sprintf("Station daily charts: %d/%d references prepared.",i,nrow(stations)))
     path
   }, character(1))
   unname(paths)
@@ -760,7 +780,7 @@ write_acis_station_explorer_prototype <- function(
     }
   }
   dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
-  for (name in c("explorer.css", "explorer.js")) {
+  for (name in c("explorer.css", "explorer.js", "temperature-normals.js", "temperature-normals.css", "station-chart-tools.js", "monthly-climatology.js", "monthly-climatology.css")) {
     if (!file.copy(file.path(asset_dir, name), file.path(output_dir, name),
                    overwrite = TRUE)) stop("Could not copy explorer asset: ", name)
   }
@@ -845,6 +865,9 @@ build_acis_station_explorer_prototype <- function(
   rows <- acis_station_explorer_rows(stations, as_of, cache_dir, cached)
   details <- write_acis_station_explorer_details(
     stations, cached, as_of, output_dir)
+  if (!exists("write_acis_station_seasonal_site", mode="function"))
+    sys.source(file.path("R","acis-station-seasonal-pilot.R"),envir=environment())
+  write_acis_station_seasonal_site(stations, cached, as_of, output_dir)
   page <- write_acis_station_explorer_prototype(rows, output_dir)
   list(page = page, detail_paths = details, rows = rows, as_of = as.Date(as_of))
 }

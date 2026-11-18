@@ -1,0 +1,10 @@
+# Run after build-water-year-temperature.R. Render only the new page locally.
+source("scripts/stage-current-map-groups.R")
+source("scripts/deploy-site-s3.R")
+temperature_quarto <- swc_deploy_quarto()
+if(.Platform$OS.type=="windows") temperature_quarto <- utils::shortPathName(temperature_quarto)
+status <- system2(temperature_quarto,c("render","site/pages/water-year-temperature.qmd"))
+if(status!=0L) stop("Local temperature page render failed; nothing published.")
+page <- normalizePath("site/_site/pages/water-year-temperature.html",mustWork=TRUE)
+if(interactive()) utils::browseURL(page)
+message("Local review: ",page,". No publication.")

@@ -1,0 +1,35 @@
+source(file.path(project_root,"R","weather-circulation-pilot.R"))
+source(file.path(project_root,"R","weather-seven-day-pilot.R"))
+testthat::test_that("weekly means require all seven finite days, including real zeros",{
+  values<-rbind(1:7,rep(0,7),seq(10,70,10))
+  testthat::expect_equal(weather_mean_complete_average(values),c(4,0,40))
+  testthat::expect_error(weather_mean_complete_average(values[,1:6]),"Seven")
+  values[1,3]<-NA
+  testthat::expect_error(weather_mean_complete_average(values),"no partial")
+})
+testthat::test_that("selected daily indexes reject wrong dates, partial samples and invalid offsets",{
+  lines<-c("1:0:d=2026100100:HGT:500 mb:8@3 hour ave(anl),missing=0:",
+    "2:32:d=2026100100:UGRD:250 mb:8@3 hour ave(anl),missing=0:")
+  testthat::expect_equal(weather_mean_record(lines,"2026-10-01","height500"),list(start=0,end=31))
+  testthat::expect_error(weather_mean_record(lines,"2026-10-02","height500"),"exact date")
+  testthat::expect_error(weather_mean_record(sub("missing=0","missing=1",lines),"2026-10-01","height500"),"complete UTC")
+  testthat::expect_error(weather_mean_record(sub("2:32","2:0",lines),"2026-10-01","height500"),"offsets")
+  testthat::expect_error(weather_mean_record(lines,"2026-10-01","pwat"),"Missing")
+})
+testthat::test_that("cached record checks detect corruption and missing calendar dates",{
+  root<-tempfile("weather-mean-");dir.create(root);on.exit(unlink(root,recursive=TRUE),add=TRUE)
+  directory<-file.path(root,"2026-10-01");dir.create(directory)
+  body<-raw(32);body[1:4]<-charToRaw("GRIB");body[8]<-as.raw(2);body[16]<-as.raw(32);body[29:32]<-charToRaw("7777")
+  path<-file.path(directory,"height500.grb");writeBin(body,path)
+  writeLines(c("1:0:d=2026100100:HGT:500 mb:8@3 hour ave(anl),missing=0:",
+    "2:32:d=2026100100:UGRD:250 mb:8@3 hour ave(anl),missing=0:"),file.path(directory,"source.idx"))
+  saveRDS(list(md5=unname(tools::md5sum(path))),paste0(path,".rds"))
+  testthat::expect_true(!is.null(weather_mean_cached_field("2026-10-01","height500",root)))
+  plan<-plan_weather_seven_day("2026-10-05",root)
+  testthat::expect_equal(nrow(plan),14L);testthat::expect_equal(sum(plan$ready),1L)
+  testthat::expect_equal(length(unique(plan$date)),7L)
+  testthat::expect_error(weather_mean_decode(plan),"both fields")
+  testthat::expect_error(weather_mean_download_missing(plan),"cap exceeded")
+  body[20]<-as.raw(1);writeBin(body,path)
+  testthat::expect_null(weather_mean_cached_field("2026-10-01","height500",root))
+})

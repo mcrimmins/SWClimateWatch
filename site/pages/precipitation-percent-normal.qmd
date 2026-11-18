@@ -1,0 +1,26 @@
+---
+title: "Percent of normal"
+page-layout: full
+toc: false
+---
+
+```{=html}
+<div class="current-group-preview" data-group="precipitation-percent-normal">
+<p>Precipitation relative to the corresponding 1991–2020 average: 100% is average and 200% is twice average. This measures the amount relative to normal, rather than its percentile rank.</p>
+<div class="temperature-variable-tabs" role="tablist" aria-label="Percent of normal">
+<button type="button" id="group-tab-precipitation" role="tab" data-tab="precipitation" aria-controls="group-maps">Precipitation</button>
+</div>
+<div class="temperature-period-control group-variant-control"><label for="group-variant">Time period</label><select id="group-variant"></select></div>
+<div id="group-maps" role="tabpanel" aria-live="polite">
+<article class="group-map" data-product="pcpn_percent_normal_30day" data-tab="precipitation" data-variant="30" data-option="30 days"><h2 class="group-map-heading">30-day percent of normal</h2>
+<a href="../maps/generated/prism/precipitation/pcpn-percent-normal-30day-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/precipitation/pcpn-percent-normal-30day-latest.png" alt="30-day percent of normal" loading="lazy"></a>
+<p>The latest 30-day precipitation total is divided by the average of 1991-2020 totals ending within two calendar days of this date and expressed as a percentage. Values below 100% indicate less precipitation than average and values above 100% more; cells with a historical average below 0.10 inch are blank.</p>
+<p><a href="../maps/generated/prism/precipitation/pcpn-percent-normal-30day-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="pcpn_percent_normal_90day" data-tab="precipitation" data-variant="90" data-option="90 days"><h2 class="group-map-heading">90-day percent of normal</h2>
+<a href="../maps/generated/prism/precipitation/pcpn-percent-normal-90day-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/precipitation/pcpn-percent-normal-90day-latest.png" alt="90-day percent of normal" loading="lazy"></a>
+<p>The latest 90-day precipitation total is divided by the average of 1991-2020 totals ending within two calendar days of this date and expressed as a percentage. Values below 100% indicate less precipitation than average and values above 100% more; cells with a historical average below 0.10 inch are blank.</p>
+<p><a href="../maps/generated/prism/precipitation/pcpn-percent-normal-90day-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+</div></div><script src="../assets/current-map-groups/current-map-groups.js"></script>
+```

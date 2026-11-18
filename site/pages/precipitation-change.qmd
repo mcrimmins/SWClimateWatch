@@ -1,0 +1,21 @@
+---
+title: "Recent precipitation change"
+page-layout: full
+toc: false
+---
+
+```{=html}
+<div class="current-group-preview" data-group="precipitation-change">
+<p>Change in the 30-day precipitation percentile rank over the past 14 days, in percentile points. Positive values indicate a shift toward wetter conditions; this is not a precipitation total.</p>
+<div class="temperature-variable-tabs" role="tablist" aria-label="Recent precipitation change">
+<button type="button" id="group-tab-change" role="tab" data-tab="change" aria-controls="group-maps">Change in rank</button>
+</div>
+<div class="temperature-period-control group-variant-control"><label for="group-variant">Display</label><select id="group-variant"></select></div>
+<div id="group-maps" role="tabpanel" aria-live="polite">
+<article class="group-map" data-product="pcpn_percentile_change_30day_14day" data-tab="change" data-variant="map" data-option="14-day change"><h2 class="group-map-heading">14-day change in 30-day rank</h2>
+<a href="../maps/generated/prism/precipitation/pcpn-percentile-rank-change-30day-over-14day-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/precipitation/pcpn-percentile-rank-change-30day-over-14day-latest.png" alt="14-day change in 30-day rank" loading="lazy"></a>
+<p>This map subtracts the 30-day precipitation percentile rank from 14 days ago from today's 30-day rank, using each date's matching 1991-2020 seasonal sample. Positive percentile-point changes show relative wetting and negative changes show relative drying, rather than a change in precipitation inches.</p>
+<p><a href="../maps/generated/prism/precipitation/pcpn-percentile-rank-change-30day-over-14day-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+</div></div><script src="../assets/current-map-groups/current-map-groups.js"></script>
+```

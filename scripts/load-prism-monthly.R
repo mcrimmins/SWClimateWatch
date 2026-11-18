@@ -1,0 +1,11 @@
+# Run from the project root. Defines functions; performs no downloads.
+source("R/config.R")
+source("R/acis-prism.R")
+source("R/process-prism.R")
+source("R/prism-monthly.R")
+source("R/prism-monthly-audit.R")
+source("R/prism-monthly-temperature.R")
+source("R/prism-monthly-precipitation.R")
+source("R/prism-monthly-ranking-pilots.R")
+source("R/prism-monthly-spi.R")
+source("R/prism-monthly-update.R")

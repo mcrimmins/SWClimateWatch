@@ -1,13 +1,28 @@
 # Publishable snapshot of the screened, local ACIS station explorer.
 # Source after the station explorer and publication-audit modules.
+.swc_station_module_files <- Filter(function(x)is.character(x)&&length(x)==1L,
+  lapply(sys.frames(),function(frame)frame$ofile))
+source(file.path(dirname(tail(.swc_station_module_files,1)[[1]]),"acis-station-monthly-climatology.R"),local=TRUE)
+source(file.path(dirname(tail(.swc_station_module_files,1)[[1]]),"site-cache.R"),local=TRUE)
+rm(.swc_station_module_files)
 
 swc_station_beta_files <- c(
   "index.html", "explorer.js", "explorer.css", "leaflet.js", "leaflet.css",
+  "temperature-normals.js", "temperature-normals.css",
   "leaflet-package-LICENSE", "station-explorer-data.csv",
   "coverage-by-station.csv", "coverage-summary.csv")
 
 swc_station_beta_snapshot <- function(directory) {
-  paths <- file.path(directory, swc_station_beta_files)
+  js_path <- file.path(directory,"explorer.js")
+  explorer_js <- if(file.exists(js_path)) paste(readLines(js_path,warn=FALSE),collapse="\n") else ""
+  integrated_charts <- grepl("SWCStationTemperatureNormals",explorer_js,fixed=TRUE)
+  required_files <- if(integrated_charts) swc_station_beta_files else
+    setdiff(swc_station_beta_files,c("temperature-normals.js","temperature-normals.css"))
+  if(grepl("SWCStationChartTools",explorer_js,fixed=TRUE))
+    required_files <- c(required_files,"station-chart-tools.js")
+  monthly_charts <- grepl("SWCStationMonthlyClimatology",explorer_js,fixed=TRUE)
+  if(monthly_charts)required_files <- c(required_files,"monthly-climatology.js","monthly-climatology.css")
+  paths <- file.path(directory, required_files)
   if (!all(file.exists(paths)) || any(file.info(paths)$size <= 0))
     stop("Station snapshot is missing a required nonempty file.", call. = FALSE)
   rows <- read.csv(file.path(directory, "station-explorer-data.csv"),
@@ -34,6 +49,35 @@ swc_station_beta_snapshot <- function(directory) {
           (is.finite(rows$pcpn_anomaly) | is.finite(rows$pcpn_percentile))))
     stop("A provisional precipitation total has a comparison value.",
          call. = FALSE)
+  if(monthly_charts&&(!grepl('src="monthly-climatology(\\.swc-[a-f0-9]{16})?\\.js"',html)||
+      !grepl('href="monthly-climatology(\\.swc-[a-f0-9]{16})?\\.css"',html)))
+    stop("Station page does not link monthly climatology assets.",call.=FALSE)
+  if (integrated_charts) {
+    for (path in details) {
+      detail <- jsonlite::read_json(path,simplifyVector=TRUE)
+      required_daily <- c("normal_maxt","normal_mint","normal_years",
+                          "record_high","record_low","record_pcpn","record_pcpn_status")
+      if (!identical(as.character(detail$as_of),rows$as_of[[1L]]) ||
+          !identical(paste0(detail$uid,".json"),basename(path)) ||
+          !all(required_daily %in% names(detail$daily)) ||
+          is.null(detail$temperature_reference) || is.null(detail$temperature_records) ||
+          is.null(detail$precipitation_records))
+        stop("Rebuild station details with daily normals and records before staging: ",path,
+             call.=FALSE)
+    }
+  }
+  if(monthly_charts)for(path in details) {
+    detail<-jsonlite::read_json(path,simplifyVector=TRUE)
+    validate_acis_station_monthly_detail(detail,sub("\\.json$","",basename(path)),rows$as_of[[1L]])
+  }
+  if (grepl("cumulative/index.html", explorer_js, fixed = TRUE))
+    validate_acis_station_cumulative_site(file.path(directory, "cumulative"),
+      unique(rows$uid), rows$as_of[[1L]])
+  if (grepl("seasonal/index.html", explorer_js, fixed = TRUE)) {
+    context <- new.env(parent=environment())
+    sys.source(file.path("R","acis-station-seasonal-pilot.R"),envir=context)
+    context$validate_station_seasonal_integration(directory)
+  }
   list(date = as.Date(rows$as_of[[1L]]), rows = rows,
        stations = length(unique(rows$uid)),
        mapped = length(unique(rows$uid[rows$role == "fixed"])),
@@ -64,6 +108,12 @@ swc_station_beta_stage <- function(
   dir.create(stage)
   on.exit(if (dir.exists(stage)) unlink(stage, recursive = TRUE), add = TRUE)
   copied <- file.copy(file.path(source_dir, swc_station_beta_files), stage)
+  for(name in c("monthly-climatology.js","monthly-climatology.css"))
+    if(file.exists(file.path(source_dir,name))&&!file.copy(file.path(source_dir,name),stage))
+      stop("Could not copy station monthly climatology assets; last good page retained.")
+  if(file.exists(file.path(source_dir,"station-chart-tools.js")) &&
+     !file.copy(file.path(source_dir,"station-chart-tools.js"),stage))
+    stop("Could not copy station chart controls; last good page retained.")
   dir.create(file.path(stage, "station-details"))
   details <- list.files(file.path(source_dir, "station-details"),
                         pattern = "^[0-9]+\\.json$", full.names = TRUE)
@@ -71,6 +121,16 @@ swc_station_beta_stage <- function(
   if (!all(copied) || !length(details) || !all(detail_copied))
     stop("Could not copy the full station snapshot; last good page retained.",
          call. = FALSE)
+  linked_js <- paste(readLines(file.path(source_dir,"explorer.js"),warn=FALSE),collapse="\n")
+  if (grepl("cumulative/index.html",linked_js,fixed=TRUE) &&
+      dir.exists(file.path(source_dir, "cumulative")) &&
+      !file.copy(file.path(source_dir, "cumulative"), stage, recursive = TRUE))
+    stop("Could not copy cumulative station resources; last good page retained.")
+  if (grepl("seasonal/index.html",linked_js,fixed=TRUE) &&
+      dir.exists(file.path(source_dir, "seasonal")) &&
+      !file.copy(file.path(source_dir, "seasonal"), stage, recursive = TRUE))
+    stop("Could not copy seasonal station resources; last good page retained.")
+  swc_cache_version_app(stage)
   swc_station_beta_snapshot(stage)
   had_previous <- dir.exists(destination)
   if (had_previous && !file.rename(destination, backup))

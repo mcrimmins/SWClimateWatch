@@ -207,6 +207,140 @@ The repeatable, local [publication-readiness audit](station-publication-readines
 separates unavailable products from calculable products that still need
 human station-record review.
 
+## Local pilot: cumulative water-year precipitation (November 3, 2026)
+
+The standalone three-station pilot is separate from the public Station
+Conditions page and daily publisher. It reads existing fixed-station caches
+for Tucson International Airport (29687), Phoenix Airport (1403), and Albuquerque
+International Airport (19376); it does not request ACIS data.
+
+From the project root in RStudio:
+
+```r
+source("scripts/build-station-cumulative-pilot.R")
+source("scripts/serve-station-cumulative-pilot.R")
+```
+
+The preview opens at `http://127.0.0.1:8770/`; output is under
+`data/diagnostics/station-cumulative-pilot/`. The serving script reuses an
+already running cumulative preview on that port. Rebuild and refresh the
+browser to see changes. If another application owns the port, choose a new
+one with `serve_station_cumulative_pilot(port = 8771)`; no existing server is stopped.
+The initial laptop snapshot ends October 6, 2026; it is labeled as cached data,
+not a current operational snapshot. Current-date changes require newer station
+caches, not changes to the plot's calendar.
+
+The plot shows the current water year's cumulative precipitation, a selected
+complete historical water year (defaulting to the previous year when eligible),
+and mean of complete WY1991-WY2020 cumulative curves. A pale band shows their
+pointwise 25th-75th percentiles (quantile type 8), with at least 20 complete
+baseline years. This is a historical distribution range, not an uncertainty or
+forecast interval; quantiles are calculated from cumulative totals at each date,
+not summed daily quantiles. All three initial stations support all 30 baseline
+years. Season-to-date and full-water-year views share hover/tap readouts and an
+accessible date slider. Future comparison curves are historical context, not
+forecasts. Month/day alignment omits a separate February 29 position but includes
+its rainfall in March 1 and subsequent totals.
+
+Trace precipitation contributes zero; other quality flags, multi-day accumulated
+reports and invalid/missing values are unusable. A cumulative line stops at the
+first unusable day rather than filling it with zero or resuming a misleading
+complete total. Subsequent known amounts are identified in the readout as an
+observed lower bound with missing/flagged counts. Reference years must be
+complete for the entire water year so the mean curve's sample remains constant.
+
+The historical dropdown includes only fully complete past water years from
+each cached record, with no large collection of colored background lines.
+The default previous-year series is already in the station payload; additional
+years are fetched only on selection and cached in the browser. Failed or stale
+comparison requests do not replace the selected station/year or remove its
+current/reference curves. An explicit None option hides the comparison.
+
+The pilot also adds two thin dotted historical high/low boundaries using all
+eligible complete historical years, not only the normal-period sample. Hover
+readouts show each boundary's value, record years and ties; the winning year may
+change along a boundary. A status row compares current accumulation through the
+latest plotted date with those bounds, distinguishing above/below range, ties
+and unavailable current data. These are records among the stated complete-year
+sample, not all-time claims over incomplete or unsupported station years.
+
+Closest match is a dropdown option based on root-mean-square difference between
+calendar-matched cumulative progressions from October 1 through the latest
+plotted observation date, not just similarity of the final total. It requires
+complete current accumulation and at least 20 complete historical years.
+Errors are in inches; the method does not normalize by annual totals or use
+future current-year data. A numerical tolerance of 0.000001 inch resolves
+floating-point ties for both record comparisons and matching. The most recent
+tied match is displayed, with the tie count; matches before 30 aligned dates
+carry an early-season note. The matched year is descriptive, not a forecast.
+The existing 365-position month/day alignment and leap-day convention apply;
+the displayed matching cutoff is explicit if February 29 is not a separate point.
+
+Initial three-line build: about 3 seconds and 77 KB per station. With the band
+and historical selection: about 9 seconds, 94-98 KB per station, and 291 small
+historical curve files totaling approximately 0.54 MB for all three stations.
+With record boundaries, year annotations and closest-match metadata, the main
+station files are approximately 139-144 KB each; the historical curve files are
+unchanged. Context calculation reuses already screened historical curves and
+adds no downloads. No full collection of historical curves is fetched in the browser.
+Unchanged JSON files are not rewritten. `history-audit.csv` records excluded
+years and missing/flagged counts. These are local pilot costs, not a benchmark
+for full-network daily integration. Tests cover missing/flagged
+days, traces, baseline eligibility, leap-day accumulation, future values, line
+gaps, browser inspection, caching, failed requests and station-selection races:
+Record and matching tests also cover changing record years, ties, sparse or
+incomplete data, and a case where the closest progression differs from the
+closest ending total.
+
+```r
+testthat::test_dir("tests/testthat", filter = "^acis-station-cumulative-pilot$")
+```
+
+```bash
+node tests/test-station-cumulative-ui.cjs
+```
+
+Next after visual review: choose placement in station details; cache baseline
+and historical calculations independently from current-year refreshes; consider
+optional very faint background curves; test stations with incomplete records; then assess full
+network payload/runtime before staging. This pilot does not change publication.
+
+## Future scope: custom date periods
+
+Backlog entry, October 25, 2026. Assess a start/end-date selector in addition
+to the existing summary-period presets; no UI or processing change is authorized
+by this note. Runtime, published size and browser responsiveness are constraints.
+
+- Start with dates bounded to the recent daily series already exported in
+  on-demand station detail JSON (currently the longest supported rolling window).
+  Basic observed totals/means and eligible recent extremes could be calculated
+  from those values without new station-history downloads. This still needs a
+  browser/payload benchmark and is not a promise of zero update or browser cost.
+- Decide whether the first version is selected-station-only or changes the
+  whole network map and table. The latter needs daily data for all displayed
+  stations, unlike the current on-demand detail view. Load/cache it only when
+  custom mode is selected; retain the lightweight preset startup path.
+- Preserve current precipitation completeness/lower-bound rules, paired-day
+  temperature thresholds, flags and notation. Specify their behavior for custom
+  durations, one-day windows and maximum allowed range; do not silently apply
+  a permissive long-window missing-day rule to a short event. Test agreement
+  between browser calculations and the existing R definitions.
+- Arbitrary-date departures, percentiles and ranks need matching historical
+  windows and support checks. Existing preset summaries cannot be interpolated
+  into valid custom-period comparisons. Initially withhold unavailable
+  comparisons with an explicit explanation. A later approved design could use
+  constrained precomputed periods or a separate on-demand service; do not ship
+  full historical daily records or precompute every start/end combination.
+- Keep seasonal freeze-night counts explicitly tied to October-March, rather
+  than silently redefining that indicator when custom dates change.
+- Before implementation, benchmark a few representative ranges across the full
+  network: transfer bytes, additional published size, update time, browser memory
+  and calculation/interaction latency on desktop and a mobile-class device.
+  Include missing/flagged/stale stations, leap days and month/year boundaries.
+- Review the scope and cost with the user, then prototype locally. No production
+  or daily-workflow integration until the performance limits and statistical
+  behavior are approved.
+
 ## Daily-chart interaction
 
 Hover, focus, or tap a chart day to see its date and precipitation total or
@@ -236,3 +370,72 @@ publication.
 The source and quality-audit context is in
 [station-reference-network.md](station-reference-network.md) and
 [station-daily-pilot.md](station-daily-pilot.md).
+
+## Cumulative plot integration (local review, November 3, 2026)
+
+The selected station detail now includes the water-year cumulative plot beneath
+its daily charts, for all 62 cached fixed-station and ThreadEx records. The map
+and table summary-period selector still controls daily plots and period metrics;
+the cumulative plot explicitly remains October 1–September 30. Its own selector
+switches season-to-date/full-year display, with historical high/low bounds,
+1991–2020 mean and middle-50% band, historical-year selection and closest
+progression. Current gaps stop complete totals; missing station caches and
+insufficient baseline/history support receive explicit unavailable messages.
+
+The explorer build and daily station updater generate these files from cached
+observations without additional ACIS requests. Historical screening and
+reference curves are cached in
+`data/processed/acis-stations/cumulative-history/`, keyed by historical
+precipitation content, station identity, water year and calculation version.
+Past revisions or October rollover invalidate them; current-year revisions
+refresh the current curve and closest match without rescreening past years.
+The browser loads only the selected station payload and one comparison curve
+at a time. The parent passes station identity and page date to the embedded
+plot; unknown stations/date mismatches cannot silently show a different plot.
+Staging copies the cumulative directory, and staging and rendered-site
+validation require station payloads and the catalogued comparison files.
+
+To refresh the integrated preview from existing caches (no downloads or upload):
+
+```r
+source("scripts/build-acis-station-cumulative.R")
+source("scripts/refresh-acis-station-explorer-preview.R")
+source("scripts/serve-acis-station-explorer-prototype.R")
+```
+
+Select a station on the map or in a table, then scroll below its daily plots.
+The earlier three-airport standalone prototype remains available for isolated
+plot experiments. The cumulative integration is live as of November 4; the
+historical-total chart described below is a subsequent local increment.
+
+The full-network local benchmark produced about 16 MB of cumulative JSON
+(3,902 files, including the main station payloads and catalog). A repeat build
+reused all 62 historical/reference caches in about 29 seconds, with no ACIS
+requests. This measures the cumulative stage only, not full publication. Browser
+startup does not fetch this collection; files are requested for a selected station
+and comparison year. Production integration was confirmed by the user on November 4;
+the benchmark above remains a laptop measurement.
+
+## Historical water-year totals (November 4 local increment)
+
+Below the cumulative plot, completed water years now appear as interactive
+precipitation-total bars. This reuses `comparison_years` annual totals already
+present in each station's small payload; no additional daily histories,
+downloads, historical-curve requests or numerical fitting are introduced.
+Small `annual_history` metadata adds the cached record's starting year,
+missing/incomplete years and supported full-year normal. The current year
+is a hatched bar, labeled season to date with its observation cutoff and any
+lower-bound caution. It remains excluded from completed-year comparisons.
+
+The normal is the endpoint of the supported complete-WY1991–WY2020 mean
+cumulative curve. It is withheld below 20 complete baseline years. Hover/tap or
+keyboard slider inspection reports year, inches and percent of that full-year
+average; percent is unavailable if the normal is missing or zero. Above/below
+average colors describe amounts, not statistical rarity. Incomplete/flagged
+years are gaps rather than zero bars. No trend or record-homogeneity claim is
+made. Seasonal periods and regional summaries remain future increments.
+
+Refresh with `scripts/build-acis-station-cumulative.R`; the normal daily
+station builder includes this update automatically. Review locally, then stage
+before explicit production promotion. The same integrated preview is served
+from the station explorer directory.

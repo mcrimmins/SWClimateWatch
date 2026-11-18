@@ -1,0 +1,27 @@
+---
+title: "Daily Explorer"
+page-layout: full
+toc: false
+---
+
+Explore daily PRISM precipitation and temperature for the current water year,
+with the preceding September included for comparisons across October 1.
+Recent observations are preliminary and may be revised. The explorer shows
+the latest available data date, which can lag today's date.
+
+[Open Daily Explorer full screen](../daily-explorer/index.html){.btn .btn-sm .btn-outline-primary}
+
+<iframe id="daily-explorer-frame" src="../daily-explorer/index.html?embedded=1" title="Daily precipitation and temperature maps, timeline and notable days" style="width:100%;height:2300px;border:0;display:block" loading="eager"></iframe>
+
+<script>
+(() => {
+  const frame = document.getElementById("daily-explorer-frame");
+  frame.addEventListener("load", () => {
+    const body = frame.contentDocument?.body;
+    if (!body) return;
+    const resize = () => { frame.style.height = `${Math.max(850, body.scrollHeight + 12)}px`; };
+    resize();
+    new ResizeObserver(resize).observe(body);
+  });
+})();
+</script>

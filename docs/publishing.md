@@ -1,5 +1,180 @@
 # Updating and publishing the site
 
+## Historical seasonal snow anomalies
+
+The November 13 release prepares WY2005-WY2025 peak-SWE departure and
+percent-of-median companions for Historic Years. Before publishing a checkout
+with `config/snodas-seasonal-anomalies.yml` enabled, build or transfer its
+verified anomaly archive. Normal publication reconciles cached pages/maps and
+validates them after rendering; it does not calculate the archive daily.
+See [local build and staging prerequisites](snodas-seasonal-anomaly-release.md).
+This increment still requires staging and production acceptance.
+
+## Optional monthly climate cycle
+
+After transferring and verifying a checkout's monthly cache, set
+`SWC_MONTHLY_MAPS=true` in its VM environment file. The existing daily command
+then checks recent monthly PRISM inputs during days 1–5 and stages completed
+monthly maps before rendering. Successful cycles skip new source requests;
+failed/pending cycles retain verified maps and report status through the
+console and ntfy. No extra cron job is needed. See the
+[monthly daily integration guide](monthly-daily-integration.md) for staging
+checkout, enablement, tests and manual catch-up. This setting defaults to false;
+site-only publication always uses retained monthly products.
+
+## PRISM freshness and automatic fallback
+
+Normal daily publication now tries yesterday after completing the usual PRISM
+revision/gap queue. All three fields must validate together; otherwise it keeps
+the completed two-day-old set (or an already verified yesterday set). This is
+automatic and does not require a new daily command. Console and ntfy completion
+messages include the selected PRISM date and availability outcome. Detailed
+reasons are in `data/diagnostics/prism-availability/update-status.csv`.
+
+For a small staging test that does not render or sync the site:
+
+```bash
+TZ=America/Phoenix Rscript scripts/test-prism-latest-fallback.R
+```
+
+This tests simulated fallback and live availability using temporary grids. A
+live `FALLBACK` is expected if yesterday has not yet arrived; it is not itself a
+test failure. See [PRISM methods](prism-data-methods.md#opportunistic-one-day-operational-lag).
+To disable optional yesterday requests, set `SWC_PRISM_TRY_YESTERDAY=false` in
+the applicable VM environment file. Revision/gap requests retain their existing
+failure policy; this fallback applies to the optional newest date.
+
+## Browser and CDN freshness
+
+The publisher versions Daily Explorer and Station Conditions JavaScript/CSS
+with content-derived filenames (`name.swc-<hash>.js/css`). URLs change only
+when their bytes change; versioned copies and canonical source files are
+checksum-validated. Their application HTML is prepared before Quarto copies
+resources, preserving staged/rendered identity. Changing a manual date token
+or repeatedly forcing browser refreshes is no longer part of a release.
+
+HTML, JS/CSS, JSON, CSV/XML and current-map image paths receive
+`Cache-Control: no-cache,max-age=0,must-revalidate`: browsers may retain bytes
+but must check for freshness on a new request. Stable `maps/latest/` hotlinks
+retain their five-minute policy. Dated/historical images otherwise retain
+their existing treatment; newly uploaded Explorer images also revalidate.
+
+AWS `s3 sync` does not update metadata on unchanged objects. The first publish
+of this cache policy therefore refreshes headers on existing pages, scripts,
+styles, current data and current-map aliases. This pass skips historical
+station-curve JSONs and dated Explorer images to avoid a bulk resend. Normal
+changed-file sync sets the policy on future uploads. A destination-specific
+S3 marker (`assets/cache-policy.json`) is uploaded only after the migration
+succeeds; later runs skip that force-copy pass. No climate inputs are downloaded
+or recomputed for this change. Dry runs preview it without changing S3.
+
+After publishing, run `Rscript scripts/check-site-cache.R` on the VM. It checks
+staged/rendered app filenames and hashes. Verify HTTP response headers too:
+
+```bash
+curl -fsSI -H 'Cache-Control: no-cache' \
+  "https://cales.arizona.edu/climate/watch-staging/daily-explorer/index.html?check=$(date +%s)" |
+  grep -Ei '^(HTTP/|cache-control:|age:|etag:|x-cache:)'
+```
+
+Expected Cache-Control is `no-cache,max-age=0,must-revalidate`. Repeat with
+`watch/` after production promotion. An already open tab is not auto-reloaded;
+the policy governs subsequent requests. Existing cached responses can persist
+through the initial migration until revalidated/expired. If a CDN/proxy ignores
+origin headers, its cache policy may need adjustment or a one-time purge by
+the hosting administrator. CloudFront minimum TTL must be zero for origin
+no-cache directives to take effect. See
+[CloudFront cache policy](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cache-key-understand-cache-policy.html)
+and [AWS sync metadata behavior](https://docs.aws.amazon.com/cli/latest/reference/s3/sync.html).
+
+## Optional weather maps
+
+Optional Weather maps now have an opt-in daily adapter and a retained,
+resumable archive. They remain disabled by default until their staging trial
+passes. See [weather daily workflow](weather-circulation-daily-workflow.md) for
+bounded local tests, backfill and the staging-only enable setting.
+
+After publishing the weather-enabled staging release, run
+`Rscript scripts/check-weather-publication.R` on the VM (or source that script
+in RStudio). It checks local staged/rendered activation, files and coverage
+without downloading data or publishing. Daily and site-only publishers also
+save the report automatically during rendered-weather validation; see the
+weather workflow document for report fields and PASS/WARN/FAIL meanings.
+
+Trailing 7-/30-day weather means are separately opt-in with
+`SWC_WEATHER_PERIOD_MEANS=true` (requires `SWC_WEATHER_MAPS=true`). They run
+after daily CORe updates, reading verified cached fields without extra network
+requests. `SWC_WEATHER_MEANS_MAX_NEW_DATES=3` bounds newly built/revised
+endpoints per run (0-30); unchanged periods are reused. The most recent 30
+retained weather endpoints are considered. Initial or revision backlogs resume
+on later runs; missing complete windows are withheld. Console/ntfy completion
+summaries include periods/maps, built/reused/deferred/unavailable counts and
+elapsed time. Current workflow status and per-period details are under
+`data/processed/weather-period-means/{workflow-status,last-batch}.csv`.
+Mean-build failures disable only the means selector, preserving daily weather.
+See [staging and promotion](weather-period-means-staging.md) before activation.
+
+Missing CORe dates are persisted in
+`data/processed/weather-circulation/retry-queue.csv` and archive state. With
+the default request budget, a newest-date slot is preserved while older gaps
+are serviced by least-recent attempt. Failed dates refresh upstream indexes
+and selected fields on retry, so an incomplete cached response cannot lock in
+a failure. Unresolved dates survive Explorer-window changes.
+
+Means are checked again each daily run. Missing required inputs are recorded
+in `data/processed/weather-period-means/needed-dates.csv`; the next daily CORe
+step queues those dates for source refresh even if their PNGs already exist.
+Unresolved/deferred endpoints persist in `retry-endpoints.csv` and remain
+eligible for repair beyond the recent 30-endpoint selection while their dates
+are retained in the Explorer. Successful repairs clear the corresponding
+queues; affected 7-/30-day maps then rebuild within the configured endpoint
+limit. Mean calculations still make zero downloads and use complete windows.
+
+## Home dashboard refresh (local review)
+
+The hydroclimate-oriented home layout reuses six existing maps: seven-day rain
+total, 30- and 90-day precipitation percentiles, water-year precipitation
+percentile, 30-day mean-temperature departure and current dry-spell percentile.
+Tool links lead to Daily Explorer, Station Conditions, Current Snow and recent
+historic years. The generator in `R/map-product-site.R` owns the page; changing
+only `site/index.qmd` would be overwritten by the next catalog build.
+The title has a compact status card with the rendered snapshot time in Phoenix
+time (MST) and the PRISM data-through date. `site/filters/dashboard-status.lua`
+stamps the time during Quarto rendering, not in the visitor's browser or the
+generated source. This avoids forcing a publication merely because a source
+build ran at a different wall-clock time. A failed publication leaves the
+previous public snapshot and its timestamp intact.
+
+`config/map-products.yml` controls the products and conditional snow setting.
+During October-May, SWE percent of median can replace dry-spell rank only if
+the snow image/page match their publication hashes, the date is in the current
+water year and no more than three days old, and the verified daily reference
+contains at least 1,000 cells with median SWE >=1 inch and >=18 reference years.
+This configurable cell-count threshold is a home-page presentation rule, not
+a new snow quality-control criterion. Sparse-reference, stale, missing or
+unverified snow keeps the dry-spell map. The snow card carries its own data
+date and WY2005-WY2025 reference; the page does not apply PRISM's baseline to it.
+
+Build a local layout preview without downloads or map regeneration:
+
+```r
+source("scripts/preview-home-dashboard.R")
+```
+
+Render `data/diagnostics/home-dashboard-preview` with Quarto and serve its
+`_site/` directory. The main preview uses current cached laptop maps; a separate,
+clearly labeled historical snow-card example is available when the existing
+winter pilot PNG is present. Preview detail links lead to existing public
+pages. Production source keeps relative Quarto links. This script updates the
+generated local `site/index.qmd` but never publishes or changes the snow files.
+
+After visual approval, this can use the normal laptop commit/push and pinned
+VM staging checkout, followed by site-only publication. No new climate maps,
+download cadence or weather-renderer signatures are introduced. Check the
+staging home page, tool links, historic-year links and conditional panel before
+the next daily staging trial. The proposed cumulative-precipitation evolution
+chart remains a separate implementation/benchmarking step.
+
 Run these commands in the RStudio Console from the **SWClimateWatch project
 root**. For the normal daily update and deployment, use this one line:
 
@@ -9,12 +184,28 @@ source("scripts/daily-update-and-publish.R")
 
 It checks PRISM for new or revised data, updates the current maps when needed,
 checks SNODAS during October-May and the June closeout, refreshes the
-station explorer from RCC-ACIS, then renders, validates, and syncs changed site
+station explorer from RCC-ACIS, stages the current water year plus the preceding
+September of cached PRISM data for
+Daily Explorer, then renders, validates, and syncs changed site
 content to the live website. The destination is
 `s3://cales-climate-reports/climate/watch/` in `us-west-2`. No remote files are
 deleted. It is safe to rerun: existing downloads and processed data are reused,
 and the site sync is skipped if its source content has not changed since the
 last successful daily publication. This is a manual command, not a scheduler.
+
+Station Conditions now refreshes water-year (October–September), cool-season
+(October–March), and monsoon (June 15–September 30) precipitation plots during
+the normal station update. Matching-date ranks, percentiles and departures
+refresh with the station cache date. Missing or flagged precipitation continues
+to withhold unsupported comparisons.
+
+Historical screening caches live in
+`data/processed/acis-stations/seasonal-history/`. New current-season reports
+reuse those references; revisions to earlier observations or a season rollover
+rebuild the affected references. The first run on each VM checkout must create
+them. Generated browser files live under `site/stations/seasonal/` after staging
+and are validated again after rendering. No separate cron entry, extra station
+download, or manual seasonal staging script is required for daily operation.
 
 ## Which command should I use?
 
@@ -29,7 +220,8 @@ last successful daily publication. This is a manual command, not a scheduler.
 **Important:** The full-workflow preview still downloads/checks live data and
 may regenerate local maps. `dry_run = TRUE` prevents only the S3 upload. Use the
 site-only preview if you do not want a climate-data update. The site-only
-commands build the map catalog and render the site from existing maps; they do
+commands build the map catalog, refresh Daily Explorer from cached grids,
+and render the site from existing maps; they do
 **not** regenerate map PNGs after a change to map-drawing code. For that, run
 the [local map-only rebuild](../README.md#local-prism-downloader-development)
 first, then use the site-only publish command.
@@ -47,8 +239,24 @@ The site-only publisher does not update the daily workflow's success marker, so
 the next normal daily run may sync the same site again. All commands require
 Quarto and a configured AWS CLI with write access to the bucket; credentials
 are not stored in this repository. A failed render or validation stops the
-sync. The daily workflow validates both the Current Snow and Station Conditions
-pages before syncing.
+sync. The daily workflow validates Current Snow, Station Conditions and
+Daily Explorer before syncing. Daily Explorer is also validated by the generic
+site-only deploy function, including when `render = FALSE`.
+Current Snow checks observed SWE, absolute departure and percent-of-median
+images and their full-resolution links. Seven-day change is checked when
+available; otherwise the rendered page must retain the explicit unavailable
+notice. Latest map dates and exact seven-day endpoints must match the source.
+The new snow comparisons require no additional daily downloads or baseline
+builds; unchanged images are reused after checksum verification.
+
+For local preparation with no network access or upload, use
+`source("scripts/stage-daily-explorer.R")`. The first build covers the current
+water year to date plus the preceding September. Subsequent runs retain earlier
+days, reuse unchanged dates, and rebuild revised inputs. A full leap water year
+plus September contains up to 396 dates (2,772 maps when all inputs are available).
+The console and ntfy daily summary report dates rebuilt/reused. See the
+[Daily Explorer release checklist](daily-explorer.md#vm-staging-and-release-checklist)
+before deploying this feature to the VM.
 
 ## Preparing a separate production machine
 
@@ -205,3 +413,160 @@ For low-level deployment settings such as a different destination or an
 explicit deletion preview, use `deploy_swc_site()` in
 [`scripts/deploy-site-s3.R`](../scripts/deploy-site-s3.R). Keep `delete = FALSE`
 for routine publishing.
+## Home RONI and station guidance (October 28, 2026)
+
+The home card uses NOAA CPC's published ERSSTv6 three-month running RONI,
+not an average of three seasonal RONI values. The daily update entry point and
+`scripts/build-map-product-site.R` check the small source table at most once
+per successful check per day and
+caches the latest completed period in `data/processed/roni/latest.rds`.
+Recent source values can be revised. The card labels warm/neutral/cold index
+ranges rather than declaring an ENSO episode from one period. A failed refresh
+retains the dated cache with a visible cached-source notice; without a cache,
+the card explicitly says unavailable. No maps or historic RONI snapshots change.
+
+For a site-only staging trial after checking out the tested code, refresh the
+station HTML from existing summaries before staging it (staging alone copies
+the previous HTML):
+
+```bash
+Rscript scripts/refresh-acis-station-explorer-preview.R
+Rscript scripts/stage-station-beta.R
+set -a
+source /home/crimmins/.config/swclimatewatch/staging.env
+set +a
+TZ=America/Phoenix Rscript scripts/publish-site-s3.R
+```
+
+The station page's "Reading this preview" disclosure starts closed and opens
+using the native keyboard-accessible summary control. A normal full daily run
+also rebuilds that HTML from the updated station summaries.
+
+### Per-map home summaries (local Option A trial)
+
+Top quick-link cards are replaced by an Explore more link row near the bottom.
+Each map has its own combined AZ/NM summary above the image. Values are
+area-weighted using state-boundary cell-center masks, require 98% valid regional
+area, and carry the matching input date. Precipitation-total maps can show mean
+regional accumulation and the area at/above a configured threshold. Percentile
+maps show area strictly below/above configured percentile thresholds, never an
+average of pixel percentiles. Temperature-departure maps show regional mean
+departure. Dry-spell rank maps show area above a selected rank threshold.
+
+Only existing date-matched accumulation, percentile-rank and temperature
+departure grids are read. Their checksums, dates and summary version invalidate
+`data/processed/dashboard/regional-summaries.rds`; unchanged inputs reuse it.
+Missing inputs display unavailable rather than older values. No downloads or
+climatology builds are triggered. Summary colors are visual cues, not drought
+classifications or statistical significance tests. Refresh the local trial with
+`source("scripts/preview-home-dashboard.R")` or rebuild the full site normally.
+
+Customize `config/map-products.yml` under `dashboard`:
+
+- `products`: selected enabled map IDs, in display order (existing four-to-six limit).
+- `groups`: titles and product lists; these must cover the selected maps exactly
+  once in the same order. Omit groups for an ungrouped map grid. `snow_title`
+  optionally supplies the title when the seasonal snow card is selected.
+- `summary_layout`: `per_map` or `none`. Section banners/top summary cards are
+  design alternatives, not currently implemented layout modes.
+- `summaries`: settings keyed by map ID; `enabled: false` hides one summary.
+  Omit an entry to show a map without a summary. `label` changes its period label.
+- `metrics`: `regional_mean`, `area_above_threshold`, `area_below_percentile`,
+  `area_above_percentile`, as supported by the matching map type. Configure
+  `threshold_inches`, `lower_percentile`, and `upper_percentile` where relevant.
+
+The generator rejects unknown/incompatible metrics and invalid thresholds.
+Changing map order does not change summary ownership. Supporting a new map type
+or calculation requires an R adapter; YAML cannot define arbitrary formulas.
+Seasonal snow substitution suppresses the dry-spell summary; the snow card keeps
+its own explicit source/date/reference note instead.
+
+Summary text uses short individual chips. Very dry/Very wet mean regional area
+below the 10th/above the 90th precipitation percentile by default; hovering exposes the precise configured threshold and
+source date. Each tail is colored independently: defaults highlight at 10% area
+and use a stronger shade at 25%. Override `highlight_area_percent` and
+`strong_area_percent` in a summary's YAML settings (ordered values from 0 to
+100). Stronger colors indicate a larger affected area, not greater severity.
+These are display thresholds, not tests of regional statistical rarity.
+Temperature chips use cool/warm hues beyond +/-0.5 F departure, with stronger
+shades at absolute departure >=3 F; no significance claim is made. Raw rainfall
+amount/coverage chips remain neutral. Map dates and the shared regional/method
+note replace repeated dates and long explanations in every visible chip.
+
+### Headline condition cards (local trial)
+
+`dashboard.headlines` independently controls one to three linked cards, with an
+overall `enabled` switch. Each `cards` entry selects an enabled `product`,
+`title`, period `label`, and percentile/color thresholds where relevant. Current
+defaults are 7-day and 90-day precipitation percentile maps (below P33 / above
+P67 area fractions), plus 30-day mean-temperature departure. A headline map
+does not have to appear in the six-map grid. Entire cards link to their map's
+detail page, with keyboard focus on the title link.
+
+For precipitation, the default color is neutral unless at least 50% of the
+region is in one tail; 67% receives stronger shading. If both tails cover at
+least 25%, mixed shading takes precedence. Both fractions remain visible in
+every available precipitation card. Configure these via `highlight_area_percent`,
+`strong_area_percent`, and `mixed_area_percent`. These are presentation rules,
+not significance tests. Temperature colors follow the departure cues described
+above. Precise P33/P67 cutoffs and color rules are independent of the per-map
+P10/P90 Very dry/Very wet chips.
+
+Headline calculations read only cached derived grids and use the same regional
+area weighting/98% coverage guard. `headline-summaries.rds` keeps their cache
+separate from per-map summaries. Missing data produce a neutral unavailable
+card; no date substitution or downloads occur.
+
+### ENSO card magnitude versus official status
+
+The home RONI badge now labels neutral range (absolute index <0.5 C), weak
+(0.5 to <1), moderate (1 to <1.5), strong (1.5 to <2), and very strong (>=2),
+using El Nino-range wording for positive and La Nina-range for negative values.
+These bands describe the latest published three-month index, not an automatic
+operational ENSO declaration. Recent RONI estimates remain provisional.
+
+A separate line reports the exact recognized alert category and issue date
+from [CPC's ENSO Diagnostic Discussion](https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml).
+The daily update and site-only catalog entry points check this small source
+once per successful daily check, caching it in
+`data/processed/roni/enso-status.rds`. Failed/unrecognized/future-dated or older
+responses cannot replace the last good status. Cached fallback is labeled;
+an issue over 45 days old becomes "Last reported NOAA status" with an age
+caution. Missing status remains explicitly unavailable even if RONI is known.
+
+Historic pages retain their existing badges for now. Their next refresh should
+apply consistent strength bands to the documented DJF value, with period/source
+context and without applying the current operational advisory retrospectively.
+This follow-up is recorded in the development roadmap.
+
+
+## Station monthly climatology integration (November 12, 2026)
+
+The standard station builder includes the collapsed monthly climatology section,
+its default 1991-2020 reference and full available cached-record alternative.
+Both periods use the same month-screening rules and minimum 20 eligible years.
+Only finished calendar months enter the comparisons. Reference selection,
+month selection, plot ordering and linked tables are browser-side operations.
+
+Private reference caches live in
+`data/processed/acis-stations/monthly-climatology/`: `<uid>.rds` for 1991-2020 and
+`<uid>-record.rds` for the full available history. Historical revisions or a newly
+completed month invalidate the affected fingerprint; current incomplete-month
+appends do not. The first build on a VM may need to calculate these references;
+there are no additional data requests. Existing daily station updates include
+this preparation automatically; no new cron entry is needed after deployment.
+
+To add the section to an existing local station snapshot without recalculating
+period summaries or downloading data, run from the project root:
+
+```r
+source("scripts/build-station-climatology-integration.R")
+source("scripts/serve-station-conditions-review.R")
+```
+
+This refreshes the standard unpublished Station Conditions snapshot. For a new
+snapshot from scratch, use `scripts/build-acis-station-explorer-prototype.R`.
+Local `scripts/stage-station-beta.R` copies the prepared assets/data for Quarto;
+remote publication remains a separate explicit step. Monthly data and linked
+assets are validated before staging and again after rendering. This entry does
+not establish that the release has been promoted to staging or production.

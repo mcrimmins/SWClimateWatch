@@ -484,7 +484,7 @@ build_prism_wet_day_count_map <- function(
     title <- "Wet-day count percentile rank"
     subtitle <- paste0(
       duration_days, "-day period: ", format_prism_map_period(start_date, date),
-      " relative to 1991-2020 | centered 5-day baseline"
+      " relative to ", prism_reference_baseline_label("percentile")
     )
     fill_label <- "Percentile rank"
     palette <- c("#7f3b08", "#b35806", "#f1a340", "#f7f7f7", "#998ec3", "#542788", "#2d004b")

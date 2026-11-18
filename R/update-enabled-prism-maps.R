@@ -34,6 +34,10 @@ plan_enabled_prism_map_updates <- function(
       c("tmean_percentile_07day", "tmean_percentile_30day", "tmean_percentile_90day"),
       c(7L, 30L, 90L)
     ),
+    water_year_temperature = select(
+      c("tmean_water_year_mean","tmean_water_year_departure","tmean_water_year_percentile"),
+      c("mean","departure","percentile")
+    ),
     extreme_warm = select("maxt_extreme_warm_count_30day", TRUE),
     extreme_cold = select("mint_extreme_cold_count_30day", TRUE),
     freeze_count = select("mint_freeze_count_30day", TRUE),
@@ -194,6 +198,8 @@ update_enabled_prism_maps <- function(
       list(variables = plan$temperature_30day_departures, days = 30L))
   run("temperature_rolling_percentiles", build_current_prism_rolling_temperature_percentile_maps,
       list(days = plan$temperature_rolling_percentiles))
+  run("water_year_temperature", build_current_prism_water_year_temperature_maps,
+      list(map_products = plan$water_year_temperature))
   run("extreme_warm", build_current_extreme_warm_day_frequency_map)
   run("extreme_cold", build_current_extreme_cold_night_frequency_map)
   run("freeze_count", build_current_freeze_day_count_map)

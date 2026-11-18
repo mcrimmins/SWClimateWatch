@@ -115,11 +115,11 @@ testthat::test_that("first-freeze cache is written and reused", {
 
 testthat::test_that("first-freeze climatology masks unreliable normals", {
   dates <- as.Date(c("1991-08-01", "1992-08-01", "1993-08-01", "1994-08-01"))
-  samples <- make_first_freeze_test_raster(c(10, 20, NA, 30), dates)
+  samples <- make_first_freeze_test_raster(c(10, 20, 0, 30), dates)
   reliable <- prism_first_freeze_climatology(samples, minimum_frequency = 0.75)
   masked <- prism_first_freeze_climatology(samples, minimum_frequency = 1)
   testthat::expect_equal(as.numeric(terra::values(reliable$frequency)), 0.75)
-  testthat::expect_equal(as.numeric(terra::values(reliable$median_day)), 20)
+  testthat::expect_equal(as.numeric(terra::values(reliable$median_day)), 25)
   testthat::expect_true(is.na(as.numeric(terra::values(masked$median_day))))
 })
 

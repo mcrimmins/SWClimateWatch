@@ -17,6 +17,7 @@ source(file.path("R", "prism-first-freeze.R"))
 source(file.path("R", "prism-last-freeze.R"))
 source(file.path("R", "prism-freeze-free-season.R"))
 source(file.path("R", "prism-water-year-cache.R"))
+source(file.path("R", "prism-water-year-temperature.R"))
 source(file.path("R", "prism-dry-spell.R"))
 source(file.path("R", "prism-longest-dry-spell.R"))
 source(file.path("R", "prism-wet-day-count.R"))
@@ -32,5 +33,8 @@ source(file.path("R", "daily-update.R"))
 
 check_swc_packages()
 initialize_swc_directories()
+
+invisible(swc_read_dashboard_roni(refresh = TRUE))
+invisible(swc_read_enso_status(refresh = TRUE))
 
 swc_update_result <- run_swc_daily_update()

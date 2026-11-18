@@ -1,6 +1,6 @@
 ---
 title: "Longest dry-spell percentile"
-description-meta: "The longest dry run in the latest 180 days is ranked against 1991-2020 180-day windows ending within two calendar days of this date. High ranks indicate an unusually long dry stretch for this time of year, whether or not it is still ongoing."
+description-meta: "The longest dry run in the latest 180 days is ranked against 1991-2020 180-day windows ending within two calendar days of this date. High ranks indicate an unusually long dry stretch for this time of year, whether or not it is still ongoing; ties share positions, so use the companion map for context."
 body-classes: product-page
 toc: false
 page-layout: full
@@ -11,7 +11,7 @@ page-layout: full
 :::
 
 ::: {.product-interpretation}
-The longest dry run in the latest 180 days is ranked against 1991-2020 180-day windows ending within two calendar days of this date. High ranks indicate an unusually long dry stretch for this time of year, whether or not it is still ongoing.
+The longest dry run in the latest 180 days is ranked against 1991-2020 180-day windows ending within two calendar days of this date. High ranks indicate an unusually long dry stretch for this time of year, whether or not it is still ongoing; ties share positions, so use the companion map for context.
 :::
 
 ::: {.product-actions}

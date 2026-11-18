@@ -516,7 +516,7 @@ build_prism_longest_dry_spell_map <- function(
     title <- "Longest recent dry-spell percentile rank"
     subtitle <- paste0(
       duration_days, "-day period ending ", format_prism_map_date(date),
-      " relative to 1991-2020 | centered 5-day baseline"
+      " relative to ", prism_reference_baseline_label("percentile")
     )
     fill_label <- "Percentile rank"
     palette <- c("#2166ac", "#67a9cf", "#d1e5f0", "#f7f7f7", "#fddbc7", "#ef8a62", "#b2182b")

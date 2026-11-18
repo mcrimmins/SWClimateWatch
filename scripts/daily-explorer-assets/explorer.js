@@ -1,0 +1,540 @@
+"use strict";
+// No dependencies, API calls, or server computations: static images + summaries.
+const METRICS = {
+  tmean: {
+    departure: ["Regional mean departure", "°F", false],
+    mean: ["Regional mean temperature", "°F", false]
+  },
+  pcpn: {
+    mean: ["Regional mean precipitation", "in.", false],
+    rain010: ["Area receiving ≥0.10 inch", "%", false],
+    rain050: ["Area receiving ≥0.50 inch", "%", false],
+    rain100: ["Area receiving ≥1 inch", "%", false],
+    spatial_p99: ["Spatial 99th-percentile precipitation", "in.", false]
+  },
+  maxt: {
+    departure: ["Regional mean departure", "°F", false],
+    mean: ["Regional mean maximum temperature", "°F", false],
+    warm: ["Area above calendar-day 90th percentile", "%", false],
+    cold: ["Area below calendar-day 10th percentile", "%", false]
+  },
+  mint: {
+    departure: ["Regional mean departure", "°F", false],
+    mean: ["Regional mean minimum temperature", "°F", false],
+    warm: ["Area above calendar-day 90th percentile", "%", false],
+    cold: ["Area below calendar-day 10th percentile", "%", false],
+    freeze: ["Area at or below freezing", "%", false]
+  }
+};
+const $ = id => document.getElementById(id);
+const valid = value => typeof value === "number" && Number.isFinite(value);
+const format = (value, unit = "", signed = false) => {
+  if (!valid(value)) return "Unavailable";
+  if (value > 0 && ((unit === "in." && value < 0.01) || (unit === "%" && value < 0.1))) {
+    return unit === "in." ? "<0.01 in." : "<0.1%";
+  }
+  return `${signed && value > 0 ? "+" : ""}${value.toLocaleString("en-US", {maximumFractionDigits: unit === "in." ? 2 : 1})}${unit === "%" ? "" : " "}${unit}`;
+};
+const isoDate = value => new Date(`${value}T12:00:00Z`);
+const dayLabel = value => isoDate(value).toLocaleDateString("en-US", {month:"short", day:"numeric", year:"numeric", timeZone:"UTC"});
+const shortLabel = value => isoDate(value).toLocaleDateString("en-US", {month:"short", day:"numeric", timeZone:"UTC"});
+const shift = (date, days) => {const d = isoDate(date); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0,10);};
+// No build-time downloads. The external reader loads only on explicit selection.
+const DISCUSSION_SOURCES = {
+  local: [
+    ["AFDPSR", "Phoenix (PSR)"], ["AFDTWC", "Tucson (TWC)"],
+    ["AFDFGZ", "Flagstaff (FGZ)"], ["AFDABQ", "Albuquerque (ABQ)"],
+    ["AFDEPZ", "El Paso / Santa Teresa (EPZ)"]
+  ],
+  adjacent: [
+    ["AFDVEF", "Las Vegas (VEF)"], ["AFDSGX", "San Diego (SGX)"],
+    ["AFDGJT", "Grand Junction (GJT)"], ["AFDPUB", "Pueblo (PUB)"],
+    ["AFDAMA", "Amarillo (AMA)"]
+  ],
+  national: [
+    ["PMDSPD", "Short-range discussion"], ["PMDEPD", "Extended discussion"],
+    ["QPFERD", "Excessive rainfall discussion"], ["FFGMPD", "Mesoscale precipitation discussions"],
+    ["QPFHSD", "Heavy snow / icing discussion"]
+  ]
+};
+let discussionDate = "", discussionProduct = "";
+function resetDiscussionReader() {
+  discussionProduct = "";
+  $("discussion-reader").hidden = true;
+  $("discussion-frame").removeAttribute("src");
+  $("discussion-original").removeAttribute("href");
+  $("discussion-reader-status").textContent = "";
+}
+function closeDiscussionReader() {resetDiscussionReader(); renderDiscussions();}
+function openDiscussion(product, label) {
+  const href = discussionArchiveUrl(selectedDate, product);
+  if (!href) return;
+  const frame = $("discussion-frame");
+  discussionProduct = product;
+  $("discussion-reader").hidden = false;
+  $("discussion-reader-title").textContent = `${label} · ${dayLabel(selectedDate)} UTC issuances`;
+  frame.title = `Archived ${label}, issued ${selectedDate} UTC`;
+  $("discussion-original").href = href;
+  $("discussion-reader-status").textContent = "External IEM archive view. If it is blank, unavailable, or blocked, use Open in new tab or try again later.";
+  if (frame.getAttribute("src") !== href) frame.src = href;
+  // Keep the clicked link in place so keyboard focus is not lost.
+  for (const group of Object.keys(DISCUSSION_SOURCES)) {
+    for (const item of $(`discussion-${group}`).children) {
+      const link = item.children[0];
+      link.setAttribute("aria-current", String(link.getAttribute("data-product") === product));
+    }
+  }
+}
+function discussionArchiveUrl(date, product) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(isoDate(date).getTime()) ||
+      isoDate(date).toISOString().slice(0,10) !== date ||
+      !Object.values(DISCUSSION_SOURCES).flat().some(([pil]) => pil === product)) return null;
+  const query = new URLSearchParams({pil: product, fmt: "html",
+    sdate: `${date}T00:00Z`, edate: `${shift(date, 1)}T00:00Z`, limit: "100", order: "asc"});
+  return `https://mesonet.agron.iastate.edu/cgi-bin/afos/retrieve.py?${query}`;
+}
+function renderDiscussions() {
+  const date = selectedDate;
+  if (date !== discussionDate) {resetDiscussionReader(); discussionDate = date;}
+  $("discussion-date").textContent = date ? ` · ${dayLabel(date)}` : "";
+  $("discussion-content").hidden = !date;
+  $("discussion-no-date").hidden = !!date;
+  for (const [group, sources] of Object.entries(DISCUSSION_SOURCES)) {
+    const list = $(`discussion-${group}`); list.replaceChildren();
+    if (!date) continue;
+    for (const [product, label] of sources) {
+      const href = discussionArchiveUrl(date, product);
+      if (!href) continue;
+      const item = document.createElement("li"), link = document.createElement("a");
+      link.href = href; link.target = "_blank"; link.rel = "noopener noreferrer";
+      link.textContent = label;
+      link.setAttribute("data-product", product);
+      link.setAttribute("aria-label", `${label}: ${product} archive search for ${date} UTC (opens in embedded reader)`);
+      if (discussionProduct === product) link.setAttribute("aria-current", "true");
+      link.addEventListener("click", event => {
+        if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        event.preventDefault(); openDiscussion(product, label);
+      });
+      item.append(link); list.append(item);
+    }
+  }
+  if (date) $("discussion-window").textContent =
+    `Issued ${date} 00:00 UTC to ${shift(date, 1)} 00:00 UTC (end exclusive). Links follow this selected day, not the full 7-/30-day grid.`;
+}
+let days = [], byDate = new Map(), selectedDate = "", visibleDates = [];
+let circulationEnabled = false, circulationPromise = null, circulationEpoch = 0, circulationShownDate = "";
+let circulationActiveTab = "height500";
+let circulationRecords = null;
+let circulationMeansEnabled = false, circulationMeansPromise = null;
+function circulationPeriod() {return circulationMeansEnabled ? $("circulation-period").value : "1";}
+function showDailyCirculation(date = selectedDate) {
+  if (circulationMeansEnabled) $("circulation-period").value = "1";
+  selectDate(date);
+}
+const CIRCULATION_FIELDS = ["height500","jet250","moisture"];
+function selectCirculationTab(field) {
+  if (!CIRCULATION_FIELDS.includes(field)) return;
+  circulationActiveTab = field;
+  for (const key of CIRCULATION_FIELDS) {
+    const tab = $(`circulation-tab-${key}`);
+    tab.setAttribute("aria-selected",String(key === field)); tab.tabIndex = key === field ? 0 : -1;
+  }
+  for (const figure of $("circulation-maps").children) {
+    figure.hidden = figure.circulationField !== field;
+    const image = figure.children[0];
+    // Fetch only the selected map. Previously viewed maps remain browser-cached.
+    if (!figure.hidden && image.circulationSource && !image.getAttribute("src")) image.src = image.circulationSource;
+    if (!figure.hidden && circulationRecords) {
+      figure.circulationActions.append($("circulation-view-control"));
+      $("circulation-view-fallback").hidden = true;
+      renderCirculationComparison(figure);
+    }
+  }
+}
+function renderCirculationComparison(figure) {
+  const mode = $("compare").value, caption = figure.circulationCaption, grid = figure.circulationGrid;
+  const key = `${selectedDate}|${mode}`;
+  if (figure.circulationGridKey === key) return;
+  figure.circulationGridKey = key;
+  const show = mode !== "single";
+  caption.hidden = grid.hidden = !show;
+  grid.classList.toggle("month-grid", mode === "30");
+  grid.replaceChildren();
+  if (!show) return;
+  const dates = comparisonDates();
+  caption.textContent = `Daily maps · ${mode === "30" ? "30 days ending" : "7 days centered on"} ${dayLabel(selectedDate)} · ${shortLabel(dates[0])}–${shortLabel(dates.at(-1))} · UTC daily means. Select a tile to show its daily map.`;
+  for (const date of dates) {
+    const record = circulationRecords.get(date);
+    const source = record?.status === "available" ? record.images[figure.circulationField] : null;
+    const button = document.createElement("button"); button.type = "button";
+    button.className = `mini${date === selectedDate ? " selected" : ""}`;
+    button.setAttribute("aria-label", `Show daily map: ${dayLabel(date)} UTC, ${figure.circulationTitle}${source ? "" : ", unavailable"}`);
+    button.title = "Show this daily map (switches Weather period to Daily)";
+    const title = document.createElement("strong"); title.textContent = shortLabel(date); button.append(title);
+    if (source) {
+      const image = document.createElement("img"); image.loading = "lazy"; image.src = source;
+      image.width = 1920; image.height = 1088;
+      image.alt = `${figure.circulationTitle}, ${date} UTC daily mean`;
+      image.addEventListener("error", () => {
+        if (figure.circulationEpoch !== circulationEpoch) return;
+        image.hidden = true;
+        const missing = document.createElement("p"); missing.className = "empty";
+        missing.textContent = "Map image unavailable"; button.append(missing);
+      });
+      button.append(image);
+    } else {
+      const missing = document.createElement("p"); missing.className = "empty";
+      missing.textContent = "Not built or unavailable"; button.append(missing);
+    }
+    button.disabled = !byDate.has(date);
+    button.addEventListener("click", () => showDailyCirculation(date));
+    grid.append(button);
+  }
+}
+function setupCirculationTabs() {
+  for (const field of CIRCULATION_FIELDS) {
+    const tab = $(`circulation-tab-${field}`);
+    tab.addEventListener("click",() => selectCirculationTab(field));
+    tab.addEventListener("keydown",event => {
+      if (!["ArrowLeft","ArrowRight","Home","End"].includes(event.key)) return;
+      event.preventDefault();
+      const next = event.key === "Home" ? CIRCULATION_FIELDS[0] : event.key === "End" ? CIRCULATION_FIELDS.at(-1) :
+        CIRCULATION_FIELDS[(CIRCULATION_FIELDS.indexOf(field)+(event.key === "ArrowRight" ? 1 : CIRCULATION_FIELDS.length-1))%CIRCULATION_FIELDS.length];
+      selectCirculationTab(next); $(`circulation-tab-${next}`).focus();
+    });
+  }
+}
+function validateCirculationManifest(payload) {
+  if (payload?.schema_version !== 1 || !Array.isArray(payload.days)) throw new Error("Invalid circulation manifest.");
+  const records = new Map();
+  for (const day of payload.days) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day.date) || !Number.isFinite(isoDate(day.date).getTime()) ||
+        isoDate(day.date).toISOString().slice(0,10) !== day.date || records.has(day.date)) throw new Error("Invalid circulation date.");
+    if (!["available","unavailable"].includes(day.status)) throw new Error("Invalid circulation status.");
+    if (day.status === "available") for (const field of CIRCULATION_FIELDS) {
+      if (day.images?.[field] !== `circulation/maps/${day.date}-${field}.png`) throw new Error("Invalid circulation image path.");
+    }
+    records.set(day.date,day);
+  }
+  return records;
+}
+function validateCirculationMeansManifest(payload) {
+  if (payload?.schema_version !== 1 || !Array.isArray(payload.periods)) throw new Error("Invalid weather means manifest.");
+  const records = new Map();
+  for (const period of payload.periods) {
+    if (![7,30].includes(period.days) || !/^\d{4}-\d{2}-\d{2}$/.test(period.end) ||
+        !Number.isFinite(isoDate(period.end).getTime()) || isoDate(period.end).toISOString().slice(0,10) !== period.end ||
+        period.start !== shift(period.end,1-period.days)) throw new Error("Invalid weather mean period.");
+    const key = `${period.end}|${period.days}`;
+    if (records.has(key)) throw new Error("Duplicate weather mean period.");
+    for (const field of CIRCULATION_FIELDS) {
+      if (period.images?.[field] !== `circulation/means/${period.end}-${period.days}day-${field}.png`) throw new Error("Invalid weather mean path.");
+    }
+    records.set(key,period);
+  }
+  return records;
+}
+async function renderCirculation() {
+  const panel = $("circulation-panel");
+  if (!circulationEnabled || !panel) return;
+  if ($("circulation-show-daily")) $("circulation-show-daily").hidden = true;
+  panel.hidden = false;
+  $("circulation-compare").value = $("compare").value;
+  $("circulation-date").textContent = selectedDate ? ` · ${dayLabel(selectedDate)} UTC` : "";
+  const period = circulationPeriod();
+  const viewKey = `${selectedDate}|${$("compare").value}|${period}`;
+  if (circulationMeansEnabled) {
+    $("circulation-period-note").textContent = !selectedDate ? "Select a date to view weather maps." : period === "1"
+      ? "Large map: selected UTC day. Map view below browses individual daily maps."
+      : `Large map: ${period}-day mean, ${dayLabel(shift(selectedDate,1-Number(period)))}–${dayLabel(selectedDate)} UTC. Map view below still browses individual days. Complete periods only; no missing-day filling.`;
+  }
+  if (panel.open && circulationShownDate === viewKey) return;
+  const epoch = ++circulationEpoch, date = selectedDate;
+  circulationShownDate = "";
+  // Keep the single shared selector alive across tab/date redraws and errors.
+  $("circulation-view-fallback").append($("circulation-view-control"));
+  $("circulation-view-fallback").hidden = false;
+  $("circulation-maps").replaceChildren();
+  $("circulation-tabs").hidden = true;
+  $("circulation-retry").hidden = true;
+  if (!panel.open) {$("circulation-status").textContent = ""; return;}
+  if (!date) {$("circulation-status").textContent = "Select a date to view circulation context."; return;}
+  $("circulation-status").textContent = "Loading circulation availability…";
+  try {
+    if (!circulationPromise) circulationPromise = fetch("circulation-manifest.json",{cache:"no-store"})
+      .then(response => {if (!response.ok) throw new Error(`HTTP ${response.status}`); return response.json();})
+      .then(validateCirculationManifest);
+    if (period !== "1" && !circulationMeansPromise) circulationMeansPromise = fetch("circulation-means-manifest.json",{cache:"no-store"})
+      .then(response => {if (!response.ok) throw new Error(`HTTP ${response.status}`); return response.json();})
+      .then(validateCirculationMeansManifest);
+    const [records,means] = await Promise.all([circulationPromise,period === "1" ? null : circulationMeansPromise]);
+    if (epoch !== circulationEpoch || !panel.open || date !== selectedDate) return;
+    circulationRecords = records;
+    const record = period === "1" ? records.get(date) : means.get(`${date}|${period}`);
+    const available = period === "1" ? record?.status === "available" : !!record;
+    if (!available) {
+      $("circulation-status").textContent = `${period === "1" ? "Circulation maps" : `${period}-day weather means`} unavailable for ${dayLabel(date)} UTC. No other date has been substituted.`;
+      if (period !== "1" && records.get(date)?.status === "available" && $("circulation-show-daily")) {
+        $("circulation-show-daily").hidden = false;
+        $("circulation-status").textContent += " A daily map is available for this date.";
+      }
+      if ($("compare").value === "single") {circulationShownDate = viewKey; return;}
+    } else {
+      $("circulation-status").textContent = "";
+    }
+    for (const [field,title] of [["height500","500-mb heights"],["jet250","250-mb jet and flow"],["moisture","Precipitable water, sea-level pressure and 850-mb flow"]]) {
+      const figure = document.createElement("figure");
+      figure.id = `circulation-map-${field}`; figure.circulationField = field;
+      figure.circulationTitle = title; figure.circulationEpoch = epoch;
+      figure.setAttribute("role","tabpanel"); figure.setAttribute("aria-labelledby",`circulation-tab-${field}`);
+      figure.tabIndex = 0;
+      const img = document.createElement("img"); img.alt = period === "1" ? `${title}, ${date} UTC daily mean` : `${title}, ${period}-day mean ${record?.start || shift(date,1-Number(period))} through ${date} UTC`;
+      img.loading = "lazy"; img.width = 1920; img.height = 1088;
+      const link = document.createElement("a"); link.target = "_blank"; link.rel = "noopener";
+      img.hidden = link.hidden = !available;
+      if (available) link.href = record.images[field];
+      link.textContent = "Open full-resolution map ↗";
+      img.addEventListener("error",() => {
+        if (epoch !== circulationEpoch) return;
+        img.hidden = true; link.hidden = true;
+        $("circulation-status").textContent = `A circulation image could not be loaded for ${dayLabel(date)} UTC. PRISM maps remain available.`;
+        $("circulation-retry").hidden = false;
+      });
+      if (available) img.circulationSource = record.images[field];
+      const caption = document.createElement("p"); caption.className = "muted small"; caption.hidden = true;
+      const grid = document.createElement("div"); grid.className = "comparison"; grid.hidden = true;
+      figure.circulationCaption = caption; figure.circulationGrid = grid;
+      const actions = document.createElement("div"); actions.className = "map-actions";
+      actions.append(link); figure.circulationActions = actions;
+      figure.append(img,actions,caption,grid); $("circulation-maps").append(figure);
+    }
+    $("circulation-tabs").hidden = false; selectCirculationTab(circulationActiveTab);
+    circulationShownDate = viewKey;
+  } catch (error) {
+    if (epoch !== circulationEpoch || !panel.open) return;
+    $("circulation-status").textContent = "Circulation availability could not be loaded. PRISM maps remain available; try again.";
+    $("circulation-retry").hidden = false;
+  }
+}
+function regionValues(date) {return byDate.get(date)?.regions?.[$("region").value]?.[$("variable").value];}
+function metricValue(date, metric) {return regionValues(date)?.[metric] ?? null;}
+function inCachedDateRange(date) {
+  return !!date && days.length > 0 && date >= days[0].date && date <= days.at(-1).date;
+}
+function imageFor(date) {
+  const variable = $("variable").value;
+  return byDate.get(date)?.images?.[`${variable}_${variable === "pcpn" ? "observed" : $("view").value}`];
+}
+function setOptions(element, options, selected) {
+  element.replaceChildren();
+  for (const [value, text] of options) {const option = document.createElement("option"); option.value = value; option.textContent = text; element.append(option);}
+  if (options.some(([key]) => key === selected)) element.value = selected;
+}
+function refreshMetricOptions(reset = false) {
+  const options = Object.entries(METRICS[$("variable").value]).map(([key, info]) => [key, info[0]]);
+  setOptions($("metric"), options, reset ? options[0][0] : $("metric").value);
+  const ranks = options.map(([key, label]) => [key, `${label} · highest first`]);
+  if ($("variable").value !== "pcpn") {
+    ranks.push(["departure_low", "Regional mean departure · lowest first"]);
+    ranks.push(["mean_low", "Regional mean temperature · lowest first"]);
+  }
+  setOptions($("ranking"), ranks, reset ? ranks[0][0] : $("ranking").value);
+  $("view-label").hidden = $("variable").value === "pcpn";
+}
+function filterDates() {
+  const year = Number($("year").value), season = $("season").value;
+  const available = days.filter(day => day.water_year === year);
+  if (!available.length) return [];
+  const result = [];
+  for (let date = available[0].date; date <= available.at(-1).date; date = shift(date, 1)) {
+    const month = Number(date.slice(5,7));
+    if (season === "cool" && month > 3 && month < 10) continue;
+    if (season === "warm" && (month < 4 || month > 9)) continue;
+    if (season === "monsoon" && (month < 6 || month > 9)) continue;
+    result.push(date);
+  }
+  return result;
+}
+function selectDate(date) {
+  const day = byDate.get(date);
+  if (day) {
+    $("year").value = String(day.water_year);
+    if (!filterDates().includes(date)) $("season").value = "all";
+  }
+  selectedDate = date; render();
+}
+function selectLatestDate() {
+  const date = days.at(-1)?.date;
+  if (date) selectDate(date);
+}
+function changeMapView(source = "compare") {
+  $("compare").value = $(source).value;
+  $("circulation-compare").value = $("compare").value;
+  // Opening the month grid starts at the newest day in the chosen season,
+  // rather than silently retaining a day previously selected while browsing.
+  if ($("compare").value === "30") selectedDate = filterDates().at(-1) || "";
+  render();
+}
+function comparisonDates() {
+  if (!selectedDate || $("compare").value === "single") return [];
+  const monthly = $("compare").value === "30";
+  return Array.from({length: monthly ? 30 : 7}, (_, i) => shift(selectedDate, i - (monthly ? 29 : 3)));
+}
+function renderTimeline() {
+  const timelineDates = $("compare").value === "single" ? visibleDates : comparisonDates();
+  const metric = $("metric").value, [label, unit] = METRICS[$("variable").value][metric];
+  const maximum = Math.max(...timelineDates.map(date => Math.abs(metricValue(date, metric) || 0)), 0.01);
+  $("timeline-caption").textContent = `${label} · ${$("region").selectedOptions[0].textContent} · ${timelineDates.length ? `${shortLabel(timelineDates[0])}–${shortLabel(timelineDates.at(-1))}` : "No cached dates in this season"}${metric === "departure" ? " · Blue: below normal; orange: above normal. Bar height shows magnitude." : ""}`;
+  $("timeline").replaceChildren();
+  const spacing = Math.max(1, Math.ceil(timelineDates.length / 16));
+  timelineDates.forEach((date, index) => {
+    const value = metricValue(date, metric), button = document.createElement("button");
+    button.type = "button"; button.className = `day${date === selectedDate ? " selected" : ""}${!valid(value) ? " missing" : ""}`;
+    button.disabled = !byDate.has(date);
+    button.title = `${dayLabel(date)}: ${label} ${format(value, unit, metric === "departure")}`;
+    button.setAttribute("aria-label", button.title); button.setAttribute("aria-pressed", String(date === selectedDate));
+    const bar = document.createElement("span"); bar.className = "bar";
+    bar.style.height = `${valid(value) ? Math.max(2, Math.abs(value) / maximum * 78) : 0}px`;
+    bar.style.background = $("variable").value === "pcpn" ? "#2d8b9b" : metric === "departure" ? value < 0 ? "#4286b2" : "#c66a3c" : "#756799";
+    bar.hidden = !valid(value);
+    const dateLabel = document.createElement("span"); dateLabel.className = "date-label"; dateLabel.textContent = index % spacing === 0 ? shortLabel(date) : "";
+    button.append(bar, dateLabel); button.addEventListener("click", () => selectDate(date)); $("timeline").append(button);
+  });
+}
+function addStat(label, value, unit, signed = false) {
+  const box = document.createElement("div"); box.className = "stat";
+  const number = document.createElement("strong"); number.textContent = format(value, unit, signed);
+  const caption = document.createElement("span"); caption.textContent = label;
+  box.append(number, caption); $("stats").append(box);
+}
+const DATE_CONTROLS = [
+  {input:"date", previous:"previous", next:"next", latest:"latest"},
+  {input:"circulation-date-input", previous:"circulation-previous", next:"circulation-next", latest:"circulation-latest"}
+];
+function renderDateControls() {
+  for (const ids of DATE_CONTROLS) {
+    const input = $(ids.input);
+    input.value = selectedDate; input.disabled = !days.length;
+    $(ids.previous).disabled = !selectedDate || !inCachedDateRange(shift(selectedDate, -1));
+    $(ids.next).disabled = !selectedDate || !inCachedDateRange(shift(selectedDate, 1));
+    $(ids.latest).disabled = !days.length || selectedDate === days.at(-1).date;
+    if (days.length) {input.min = days[0].date; input.max = days.at(-1).date;}
+  }
+}
+function setupDateControls() {
+  for (const ids of DATE_CONTROLS) {
+    $(ids.input).addEventListener("change", () => {
+      const input = $(ids.input);
+      if (inCachedDateRange(input.value)) selectDate(input.value);
+      else input.value = selectedDate;
+    });
+    $(ids.previous).addEventListener("click", () => selectDate(shift(selectedDate, -1)));
+    $(ids.next).addEventListener("click", () => selectDate(shift(selectedDate, 1)));
+    $(ids.latest).addEventListener("click", selectLatestDate);
+  }
+}
+function renderMap() {
+  const date = selectedDate, variable = $("variable").value, image = imageFor(date);
+  renderDateControls();
+  $("map-title").textContent = date ? dayLabel(date) : "No cached dates in this season";
+  $("map").hidden = !image; $("open-map").hidden = !image; $("unavailable").hidden = !!image;
+  if (image) {$("map").src = image; $("map").alt = `${$("variable").selectedOptions[0].textContent}, ${variable === "pcpn" ? "observed" : $("view").value}, ${dayLabel(date)}`; $("open-map").href = image;}
+  else {$("map").removeAttribute("src"); $("unavailable").textContent = "This map is unavailable in the local cache. Choose another date or display mode.";}
+  $("stats").replaceChildren();
+  const stats = regionValues(date);
+  addStat(variable === "pcpn" ? "Regional mean precipitation" : "Regional mean temperature", stats?.mean, variable === "pcpn" ? "in." : "°F");
+  if (variable === "pcpn") {addStat("Area with ≥0.10 inch", stats?.rain010, "%"); addStat("Area with ≥1 inch", stats?.rain100, "%");}
+  else {addStat("Departure from normal", stats?.departure, "°F", true); if (variable !== "tmean") addStat(variable === "mint" ? "Area at or below freezing" : "Area above 90th percentile", variable === "mint" ? stats?.freeze : stats?.warm, "%");}
+}
+function renderComparison() {
+  const mode = $("compare").value, show = mode !== "single" && !!selectedDate;
+  $("comparison").hidden = !show;
+  $("comparison-caption").hidden = !show;
+  $("comparison").classList.toggle("month-grid", mode === "30");
+  $("comparison").replaceChildren();
+  if (!show) return;
+  $("comparison-caption").textContent = mode === "30"
+    ? `30 days ending ${dayLabel(selectedDate)} · ${shortLabel(shift(selectedDate,-29))}–${shortLabel(selectedDate)}. Uses built dates across season and water-year boundaries.`
+    : `7 days centered on ${dayLabel(selectedDate)} · ${shortLabel(shift(selectedDate,-3))}–${shortLabel(shift(selectedDate,3))}. Uses built dates across season and water-year boundaries.`;
+  for (const date of comparisonDates()) {
+    const image = imageFor(date);
+    const button = document.createElement("button"); button.type = "button"; button.className = `mini${date === selectedDate ? " selected" : ""}`;
+    const title = document.createElement("strong"); title.textContent = shortLabel(date); button.append(title);
+    if (image) {const img = document.createElement("img"); img.src = image; img.loading = "lazy"; img.alt = `Daily map for ${dayLabel(date)}`; button.append(img);}
+    else {const missing = document.createElement("p"); missing.className = "empty"; missing.textContent = "Not built or unavailable"; button.append(missing);}
+    button.disabled = !byDate.has(date);
+    button.addEventListener("click", () => {
+      const day = byDate.get(date);
+      $("year").value = String(day.water_year);
+      if (!filterDates().includes(date)) $("season").value = "all";
+      selectDate(date);
+    }); $("comparison").append(button);
+  }
+}
+function renderNotable() {
+  const ranking = $("ranking").value, ascending = ranking.endsWith("_low"), metric = ranking.replace(/_low$/, "");
+  const [label, unit] = METRICS[$("variable").value][metric];
+  const candidates = visibleDates.map(date => ({date, value:metricValue(date, metric)})).filter(day => valid(day.value));
+  candidates.sort((a,b) => (ascending ? a.value - b.value : b.value - a.value) || a.date.localeCompare(b.date));
+  $("ranking-title").textContent = label; $("notable").replaceChildren();
+  for (const day of candidates.slice(0,10)) {
+    const row = document.createElement("tr"), date = document.createElement("td"), value = document.createElement("td"), action = document.createElement("td");
+    date.textContent = dayLabel(day.date); value.textContent = format(day.value, unit, metric === "departure");
+    const button = document.createElement("button"); button.type = "button"; button.textContent = "View day";
+    button.addEventListener("click", () => {selectDate(day.date); $("map-title").scrollIntoView({behavior:"smooth", block:"start"});});
+    action.append(button); row.append(date,value,action); $("notable").append(row);
+  }
+  if (!candidates.length) {const row = document.createElement("tr"), cell = document.createElement("td"); cell.colSpan = 3; cell.textContent = "No usable values for this metric in the selected period."; row.append(cell); $("notable").append(row);}
+}
+function render() {
+  visibleDates = filterDates();
+  if (!visibleDates.includes(selectedDate)) selectedDate = visibleDates.at(-1) || "";
+  renderTimeline(); renderMap(); renderComparison(); renderDiscussions(); renderNotable(); renderCirculation();
+}
+async function initialize() {
+  try {
+    const response = await fetch("daily-data.json", {cache:"no-store"});
+    if (!response.ok) throw new Error(`Data request failed (${response.status}).`);
+    const payload = await response.json();
+    if (payload.schema_version !== 1 || !Array.isArray(payload.days) || !payload.days.length) throw new Error("No usable daily data were built.");
+    days = payload.days.sort((a,b) => a.date.localeCompare(b.date)); byDate = new Map(days.map(day => [day.date,day]));
+    // Explicit local opt-in: existing public payloads do not request weather assets.
+    circulationEnabled = payload.circulation_enabled === true ||
+      (payload.circulation_preview === true && payload.publication_mode !== true);
+    setupCirculationTabs();
+    $("circulation-panel").addEventListener("toggle",renderCirculation);
+    $("circulation-retry").addEventListener("click",() => {circulationPromise=null; circulationMeansPromise=null; circulationShownDate=""; renderCirculation();});
+    circulationMeansEnabled = payload.circulation_period_means_enabled === true ||
+      (payload.circulation_period_means_preview === true && payload.publication_mode !== true);
+    $("circulation-period-control").hidden = $("circulation-period-note").hidden = !circulationMeansEnabled;
+    if (circulationMeansEnabled) {
+      $("circulation-period").value = "1";
+      $("circulation-period").addEventListener("change",renderCirculation);
+    }
+    $("circulation-show-daily")?.addEventListener("click",() => showDailyCirculation());
+    $("mode-badge").textContent = payload.publication_mode ? "Daily PRISM maps" : "Local preview · Unpublished";
+    if (payload.local_review_note && payload.publication_mode !== true) {
+      $("local-review-note").textContent = payload.local_review_note;
+      $("local-review-note").hidden = false;
+    }
+    const years = [...new Set(days.map(day => day.water_year))].sort((a,b) => b-a);
+    setOptions($("year"), years.map(year => [String(year), `${year} · Oct ${year-1}–Sep ${year}`]), String(years[0]));
+    $("coverage").textContent = `${payload.publication_mode ? "Daily maps" : "Cached daily maps"}: ${dayLabel(days[0].date)}–${dayLabel(days.at(-1).date)} · Latest PRISM date: ${dayLabel(payload.latest_cached_date)} · Temperature reference: ${payload.baseline}`;
+    refreshMetricOptions(); selectLatestDate();
+    for (const id of ["year","season","region","view","metric","ranking"]) $(id).addEventListener("change", render);
+    $("compare").addEventListener("change", () => changeMapView());
+    $("circulation-compare").addEventListener("change", () => changeMapView("circulation-compare"));
+    $("variable").addEventListener("change", () => {refreshMetricOptions(true); render();});
+    setupDateControls();
+    $("discussion-close").addEventListener("click", closeDiscussionReader);
+    $("discussion-frame").addEventListener("error", () => {
+      if (!$("discussion-reader").hidden) $("discussion-reader-status").textContent =
+        "The embedded archive could not be opened. Use Open in new tab or try again later.";
+    });
+    $("map").addEventListener("error", () => {$("map").hidden = true; $("open-map").hidden = true; $("unavailable").hidden = false; $("unavailable").textContent = "The map image could not be loaded. Rebuild the local explorer to restore missing assets.";});
+  } catch (error) {
+    $("error").hidden = false; $("error").textContent = `Could not load the local explorer: ${error.message} Open it through scripts/serve-daily-explorer.R, rather than directly from a file.`;
+    $("coverage").textContent = "Daily explorer unavailable";
+  }
+}
+initialize();

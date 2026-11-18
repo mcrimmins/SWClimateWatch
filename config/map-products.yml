@@ -11,12 +11,85 @@ defaults:
 # Keep four to six unique, enabled product IDs here.
 dashboard:
   products:
-    - tmean_percentile_07day
-    - tmean_percentile_30day
+    - pcpn_total_07day
     - pcpn_percentile_30day
     - pcpn_percentile_90day
-    - pcpn_current_dry_spell_percentile
     - pcpn_water_year_percentile
+    - tmean_departure_30day
+    - pcpn_current_dry_spell_percentile
+  # Supported layouts: per_map or none. Summaries follow product IDs when reordered.
+  summary_layout: per_map
+  # Independent of the six maps below. Links open the corresponding full map.
+  headlines:
+    enabled: true
+    cards:
+      - product: pcpn_percentile_07day
+        title: Recent precipitation
+        label: Past 7 days
+        lower_percentile: 33
+        upper_percentile: 67
+        highlight_area_percent: 50
+        strong_area_percent: 67
+        mixed_area_percent: 25
+      - product: pcpn_percentile_90day
+        title: Seasonal Precipitation
+        label: Past 90 days
+        show_period: true
+        lower_percentile: 33
+        upper_percentile: 67
+        highlight_area_percent: 50
+        strong_area_percent: 67
+        mixed_area_percent: 25
+      - product: tmean_departure_30day
+        title: Recent temperature
+        label: Past 30 days
+  groups:
+    - title: Recent rainfall
+      products: [pcpn_total_07day, pcpn_percentile_30day]
+    - title: Seasonal context
+      products: [pcpn_percentile_90day, pcpn_water_year_percentile]
+    - title: Temperature and dry spells
+      snow_title: Temperature and snow
+      products: [tmean_departure_30day, pcpn_current_dry_spell_percentile]
+  # Each summary must use metrics supported by its map. Set enabled: false to hide.
+  summaries:
+    pcpn_total_07day:
+      enabled: true
+      label: Past 7 days
+      metrics: [regional_mean, area_above_threshold]
+      threshold_inches: 0.10
+    pcpn_percentile_30day:
+      enabled: true
+      label: Past 30 days
+      metrics: [area_below_percentile, area_above_percentile]
+      lower_percentile: 10
+      upper_percentile: 90
+    pcpn_percentile_90day:
+      enabled: true
+      label: Past 90 days
+      metrics: [area_below_percentile, area_above_percentile]
+      lower_percentile: 10
+      upper_percentile: 90
+    pcpn_water_year_percentile:
+      enabled: true
+      label: Water year to date
+      metrics: [area_below_percentile, area_above_percentile]
+      lower_percentile: 10
+      upper_percentile: 90
+    tmean_departure_30day:
+      enabled: true
+      label: Past 30 days
+      metrics: [regional_mean]
+    pcpn_current_dry_spell_percentile:
+      enabled: true
+      label: Ongoing dry spell
+      metrics: [area_above_percentile]
+      upper_percentile: 90
+  seasonal_snow:
+    enabled: true
+    replace: pcpn_current_dry_spell_percentile
+    minimum_reference_cells: 1000
+    maximum_age_days: 3
 
 products:
   maxt_value:
@@ -43,6 +116,32 @@ products:
     description: >-
       This map shows the latest PRISM daily minimum temperature at each grid cell in degrees F.
       Lower values mark colder overnight conditions; use the departure or percentile maps to judge whether they are unusual for the date.
+
+  tmean_water_year_mean:
+    section: Temperature
+    group: Water year
+    label: Water-year mean temperature
+    image: prism/temperature/tmean-water-year-mean-latest.png
+    description: >-
+      Mean daily temperature from October 1 through the map date, in degrees F.
+      Each day contributes equally with daily mean calculated as (maximum + minimum)/2; missing or invalid daily pairs remain unavailable.
+  tmean_water_year_departure:
+    section: Temperature
+    group: Water year
+    label: Water-year temperature departure
+    image: prism/temperature/tmean-water-year-departure-latest.png
+    description: >-
+      Water-year-to-date mean temperature minus the average of corresponding October 1-to-date means in water years 1991-2020, in degrees F.
+      Positive values are warmer and negative values cooler than the date-matched reference, not a completed-year comparison.
+  tmean_water_year_percentile:
+    section: Temperature
+    group: Water year
+    label: Water-year temperature percentile rank
+    scale: categorical
+    image: prism/temperature/tmean-water-year-percentile-latest.png
+    description: >-
+      Mean temperature since October 1 ranked against corresponding calendar-date periods in water years 1991-2020.
+      Higher percentiles indicate warmer conditions within the 30-year reference; this is not a full-record ranking.
 
   maxt_departure_daily:
     section: Temperature
@@ -197,8 +296,8 @@ products:
     label: First-freeze departure
     image: prism/temperature/mint-first-freeze-departure-latest.png
     description: >-
-      The observed first freeze in the displayed August 1-July 31 season is compared with the local median first-freeze date from 1991-2020.
-      Negative values mean the first freeze arrived early and positive values mean it arrived late; areas without a reliable historical comparison are blank.
+      Observed first-freeze dates are compared with the 1991-2020 median, including verified no-freeze seasons; negative means early and positive means late.
+      Purple marks no freeze yet after the median date, indicating a delay lower bound rather than an observed date; unreliable or missing comparisons are blank.
   mint_last_freeze_date:
     section: Temperature
     group: Freeze monitoring
@@ -213,8 +312,8 @@ products:
     label: Last-freeze departure
     image: prism/temperature/mint-last-freeze-departure-latest.png
     description: >-
-      The observed last freeze in the displayed August 1-July 31 season is compared with the local median last-freeze date from 1991-2020.
-      Negative values mean the last freeze was early and positive values mean it was late; a current-season result remains provisional until July 31.
+      Last-freeze dates are compared with the censoring-aware 1991-2020 median; negative means early and positive means late.
+      Before July 31, departures require the median date to have passed and 14 freeze-free days; gray marks the season in progress, and later freezes can change provisional results.
   mint_freeze_free_length:
     section: Temperature
     group: Freeze monitoring
@@ -229,9 +328,8 @@ products:
     label: Freeze-free season departure
     image: prism/temperature/mint-freeze-free-season-departure-latest.png
     description: >-
-      The displayed year's freeze-free season length is compared with the local median length from 1991-2020.
-      Positive values mean a longer-than-median interval and negative values a shorter one; areas without both freeze dates or a reliable historical comparison are blank.
-
+      The observed freeze-free interval is compared with a 1991-2020 median that includes censored historical bounds; positive means longer and negative means shorter.
+      Areas lacking current endpoints, complete historical inputs or a uniquely identified median are blank.
   pcpn_total_01day:
     section: Precipitation
     group: Recent totals
@@ -272,8 +370,7 @@ products:
     label: 7-day percentile rank
     image: prism/precipitation/pcpn-percentile-rank-07day-latest.png
     description: >-
-      The latest seven-day precipitation total is ranked against 1991-2020 seven-day totals ending within two calendar days of this date.
-      Low ranks indicate an unusually dry week and high ranks an unusually wet week for this time of year.
+      The latest seven-day precipitation total is ranked against 1991-2020 seven-day totals ending within two calendar days of this date. Low ranks indicate an unusually dry week and high ranks an unusually wet week for this time of year; ties share positions, so zero rainfall can be near normal in a normally dry period.
   pcpn_percentile_30day:
     scale: categorical
     section: Precipitation
@@ -281,8 +378,7 @@ products:
     label: 30-day percentile rank
     image: prism/precipitation/pcpn-percentile-rank-30day-latest.png
     description: >-
-      The latest 30-day precipitation total is ranked against 1991-2020 30-day totals ending within two calendar days of this date.
-      Low ranks indicate an unusually dry month-length period and high ranks an unusually wet one for this time of year.
+      The latest 30-day precipitation total is ranked against 1991-2020 30-day totals ending within two calendar days of this date. Low ranks indicate an unusually dry month-length period and high ranks an unusually wet one for this time of year; ties share positions, so zero rainfall can be near normal in a normally dry period.
   pcpn_percentile_90day:
     scale: categorical
     section: Precipitation
@@ -290,9 +386,7 @@ products:
     label: 90-day percentile rank
     image: prism/precipitation/pcpn-percentile-rank-90day-latest.png
     description: >-
-      The latest 90-day precipitation total is ranked against 1991-2020 90-day totals ending within two calendar days of this date.
-      Low ranks indicate an unusually dry recent season-length period and high ranks an unusually wet one.
-
+      The latest 90-day precipitation total is ranked against 1991-2020 90-day totals ending within two calendar days of this date. Low ranks indicate an unusually dry recent season-length period and high ranks an unusually wet one; ties share positions, so zero rainfall can be near normal in a normally dry period.
   pcpn_percent_normal_30day:
     section: Precipitation
     group: Percent of normal
@@ -335,8 +429,7 @@ products:
     label: Current dry-spell percentile
     image: prism/precipitation/pcpn-current-dry-spell-percentile-rank-latest.png
     description: >-
-      The ongoing number of consecutive days below 0.04 inch is ranked against 1991-2020 dry spells ending within two calendar days of this date.
-      High ranks mean the current dry spell is unusually long for this time of year, while low ranks mean it is relatively short.
+      The ongoing number of consecutive days below 0.04 inch is ranked against 1991-2020 dry spells ending within two calendar days of this date. High ranks mean the current dry spell is unusually long for this time of year, while low ranks mean it is relatively short; ties share positions, so use the companion map for context.
   pcpn_longest_dry_spell_180day:
     section: Precipitation
     group: Dry-spell conditions
@@ -352,9 +445,7 @@ products:
     label: Longest dry-spell percentile
     image: prism/precipitation/pcpn-longest-dry-spell-percentile-rank-180day-latest.png
     description: >-
-      The longest dry run in the latest 180 days is ranked against 1991-2020 180-day windows ending within two calendar days of this date.
-      High ranks indicate an unusually long dry stretch for this time of year, whether or not it is still ongoing.
-
+      The longest dry run in the latest 180 days is ranked against 1991-2020 180-day windows ending within two calendar days of this date. High ranks indicate an unusually long dry stretch for this time of year, whether or not it is still ongoing; ties share positions, so use the companion map for context.
   pcpn_wet_day_count_90day:
     section: Precipitation
     group: Wet-day frequency
@@ -370,9 +461,7 @@ products:
     label: Wet-day-count percentile
     image: prism/precipitation/pcpn-wet-day-count-percentile-rank-090day-latest.png
     description: >-
-      The latest 90-day count of days with at least 0.04 inch is ranked against 1991-2020 counts in windows ending within two calendar days of this date.
-      High ranks mean wet days have been unusually frequent and low ranks mean they have been unusually scarce.
-
+      The latest 90-day count of days with at least 0.04 inch is ranked against 1991-2020 counts in windows ending within two calendar days of this date. High ranks mean wet days have been unusually frequent and low ranks mean they have been unusually scarce; ties share positions, so use the companion map for context.
   pcpn_wet_day_intensity_90day:
     section: Precipitation
     group: Wet-day intensity
@@ -388,9 +477,8 @@ products:
     label: Wet-day-intensity percentile
     image: prism/precipitation/pcpn-wet-day-intensity-percentile-rank-090day-latest.png
     description: >-
-      Mean precipitation per wet day is calculated from days with at least 0.04 inch in the latest 90 days and ranked against 1991-2020 periods ending within two calendar days of this date.
-      High ranks mean unusually heavy wet days and low ranks mean unusually light wet days; cells with no qualifying wet days are blank.
-
+      Mean precipitation per wet day in the latest 90 days is ranked against matching 1991-2020 periods; wet days have at least 0.04 inch.
+      High ranks mean heavier wet days and low ranks lighter ones; ranks can be volatile with only one wet day, so consult wet-day counts, and blank cells lack qualifying events.
   pcpn_very_wet_contribution_90day:
     section: Precipitation
     group: Very-wet-day contribution
@@ -406,9 +494,7 @@ products:
     label: Contribution percentile rank
     image: prism/precipitation/pcpn-very-wet-contribution-percentile-rank-090day-latest.png
     description: >-
-      The latest 90-day precipitation share from days above the local 1991-2020 wet-day 95th-percentile amount is ranked against shares from 1991-2020 windows ending within two calendar days of this date.
-      High ranks mean unusually strong dependence on very wet days, while low ranks mean less dependence; cells with less than 0.10 inch in total are blank.
-
+      The latest 90-day precipitation share from days above the local 1991-2020 wet-day 95th-percentile amount is ranked against shares from 1991-2020 windows ending within two calendar days of this date. High ranks mean unusually strong dependence on very wet days, while low ranks mean less dependence; cells with less than 0.10 inch in total are blank; ties share positions, so use the companion map for context.
   pcpn_water_year_total:
     section: Precipitation
     group: Water year
@@ -432,9 +518,7 @@ products:
     label: Percentile rank
     image: prism/precipitation/pcpn-water-year-percentile-rank-latest.png
     description: >-
-      Precipitation since October 1 is ranked against water-year 1991-2020 totals accumulated through the same calendar date.
-      Low ranks indicate an unusually dry water year to date and high ranks an unusually wet one.
-
+      Precipitation since October 1 is ranked against water-year 1991-2020 totals accumulated through the same calendar date. Low ranks indicate an unusually dry water year to date and high ranks an unusually wet one; ties share positions, so zero rainfall can be near normal in a normally dry period.
   pcpn_water_year_max_03day:
     section: Precipitation
     group: Water-year extremes
@@ -450,8 +534,8 @@ products:
     label: Maximum 3-day percentile
     image: prism/precipitation/pcpn-water-year-max-percentile-rank-03day-latest.png
     description: >-
-      The largest three-day precipitation total so far this water year is ranked against the largest three-day totals from complete water years 1991-2020.
-      High ranks indicate an unusually large event; the current-year rank is provisional until September 30 because another event may raise the maximum.
+      The largest three-day total since October 1 is ranked against each 1991-2020 reference water year through the same calendar date.
+      High ranks identify unusually large events for this point in the year; only complete within-year windows count, February 29 uses interpolated references, and tied zeros can be near normal in a normally dry period.
   pcpn_water_year_concentration_03day:
     section: Precipitation
     group: Water-year extremes

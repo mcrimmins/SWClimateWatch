@@ -1,40 +1,94 @@
 ---
 title: "Current Conditions"
-subtitle: "Southwest Climate Watch"
 page-layout: full
 toc: false
 body-classes: dashboard-page
+filters: [filters/dashboard-status.lua]
 ---
 
-::: {.dashboard-intro}
-Key temperature and precipitation indicators for Arizona and New Mexico.
+::: {.dashboard-heading}
+::: {.dashboard-heading-title}
+# Current Conditions
 
-**Data through October 05, 2026** · Reference period: 1991–2020
+:::
 
-Explore all maps from Current Maps in the navigation menu.
+::: {.dashboard-status}
+**Site updated:** [Recorded at render time]{.dashboard-rendered-at}
+
+**PRISM through:** October 05, 2026
+:::
+:::
+
+::: {.panel-tabset #home-views}
+## Maps
+
+::: {.archive-year-intro .dashboard-roni .archive-roni-el-nino}
+[Strong El Niño-range conditions · RONI +1.7 °C]{.archive-roni-badge}
+
+**JAS · Jul 2026–Sep 2026** — latest published three-month period.
+
+**NOAA status:** El Niño Advisory · issued Oct 08, 2026. [CPC discussion](https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml)
+
+Recent values are provisional; one period does not establish an ENSO episode. [NOAA CPC](https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso/roni/)
+:::
+
+::: {.dashboard-headlines}
+::: {.dashboard-headline .headline-wet .headline-strong}
+### [Recent precipitation](pages/products/pcpn_percentile_07day.qmd){.headline-link}
+
+[Past 7 days]{.headline-period}
+
+<div class="headline-metrics"><span><strong>0%</strong><small>below normal</small></span><span><strong>100%</strong><small>above normal</small></span></div>
+
+[AZ + NM · Through Oct 05, 2026]{.headline-date}
+:::
+
+::: {.dashboard-headline .headline-wet}
+### [Seasonal Precipitation](pages/products/pcpn_percentile_90day.qmd){.headline-link}
+
+[Past 90 days]{.headline-period}
+
+<div class="headline-metrics"><span><strong>3%</strong><small>below normal</small></span><span><strong>65%</strong><small>above normal</small></span></div>
+
+[AZ + NM · Through Oct 05, 2026]{.headline-date}
+:::
+
+::: {.dashboard-headline .headline-warm}
+### [Recent temperature](pages/products/tmean_departure_30day.qmd){.headline-link}
+
+[Past 30 days]{.headline-period}
+
+<div class="headline-metrics headline-temperature"><span><strong>+2.4°F</strong><small>from normal</small></span></div>
+
+[AZ + NM · Through Oct 05, 2026]{.headline-date}
+:::
+
 :::
 
 ::: {.dashboard-map-grid}
+::: {.dashboard-row-heading}
+## Recent rainfall
+:::
+
 ::: {.dashboard-map-card}
-[![](maps/generated/prism/temperature/tmean-percentile-rank-07day-latest.png){fig-alt="Map showing 7-day mean temperature across Arizona and New Mexico"}](pages/products/tmean_percentile_07day.qmd)
+::: {.dashboard-map-summary}
+<span class="dashboard-summary-period">Past 7 days</span> <span class="dashboard-summary-chip summary-neutral" title="AZ + NM; Area-weighted precipitation total; through 2026-10-05">1.52″ avg</span> <span class="dashboard-summary-chip summary-neutral" title="AZ + NM; Area with accumulated precipitation at least 0.10 inches; through 2026-10-05">≥0.10″: 100%</span>
+:::
+
+[![](maps/generated/prism/precipitation/pcpn-total-07day-latest.png){fig-alt="Map showing 7-day total across Arizona and New Mexico"}](pages/products/pcpn_total_07day.qmd)
 
 ::: {.dashboard-card-actions}
-[View details](pages/products/tmean_percentile_07day.qmd){.btn .btn-sm .btn-outline-primary}
-[Full-resolution PNG](maps/generated/prism/temperature/tmean-percentile-rank-07day-latest.png){.dashboard-full-resolution}
+[View details](pages/products/pcpn_total_07day.qmd){.btn .btn-sm .btn-outline-primary}
+[Full-resolution PNG](maps/generated/prism/precipitation/pcpn-total-07day-latest.png){.dashboard-full-resolution}
 :::
 :::
 
 ::: {.dashboard-map-card}
-[![](maps/generated/prism/temperature/tmean-percentile-rank-30day-latest.png){fig-alt="Map showing 30-day mean temperature across Arizona and New Mexico"}](pages/products/tmean_percentile_30day.qmd)
-
-::: {.dashboard-card-actions}
-[View details](pages/products/tmean_percentile_30day.qmd){.btn .btn-sm .btn-outline-primary}
-[Full-resolution PNG](maps/generated/prism/temperature/tmean-percentile-rank-30day-latest.png){.dashboard-full-resolution}
-:::
+::: {.dashboard-map-summary}
+<span class="dashboard-summary-period">Past 30 days</span> <span class="dashboard-summary-chip summary-neutral" title="AZ + NM; Area below percentile 10; through 2026-10-05">Very dry: 0%</span> <span class="dashboard-summary-chip summary-wet summary-strong" title="AZ + NM; Area above percentile 90; through 2026-10-05">Very wet: 68%</span>
 :::
 
-::: {.dashboard-map-card}
-[![](maps/generated/prism/precipitation/pcpn-percentile-rank-30day-latest.png){fig-alt="Map showing 30-day percentile rank across Arizona and New Mexico" loading="lazy"}](pages/products/pcpn_percentile_30day.qmd)
+[![](maps/generated/prism/precipitation/pcpn-percentile-rank-30day-latest.png){fig-alt="Map showing 30-day percentile rank across Arizona and New Mexico"}](pages/products/pcpn_percentile_30day.qmd)
 
 ::: {.dashboard-card-actions}
 [View details](pages/products/pcpn_percentile_30day.qmd){.btn .btn-sm .btn-outline-primary}
@@ -42,7 +96,15 @@ Explore all maps from Current Maps in the navigation menu.
 :::
 :::
 
+::: {.dashboard-row-heading}
+## Seasonal context
+:::
+
 ::: {.dashboard-map-card}
+::: {.dashboard-map-summary}
+<span class="dashboard-summary-period">Past 90 days</span> <span class="dashboard-summary-chip summary-neutral" title="AZ + NM; Area below percentile 10; through 2026-10-05">Very dry: 0%</span> <span class="dashboard-summary-chip summary-wet" title="AZ + NM; Area above percentile 90; through 2026-10-05">Very wet: 19%</span>
+:::
+
 [![](maps/generated/prism/precipitation/pcpn-percentile-rank-90day-latest.png){fig-alt="Map showing 90-day percentile rank across Arizona and New Mexico" loading="lazy"}](pages/products/pcpn_percentile_90day.qmd)
 
 ::: {.dashboard-card-actions}
@@ -52,15 +114,10 @@ Explore all maps from Current Maps in the navigation menu.
 :::
 
 ::: {.dashboard-map-card}
-[![](maps/generated/prism/precipitation/pcpn-current-dry-spell-percentile-rank-latest.png){fig-alt="Map showing current dry-spell percentile across Arizona and New Mexico" loading="lazy"}](pages/products/pcpn_current_dry_spell_percentile.qmd)
-
-::: {.dashboard-card-actions}
-[View details](pages/products/pcpn_current_dry_spell_percentile.qmd){.btn .btn-sm .btn-outline-primary}
-[Full-resolution PNG](maps/generated/prism/precipitation/pcpn-current-dry-spell-percentile-rank-latest.png){.dashboard-full-resolution}
-:::
+::: {.dashboard-map-summary}
+<span class="dashboard-summary-period">Water year to date</span> <span class="dashboard-summary-chip summary-neutral" title="AZ + NM; Area below percentile 10; through 2026-10-05">Very dry: 0%</span> <span class="dashboard-summary-chip summary-neutral" title="AZ + NM; Area above percentile 90; through 2026-10-05">Very wet: 5%</span>
 :::
 
-::: {.dashboard-map-card}
 [![](maps/generated/prism/precipitation/pcpn-water-year-percentile-rank-latest.png){fig-alt="Map showing percentile rank across Arizona and New Mexico" loading="lazy"}](pages/products/pcpn_water_year_percentile.qmd)
 
 ::: {.dashboard-card-actions}
@@ -69,10 +126,64 @@ Explore all maps from Current Maps in the navigation menu.
 :::
 :::
 
+::: {.dashboard-row-heading}
+## Temperature and dry spells
 :::
 
-::: {.dashboard-note}
-Percentile rank compares current conditions with the same time of year in 1991–2020. Low precipitation ranks indicate drier conditions; high temperature ranks indicate warmer conditions. A high dry-spell rank means the ongoing dry spell is unusually long.
+::: {.dashboard-map-card}
+::: {.dashboard-map-summary}
+<span class="dashboard-summary-period">Past 30 days</span> <span class="dashboard-summary-chip summary-warm" title="AZ + NM; Area-weighted temperature departure; through 2026-10-05">+2.4°F from normal</span>
+:::
+
+[![](maps/generated/prism/temperature/tmean-departure-30day-latest.png){fig-alt="Map showing mean temperature departure across Arizona and New Mexico" loading="lazy"}](pages/products/tmean_departure_30day.qmd)
+
+::: {.dashboard-card-actions}
+[View details](pages/products/tmean_departure_30day.qmd){.btn .btn-sm .btn-outline-primary}
+[Full-resolution PNG](maps/generated/prism/temperature/tmean-departure-30day-latest.png){.dashboard-full-resolution}
+:::
+:::
+
+::: {.dashboard-map-card}
+::: {.dashboard-map-summary}
+<span class="dashboard-summary-period">Ongoing dry spell</span> <span class="dashboard-summary-chip summary-neutral" title="AZ + NM; Area above percentile 90; through 2026-10-05">Long dry spells: 0%</span>
+:::
+
+[![](maps/generated/prism/precipitation/pcpn-current-dry-spell-percentile-rank-latest.png){fig-alt="Map showing current dry-spell percentile across Arizona and New Mexico" loading="lazy"}](pages/products/pcpn_current_dry_spell_percentile.qmd)
+
+::: {.dashboard-card-actions}
+[View details](pages/products/pcpn_current_dry_spell_percentile.qmd){.btn .btn-sm .btn-outline-primary}
+[Full-resolution PNG](maps/generated/prism/precipitation/pcpn-current-dry-spell-percentile-rank-latest.png){.dashboard-full-resolution}
+:::
+:::
+
+:::
+
+<!-- BEGIN HOME MAP FOOTER -->
+```{=html}
+<details id="home-map-notes" class="dashboard-reading-notes">
+<summary>Reading these maps</summary>
+<ul>
+<li><strong>Reference and dates:</strong> PRISM ranks and departures use seasonally matched 1991&ndash;2020 comparisons. Low precipitation ranks mean drier conditions; high dry-spell ranks mean unusually long dry spells. Positive temperature departures mean warmer conditions, in &deg;F. Recent inputs are preliminary; use each map's data date.</li>
+<li><strong>Water year:</strong> Precipitation starts October 1. Early-season ranks cover a short period; the 90-day map provides broader context.</li>
+<li><strong>Regional values:</strong> Summaries cover Arizona and New Mexico, weighted by grid-cell area within state boundaries, and require at least 98% valid area. Percentile percentages describe affected area, not an average percentile. Each summary follows its map's period and date.</li>
+<li><strong>Headline precipitation cards:</strong> Below-/above-normal area uses below percentile 33 / above percentile 67. Mixed shading retains both dry and wet signals.</li>
+<li><strong>Very dry/wet map summaries:</strong> Affected area uses below percentile 10 / above percentile 90. Dry-spell summaries highlight the unusually long tail. Map-summary tooltips give the thresholds and dates.</li>
+<li><strong>Summary color cues:</strong> Stronger precipitation or dry-spell summary colors highlight a larger affected area, not more extreme grid-cell values. Temperature summary colors show warmer/cooler departures, not statistical significance. Rainfall amounts remain neutral because amount alone does not establish rarity. These cues are not a combined drought classification.</li>
+</ul><p><a href="pages/methods.html">About the data and methods</a></p></details>
+<nav id="historic-seasons" class="dashboard-context-links" aria-label="Historical climate context">
+<span class="dashboard-context-label">Historical context</span>
+<a href="pages/monthly-climate.html">Monthly Climate</a>
+<a href="pages/archive/wy2025.html">Latest completed water year (WY2025)</a>
+</nav>
+```
+<!-- END HOME MAP FOOTER -->
+
+## Synopsis
+
+[Open synopsis as a separate page](pages/synopsis.qmd)
+
+{{< include pages/_synopsis-content.qmd >}}
+
 :::
 
 ::: {.institutional-branding .dashboard-branding}

@@ -1,0 +1,8 @@
+---
+title: "Conditions synopsis"
+toc: false
+---
+
+[Home dashboard](../index.qmd)
+
+{{< include _synopsis-content.qmd >}}

@@ -1,0 +1,90 @@
+testthat::test_that("hydroclimate home keeps six maps and substitutes only the seasonal card", {
+  dashboard<-read_map_dashboard_config(file.path(project_root,"config","map-products.yml"))
+  dates<-c(Temperature="2026-02-15",Precipitation="2026-02-14")
+  normal<-map_dashboard_page_text(dashboard,dates,archive_years=2025:2021)
+  testthat::expect_equal(sum(grepl("::: {.dashboard-map-card}",normal,fixed=TRUE)),6L)
+  testthat::expect_true(any(grepl("pcpn_total_07day.qmd",normal,fixed=TRUE)))
+  testthat::expect_true(any(grepl("tmean_departure_30day.qmd",normal,fixed=TRUE)))
+  testthat::expect_false(any(grepl("tmean_percentile_07day.qmd",normal,fixed=TRUE)))
+  testthat::expect_false(any(grepl("dashboard-tool-link",normal,fixed=TRUE)))
+  testthat::expect_false(any(grepl("Explore more:|Compare historic seasons",normal)))
+  testthat::expect_true(any(grepl('href="pages/monthly-climate.html"',normal,fixed=TRUE)))
+  testthat::expect_true(any(grepl('href="pages/archive/wy2025.html"',normal,fixed=TRUE)))
+  testthat::expect_false(any(grepl('href="pages/archive/wy2024.html"',normal,fixed=TRUE)))
+  note <- normal[grepl('id="home-map-notes"',normal,fixed=TRUE)]
+  testthat::expect_length(note,1L)
+  testthat::expect_false(grepl("\\bopen\\b",note))
+  testthat::expect_true(any(grepl("Early-season ranks",normal,fixed=TRUE)))
+  testthat::expect_true(any(grepl("**Site updated:**",normal,fixed=TRUE)))
+  testthat::expect_true(any(grepl("**PRISM through:**",normal,fixed=TRUE)))
+  testthat::expect_false(any(grepl("Track recent rainfall|Explore all maps from Current Maps",normal)))
+  testthat::expect_identical(normal,map_dashboard_page_text(dashboard,dates,archive_years=2025:2021))
+  snow<-list(available=TRUE,date="2026-02-16",image="maps/generated/snodas/current/swe-percent-median.png",page="pages/current-snow.qmd")
+  winter<-map_dashboard_page_text(dashboard,dates,snow=snow)
+  testthat::expect_equal(sum(grepl("::: {.dashboard-map-card}",winter,fixed=TRUE)),6L)
+  testthat::expect_true(any(grepl("SNODAS · 2026-02-16",winter,fixed=TRUE)))
+  testthat::expect_true(any(grepl("WY2005–2025",winter,fixed=TRUE)))
+  testthat::expect_false(any(grepl("pcpn_current_dry_spell_percentile.qmd",winter,fixed=TRUE)))
+  testthat::expect_true(any(grepl("Snow percentages are not percentile ranks",winter,fixed=TRUE)))
+})
+
+testthat::test_that("snow card requires verified fresh imagery and meaningful reference support", {
+  root<-tempfile(); dir.create(root); on.exit(unlink(root,recursive=TRUE),add=TRUE)
+  site<-file.path(root,"site")
+  image<-file.path(site,"maps","generated","snodas","current","swe-percent-median.png")
+  page<-file.path(site,"pages","current-snow.qmd")
+  diagnostic<-file.path(root,"data","diagnostics","snodas-current-site","publication.csv")
+  reference<-file.path(root,"data","processed","snodas","az-nm-pad050","climatology",
+    "wy2005-wy2025","daily","centered-05day","02-15")
+  for(path in c(dirname(image),dirname(page),dirname(diagnostic),reference)) dir.create(path,recursive=TRUE)
+  # Publication integrity is represented by matching signatures/checksums here;
+  # the existing snow publication workflow independently validates PNG decoding.
+  writeBin(c(as.raw(c(137,80,78,71,13,10,26,10)),raw(10001)),image)
+  writeLines("Verified snow page",page)
+  publication<-data.frame(water_year=2026,date="2026-02-15",
+    percent_md5=unname(tools::md5sum(image)),page_md5=unname(tools::md5sum(page)))
+  utils::write.csv(publication,diagnostic,row.names=FALSE)
+  m<-terra::rast(nrows=2,ncols=2,xmin=-115,xmax=-109,ymin=31,ymax=37,crs="EPSG:4326")
+  n<-terra::setValues(m,c(18,21,20,10)); m<-terra::setValues(m,c(1,2,0,NA))
+  terra::writeRaster(m,file.path(reference,"median_swe.tif"))
+  terra::writeRaster(n,file.path(reference,"sample_years.tif"))
+  marker<-data.frame(month_day="02-15",reference_years=paste(2005:2025,collapse=","),
+    median_swe_md5=unname(tools::md5sum(file.path(reference,"median_swe.tif"))),
+    sample_years_md5=unname(tools::md5sum(file.path(reference,"sample_years.tif"))))
+  utils::write.csv(marker,file.path(reference,"complete.csv"),row.names=FALSE)
+  select<-function(today="2026-02-16",minimum=2) map_dashboard_snow_selection(site,
+    today=as.Date(today),minimum_reference_cells=minimum)
+  testthat::expect_true(select()$available)
+  testthat::expect_equal(select()$reference_cells,2)
+  testthat::expect_false(select(minimum=3)$available)
+  testthat::expect_false(select("2026-02-20")$available)
+  testthat::expect_false(select("2026-02-14")$available)
+  testthat::expect_false(select("2026-07-01")$available)
+  writeLines("Changed page",page)
+  testthat::expect_false(select()$available)
+  writeLines("Verified snow page",page)
+  marker$median_swe_md5<-"wrong"; utils::write.csv(marker,file.path(reference,"complete.csv"),row.names=FALSE)
+  testthat::expect_false(select()$available)
+  testthat::expect_false(map_dashboard_snow_selection(file.path(root,"absent"),today=as.Date("2026-02-16"))$available)
+})
+
+testthat::test_that("collapsed Home notes follow configured thresholds and history stays compact", {
+  dashboard <- read_map_dashboard_config(file.path(project_root,"config/map-products.yml"))
+  settings <- attr(dashboard,"summary_config")
+  for(id in names(settings$headlines$cards)[grepl("^pcpn_",names(settings$headlines$cards))]) {
+    settings$headlines$cards[[id]]$lower_percentile <- 20
+    settings$headlines$cards[[id]]$upper_percentile <- 80
+  }
+  for(id in c("pcpn_percentile_30day","pcpn_percentile_90day","pcpn_water_year_percentile")) {
+    settings$summaries[[id]]$lower_percentile <- 5
+    settings$summaries[[id]]$upper_percentile <- 95
+  }
+  attr(dashboard,"summary_config") <- settings
+  footer <- map_dashboard_footer_text(dashboard,archive_years=c(2023,2025,2024),show_headlines=TRUE)
+  testthat::expect_true(any(grepl("below percentile 20 / above percentile 80",footer,fixed=TRUE)))
+  testthat::expect_true(any(grepl("below percentile 5 / above percentile 95",footer,fixed=TRUE)))
+  testthat::expect_equal(sum(grepl('href="pages/archive/',footer,fixed=TRUE)),1L)
+  testthat::expect_true(any(grepl("WY2025",footer,fixed=TRUE)))
+  testthat::expect_false(any(grepl("WY2024",footer,fixed=TRUE)))
+  testthat::expect_false(any(grepl("Snow percentages",footer,fixed=TRUE)))
+})

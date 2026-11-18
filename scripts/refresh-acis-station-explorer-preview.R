@@ -13,5 +13,11 @@ if (!file.exists(rows_path)) {
 preview_rows <- read.csv(rows_path, stringsAsFactors = FALSE)
 preview_page <- write_acis_station_explorer_prototype(
   preview_rows, output_dir = preview_dir)
+seasonal_directory <- file.path(preview_dir,"seasonal")
+if(dir.exists(seasonal_directory)) {
+  assets <- file.path("scripts","station-seasonal-assets",c("index.html","cumulative.js","cumulative.css"))
+  if(!all(file.copy(assets,seasonal_directory,overwrite=TRUE)))
+    stop("Could not refresh seasonal chart display assets.")
+}
 source(file.path("scripts", "audit-acis-station-publication.R"))
 message("Refreshed unpublished station explorer: ", preview_page)

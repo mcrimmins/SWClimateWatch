@@ -40,9 +40,9 @@ swc_region <- list(
 swc_prism <- list(
   aoi_id = "az-nm-pad050",
   daily_endpoint = "https://grid2.rcc-acis.org/GridData",
-  monthly_endpoint = "https://data.rcc-acis.org/GridData",
+  monthly_endpoint = "https://grid2.rcc-acis.org/GridData",
   daily_grid = "prism",
-  monthly_grid = "21",
+  monthly_grid = "prism",
   # `variables` are requested from RCC-ACIS. `tmean` is derived locally from
   # maxt and mint so it never adds API traffic.
   variables = c("maxt", "mint", "pcpn"),
@@ -76,6 +76,10 @@ swc_prism <- list(
   # monthly through six months. The 215-day check follows the approximate
   # six-month window so a late final batch is not missed by the 184-day check.
   revision_ages = c(2L, 6L, 31L, 61L, 92L, 123L, 153L, 184L, 215L),
+  # Yesterday is optional: admit all three fields together after validation.
+  try_yesterday = tolower(trimws(Sys.getenv("SWC_PRISM_TRY_YESTERDAY", "true"))) %in%
+    c("true", "1", "yes", "on"),
+  availability_timeout_seconds = 45L,
   bootstrap_chunk = "month",
   request_timeout_seconds = 180L,
   max_requests_per_run = 100L,
@@ -111,4 +115,14 @@ prism_is_wet_day <- function(
 initialize_swc_directories <- function(paths = swc_paths) {
   directories <- unname(unlist(paths[c("raw", "processed", "maps")]))
   invisible(vapply(directories, dir.create, logical(1), recursive = TRUE, showWarnings = FALSE))
+}
+
+prism_reference_year_label <- function(kind=c('normal','percentile'), config=swc_prism) {
+  kind <- match.arg(kind)
+  paste0(format(as.Date(config[[paste0(kind,'_start')]]),'%Y'),'-',
+    format(as.Date(config[[paste0(kind,'_end')]]),'%Y'))
+}
+prism_reference_baseline_label <- function(kind=c('normal','percentile'), centered=TRUE, config=swc_prism) {
+  kind <- match.arg(kind)
+  paste0(prism_reference_year_label(kind,config),if(centered) paste0(' | centered ',config$centered_window_days,'-day baseline') else '')
 }

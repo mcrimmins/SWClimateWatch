@@ -1,0 +1,27 @@
+---
+title: "Temperature extremes"
+page-layout: full
+toc: false
+---
+
+```{=html}
+<div class="current-group-preview" data-group="temperature-extremes">
+<p>Counts over the past 30 days use seasonal 1991–2020 percentile thresholds. These are unusually warm days or cold nights, rather than all-time records.</p>
+<div class="temperature-variable-tabs" role="tablist" aria-label="Temperature extremes">
+<button type="button" id="group-tab-warm" role="tab" data-tab="warm" aria-controls="group-maps">Extreme warm days</button>
+<button type="button" id="group-tab-cold" role="tab" data-tab="cold" aria-controls="group-maps">Extreme cold nights</button>
+</div>
+<div class="temperature-period-control group-variant-control"><label for="group-variant">Display</label><select id="group-variant"></select></div>
+<div id="group-maps" role="tabpanel" aria-live="polite">
+<article class="group-map" data-product="maxt_extreme_warm_count_30day" data-tab="warm" data-variant="map" data-option="Past 30 days"><h2 class="group-map-heading">Extreme warm days in 30 days</h2>
+<a href="../maps/generated/prism/temperature/maxt-above-p90-count-30day-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/maxt-above-p90-count-30day-latest.png" alt="Extreme warm days in 30 days" loading="lazy"></a>
+<p>This map counts days in the latest 30 when maximum temperature exceeded the local 1991-2020 calendar-day 90th-percentile threshold. More qualifying days indicate more frequent unusually hot afternoons during the period.</p>
+<p><a href="../maps/generated/prism/temperature/maxt-above-p90-count-30day-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+<article class="group-map" data-product="mint_extreme_cold_count_30day" data-tab="cold" data-variant="map" data-option="Past 30 days"><h2 class="group-map-heading">Extreme cold nights in 30 days</h2>
+<a href="../maps/generated/prism/temperature/mint-below-p10-count-30day-latest.png" target="_blank" rel="noopener"><img src="../maps/generated/prism/temperature/mint-below-p10-count-30day-latest.png" alt="Extreme cold nights in 30 days" loading="lazy"></a>
+<p>This map counts nights in the latest 30 when minimum temperature fell below the local 1991-2020 calendar-day 10th-percentile threshold. More qualifying nights indicate more frequent unusually cold overnight conditions during the period.</p>
+<p><a href="../maps/generated/prism/temperature/mint-below-p10-count-30day-latest.png" target="_blank" rel="noopener">Open full-resolution PNG</a></p>
+</article>
+</div></div><script src="../assets/current-map-groups/current-map-groups.js"></script>
+```

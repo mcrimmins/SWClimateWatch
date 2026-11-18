@@ -35,7 +35,20 @@ Observed SWE minus the centered-five-day WY2005-WY2025 median for this calendar 
 :::
 :::
 
+::: {.dashboard-map-card}
+![](../maps/generated/snodas/current/swe-percent-median.png){fig-alt="Snow water equivalent as a percent of the date-specific median"}
+
+::: {.archive-map-description}
+Observed SWE divided by the centered-five-day WY2005-WY2025 median, times 100. Ratios require a median of at least 1 inch and at least 18 reference years. Gray indicates a valid median below 1 inch; beige indicates unavailable data or insufficient reference support. This is not a percentile.
 :::
 
+::: {.dashboard-card-actions}
+[Open full-resolution PNG](../maps/generated/snodas/current/swe-percent-median.png){.btn .btn-sm .btn-outline-primary}
+:::
+:::
+
+:::
+
+Seven-day SWE change unavailable (2026-09-30 to 2026-10-07): Exact prior endpoint is missing or unverified. No date substitution or zero filling is used.
 SNODAS is a modeled 06:00 UTC snowpack snapshot supplied by NOAA/NSIDC.
 The departure is an absolute difference, not a percentile or snowfall total.

@@ -35,3 +35,65 @@ testthat::test_that("live publish entry point uses the dedicated confirmed prefi
   testthat::expect_match(script, "delete = FALSE", fixed = TRUE)
   testthat::expect_match(script, "render = TRUE", fixed = TRUE)
 })
+
+
+testthat::test_that("site renders reconcile monthly pages from cached local releases first", {
+  script<-readLines(file.path(project_root,"scripts/deploy-site-s3.R"))
+  calls <- character()
+  swc_deploy_stage_cached_sources("Rscript", "s3://fixture/watch-staging/", TRUE,
+    function(command, args, label) calls <<- c(calls, args[[1L]]))
+  testthat::expect_equal(sum(calls == "scripts/stage-cached-prism-monthly-site.R"), 1L)
+  stage<-grep('swc_deploy_stage_cached_sources(rscript, destination)',script,fixed=TRUE)
+  render<-grep('swc_deploy_run(quarto, c("render", "site")',script,fixed=TRUE)
+  testthat::expect_length(stage,1L)
+  testthat::expect_true(stage<render)
+  helper<-paste(readLines(file.path(project_root,"scripts/stage-cached-prism-monthly-site.R")),collapse="\n")
+  testthat::expect_false(grepl("run_prism_monthly_update(",helper,fixed=TRUE))
+})
+
+
+testthat::test_that("stable images are uploaded separately with short caching and without deletion", {
+  args<-swc_deploy_hotlink_sync_args("/tmp/site","s3://bucket/climate/watch/","us-west-2",TRUE)
+  testthat::expect_true("--dryrun" %in% args)
+  testthat::expect_false("--delete" %in% args)
+  testthat::expect_true("--cache-control" %in% args)
+  testthat::expect_true(any(grepl("public,max-age=300,must-revalidate",args,fixed=TRUE)))
+  testthat::expect_true(any(grepl("s3://bucket/climate/watch/maps/latest/",args,fixed=TRUE)))
+  script<-readLines(file.path(project_root,"scripts/deploy-site-s3.R"))
+  create<-grep("map_hotlinks <- stage_map_hotlinks",script,fixed=TRUE)
+  optional<-grep("extra_validation(output_dir)",script,fixed=TRUE)
+  upload<-grep("Upload stable map links",script,fixed=TRUE)
+  testthat::expect_true(optional<create&&create<upload)
+  testthat::expect_true(any(grepl('shQuote("maps/latest/*")',script,fixed=TRUE)))
+})
+
+testthat::test_that("cached snow staging and rendered checks surround render before upload", {
+  script <- readLines(file.path(project_root, "scripts/deploy-site-s3.R"))
+  stage <- grep('"scripts/stage-cached-snodas-seasonal-anomalies.R"', script, fixed = TRUE)
+  render <- grep('c("render", "site")', script, fixed = TRUE)
+  check <- grep('"scripts/check-snodas-seasonal-anomaly-publication.R"', script, fixed = TRUE)
+  upload <- grep('"Upload stable map links"', script, fixed = TRUE)
+  testthat::expect_true(length(stage) == 1L && stage < render)
+  testthat::expect_true(length(check) == 1L && render < check && check < upload)
+})
+
+testthat::test_that("mutable uploads revalidate and metadata migration avoids historical bulk copies",{
+  args<-swc_deploy_mutable_args("/tmp/site","s3://bucket/climate/watch/","us-west-2",TRUE)
+  testthat::expect_true(all(c("sync","--dryrun","--cache-control")%in%args))
+  testthat::expect_true(any(grepl("no-cache,max-age=0,must-revalidate",args,fixed=TRUE)))
+  for(pattern in c("*.html","*.js","*.css","*.json"))testthat::expect_true(shQuote(pattern)%in%args)
+  force<-swc_deploy_mutable_args("/tmp/site","s3://bucket/climate/watch/","us-west-2",TRUE,force=TRUE)
+  testthat::expect_true(all(c("cp","--recursive","--dryrun")%in%force))
+  testthat::expect_false("--delete"%in%force)
+  testthat::expect_true(shQuote("*/history/*")%in%force)
+  testthat::expect_true(shQuote("assets/cache-policy.json")%in%args)
+  testthat::expect_error(swc_deploy_cache_policy_current("aws","s3://bucket/climate/watch/","us-west-2",
+    capture=function(args)structure("AccessDenied",status=1L)),"AWS access")
+  testthat::expect_false(swc_deploy_cache_policy_current("aws","s3://bucket/climate/watch/","us-west-2",
+    capture=function(args)structure("404 Not Found",status=1L)))
+  testthat::expect_true(swc_deploy_cache_policy_current("aws","s3://bucket/climate/watch/","us-west-2",
+    capture=function(args)jsonlite::toJSON(list(version=swc_deploy_cache_policy_version()),auto_unbox=TRUE)))
+  script<-readLines(file.path(project_root,"scripts/deploy-site-s3.R"))
+  testthat::expect_true(grep('"Apply cache headers',script)<grep('"Record completed cache-policy upgrade"',script))
+  testthat::expect_true(grep('swc_cache_version_app(file.path("site","daily-explorer"))',script,fixed=TRUE)<grep('c("render", "site")',script,fixed=TRUE))
+})

@@ -1,4 +1,10 @@
 # One local, date-aware PRISM + SNODAS + station update followed by site sync.
+.swc_daily_module_files <- Filter(function(x) is.character(x)&&length(x)==1L,
+  lapply(sys.frames(),function(frame) frame$ofile))
+source(file.path(dirname(tail(.swc_daily_module_files,1)[[1]]),"monthly-publish.R"))
+source(file.path(dirname(tail(.swc_daily_module_files,1)[[1]]),"site-cache.R"),local=TRUE)
+source(file.path(dirname(tail(.swc_daily_module_files,1)[[1]]),"acis-station-monthly-climatology.R"),local=TRUE)
+rm(.swc_daily_module_files)
 
 # ntfy is opt-in. Never store a topic or access token in repository files.
 swc_ntfy_notify <- function(event, message, perform = httr2::req_perform) {
@@ -101,7 +107,8 @@ swc_publish_elapsed <- function(seconds) {
 swc_daily_publish_summary_lines <- function(record, prism = NULL, snow = NULL,
                                             stations = NULL, validation = NULL,
                                             failed_stage = NULL,
-                                            destination = swc_daily_publish_live_destination()) {
+                                            destination = swc_daily_publish_live_destination(),
+                                            explorer = NULL, weather = NULL, monthly = NULL, interactive = NULL) {
   status <- switch(record$status[[1L]],
                    PUBLISHED = "Published", PREVIEW = "Preview complete",
                    SKIPPED_UNCHANGED = "Update complete; upload skipped",
@@ -121,6 +128,13 @@ swc_daily_publish_summary_lines <- function(record, prism = NULL, snow = NULL,
         row$downloaded, row$downloaded_changed, row$processed,
         if (isTRUE(row$maps_rebuilt[[1L]])) "rebuilt" else "skipped"))
     } else lines <- c(lines, paste0("PRISM: data ", changed, "."))
+    availability <- prism$availability
+    if (is.data.frame(availability) && nrow(availability) &&
+        !is.na(availability$selected_date[1L])) {
+      lines <- c(lines, paste0("PRISM date: ", availability$selected_date[1L],
+        if (availability$status[1L] == "ACCEPTED") " (yesterday available)." else
+          paste0(" (", tolower(availability$status[1L]), "; latest complete set retained).")))
+    }
   }
   if (is.list(snow) && is.list(snow$maps) && length(snow$maps$status) == 1L) {
     snow_line <- paste0("Snow: ", gsub("_", " ", tolower(snow$maps$status)),
@@ -156,6 +170,39 @@ swc_daily_publish_summary_lines <- function(record, prism = NULL, snow = NULL,
       station_line <- paste0(station_line, "; ", stations$pending, " delayed")
     lines <- c(lines, paste0(station_line, "."))
   }
+  if (is.list(explorer) && all(c("days", "maps", "built", "reused") %in% names(explorer))) {
+    lines <- c(lines, sprintf("Daily Explorer: %d days, %d maps; %d dates rebuilt, %d reused.",
+      explorer$days, explorer$maps, explorer$built, explorer$reused))
+  }
+  if (is.list(weather) && !identical(weather$status,"DISABLED")) {
+    lines <- c(lines, if (identical(weather$status,"ERROR"))
+      "Weather maps: unavailable this run; core publishing continued." else
+      sprintf("Weather maps: %d dates retained; %d built, %d reused, %d failed; %d pending. Latest: %s.",
+        weather$days,weather$built,weather$reused,weather$failed,weather$pending,weather$latest))
+    if(is.data.frame(weather$coverage) && nrow(weather$coverage)==1L) {
+      coverage<-weather$coverage
+      lines<-c(lines,sprintf("Weather coverage: %d/%d recent dates, %d/%d Explorer dates; %d wind overlays withheld, %d overlay statuses unknown.",
+        coverage$recent_available,coverage$recent_expected,coverage$available_dates,
+        coverage$explorer_dates,coverage$wind_withheld_dates,coverage$unknown_overlay_dates))
+    }
+    if(is.numeric(weather$retry_pending)&&length(weather$retry_pending)==1L&&is.finite(weather$retry_pending)&&weather$retry_pending>0)
+      lines<-c(lines,sprintf("CORe retry queue: %d dates; retries resume on subsequent daily runs.",weather$retry_pending))
+    means<-weather$period_means
+    if(is.list(means)&&!identical(means$status,"DISABLED"))lines<-c(lines,
+      if(identical(means$status,"ERROR"))"Weather means: unavailable this run; daily maps retained." else
+        sprintf("Weather means (7/30 days): %d periods, %d maps; %d built, %d reused; %d deferred, %d unavailable (%s).",
+          means$periods,means$maps,means$built,means$reused,means$deferred,means$unavailable,swc_publish_elapsed(means$seconds)))
+  }
+  lines <- c(lines,swc_monthly_summary_line(monthly))
+  if(is.list(interactive)&&length(interactive$status)==1L&&interactive$status %in% c("READY","REUSED")) lines <- c(lines,
+    sprintf("Interactive Maps: %s; %d daily bundles through %s; %d current products (%d unavailable); monthly through %s.",
+      tolower(interactive$status),interactive$daily_bundles,interactive$daily_through,interactive$current_products,
+      interactive$current_unavailable,interactive$monthly_end))
+  if (is.list(interactive) && !is.null(interactive$snow_status)) lines <- c(lines,
+    if (interactive$snow_status %in% c("READY", "REUSED"))
+      sprintf("Interactive Snow: %s; through %s; seven-day change %s.", tolower(interactive$snow_status),
+        interactive$snow_date, if (isTRUE(interactive$snow_change_available)) "available" else "unavailable") else
+      paste0("Interactive Snow: ", tolower(interactive$snow_status), "."))
   if (is.list(validation) &&
       all(c("current_passed", "current_total", "archive_passed",
             "archive_total") %in% names(validation))) {
@@ -262,17 +309,164 @@ swc_daily_publish_update_snow <- function(today = Sys.Date()) {
   list(data = data, maps = maps)
 }
 
-swc_daily_publish_update_stations <- function(today = Sys.Date()) {
+swc_daily_publish_station_context <- function() {
   context <- new.env(parent = .GlobalEnv)
   for (path in c("R/config.R", "R/acis-station-inventory.R",
                  "R/acis-station-daily-pilot.R", "R/map-southwest.R",
                  "R/acis-station-current-prototype.R",
                  "R/acis-station-explorer-prototype.R",
+                 "R/acis-station-cumulative-pilot.R",
+                 "R/acis-station-seasonal-pilot.R",
                  "R/acis-station-explorer-update-pilot.R",
                  "R/acis-station-publication-audit.R",
                  "R/acis-station-site.R"))
-    sys.source(path, envir = context)
+    # source() supplies the current filename for modules that load siblings.
+    # Keep all station definitions isolated in the same private environment.
+    source(path, local = context)
+  context
+}
+
+swc_daily_publish_update_stations <- function(today = Sys.Date()) {
+  context<-swc_daily_publish_station_context()
   context$run_swc_station_beta_update(today = today)
+}
+
+swc_daily_publish_update_explorer <- function() {
+  source(file.path("scripts", "load-daily-explorer.R"))
+  stage_daily_explorer_site()
+}
+
+swc_daily_publish_disable_weather_means <- function(explorer_dir=file.path("site","daily-explorer")) {
+  path<-file.path(explorer_dir,"daily-data.json")
+  if(file.exists(path)) {
+    payload<-jsonlite::read_json(path)
+    if(isTRUE(payload$circulation_period_means_enabled)) {
+      payload$circulation_period_means_enabled<-FALSE
+      jsonlite::write_json(payload,path,auto_unbox=TRUE,digits=NA)
+    }
+  }
+  invisible(NULL)
+}
+
+swc_daily_publish_update_weather_means <- function(explorer_dir=file.path("site","daily-explorer"),builder=NULL,
+    report_dir=file.path("data","processed","weather-period-means")) {
+  if(!tolower(Sys.getenv("SWC_WEATHER_PERIOD_MEANS","false"))%in%c("true","1","yes")) {
+    swc_daily_publish_disable_weather_means(explorer_dir)
+    return(list(status="DISABLED"))
+  }
+  tryCatch({
+    cap<-suppressWarnings(as.numeric(Sys.getenv("SWC_WEATHER_MEANS_MAX_NEW_DATES","3")))
+    if(length(cap)!=1L||is.na(cap)||!cap%in%0:30)stop("SWC_WEATHER_MEANS_MAX_NEW_DATES must be 0-30.")
+    if(is.null(builder)){source(file.path("scripts","load-weather-period-archive.R"));builder<-build_weather_period_archive}
+    result<-builder(explorer_dir=explorer_dir,output_dir=report_dir,max_new_end_dates=cap)
+    counts<-c("periods","maps","built","reused","deferred","unavailable","requests","seconds")
+    if(!is.data.frame(result)||nrow(result)!=1L||!all(vapply(counts,function(n)is.numeric(result[[n]])&&
+        length(result[[n]])==1L&&is.finite(result[[n]])&&result[[n]]>=0,logical(1)))||result$requests!=0L)
+      stop("Weather means returned an invalid cached-build summary.")
+    retry_pending<-if(is.numeric(result$retry_endpoints)&&length(result$retry_endpoints)==1L)result$retry_endpoints else 0L
+    status<-if(result$deferred>0||result$unavailable>0||result$periods==0||retry_pending>0)"PARTIAL" else "READY"
+    dir.create(report_dir,recursive=TRUE,showWarnings=FALSE)
+    utils::write.csv(cbind(data.frame(status=status,note=""),result),file.path(report_dir,"workflow-status.csv"),row.names=FALSE)
+    c(list(status=status),as.list(result))
+  },error=function(e) {
+    swc_daily_publish_disable_weather_means(explorer_dir)
+    dir.create(report_dir,recursive=TRUE,showWarnings=FALSE)
+    utils::write.csv(data.frame(status="ERROR",note=conditionMessage(e)),file.path(report_dir,"workflow-status.csv"),row.names=FALSE)
+    list(status="ERROR",error=conditionMessage(e))
+  })
+}
+
+swc_daily_publish_update_weather <- function(today=Sys.Date(),daily_builder=NULL,means_builder=NULL,
+    explorer_dir=file.path("site","daily-explorer"),means_report_dir=file.path("data","processed","weather-period-means")) {
+  if (!tolower(Sys.getenv("SWC_WEATHER_MAPS","false")) %in% c("true","1","yes")) {
+    path <- file.path(explorer_dir,"daily-data.json")
+    if (file.exists(path)) {
+      payload <- jsonlite::read_json(path)
+      if (isTRUE(payload$circulation_enabled)||isTRUE(payload$circulation_period_means_enabled)) {
+        payload$circulation_enabled <- FALSE
+        payload$circulation_period_means_enabled<-FALSE
+        jsonlite::write_json(payload,path,auto_unbox=TRUE,digits=NA)
+      }
+    }
+    return(list(status="DISABLED"))
+  }
+  if(is.null(daily_builder)){source(file.path("scripts","load-weather-circulation-archive.R"));daily_builder<-update_weather_circulation_archive}
+  daily_args<-list(today=today,explorer_dir=explorer_dir)
+  if("dependency_path"%in%names(formals(daily_builder)))daily_args$dependency_path<-
+    if(tolower(Sys.getenv("SWC_WEATHER_PERIOD_MEANS","false"))%in%c("true","1","yes"))file.path(means_report_dir,"needed-dates.csv") else ""
+  result<-do.call(daily_builder,daily_args)
+  if(is.list(result)&&result$status%in%c("READY","PARTIAL")) {
+    result$period_means<-swc_daily_publish_update_weather_means(explorer_dir,builder=means_builder,report_dir=means_report_dir)
+  } else swc_daily_publish_disable_weather_means(explorer_dir)
+  result
+}
+
+swc_daily_publish_weather_expected <- function(source_dir=file.path("site","daily-explorer")) {
+  payload<-tryCatch(jsonlite::read_json(file.path(source_dir,"daily-data.json")),error=function(e) NULL)
+  isTRUE(payload$circulation_enabled) || tolower(Sys.getenv("SWC_WEATHER_MAPS","false")) %in% c("true","1","yes")
+}
+
+swc_daily_publish_validate_weather <- function(output_dir,source_dir=file.path("site","daily-explorer"),
+    expected_enabled=NULL,report_dir=NULL) {
+  directory <- file.path(output_dir,"daily-explorer")
+  payload <- jsonlite::read_json(file.path(directory,"daily-data.json"))
+  if(is.null(expected_enabled)) expected_enabled<-swc_daily_publish_weather_expected(source_dir) ||
+    isTRUE(payload$circulation_enabled)
+  if (!expected_enabled && !isTRUE(payload$circulation_enabled)) return(invisible(TRUE))
+  adapter <- file.path("R","weather-circulation-archive.R")
+  if (!file.exists(adapter) && file.exists(file.path("..","..",adapter))) adapter <- file.path("..","..",adapter)
+  if (!file.exists(adapter) && exists("project_root",inherits=TRUE)) adapter <- file.path(get("project_root",inherits=TRUE),adapter)
+  report<-NULL
+  okay <- tryCatch({
+    source(file.path(dirname(adapter),"weather-publication-audit.R"),local=TRUE)
+    report<-audit_weather_publication(source_dir=source_dir,rendered_dir=directory,
+      require_enabled=expected_enabled,report_dir=report_dir)
+    !identical(report$summary$status,"FAIL")
+  },error=function(e) FALSE)
+  if (!okay) {
+    # Quarantine only the optional panel, not the successfully validated PRISM
+    # page. The source archive remains available for repair on the next run.
+    payload$circulation_enabled <- FALSE
+    jsonlite::write_json(payload,file.path(directory,"daily-data.json"),auto_unbox=TRUE,digits=NA)
+    if(is.list(report)) {
+      report$summary$quarantined<-TRUE
+      report$summary$rendered_enabled<-FALSE
+      if(!is.null(report_dir)) utils::write.csv(report$summary,
+        file.path(report_dir,"summary.csv"),row.names=FALSE)
+    }
+    warning("Rendered weather assets failed validation; weather panel disabled for this publication. Core maps remain available.",call.=FALSE)
+  }
+  attr(okay,"weather_report")<-if(is.list(report)) report$summary else NULL
+  invisible(okay)
+}
+
+swc_daily_publish_validate_explorer <- function(output_dir,
+    source_dir = file.path("site", "daily-explorer")) {
+  adapter <- file.path("R", "daily-explorer-site.R")
+  if (!file.exists(adapter) && file.exists(file.path("..", "..", adapter)))
+    adapter <- file.path("..", "..", adapter)
+  if (!file.exists(adapter) && exists("project_root", inherits = TRUE))
+    adapter <- file.path(get("project_root", inherits = TRUE), adapter)
+  source(adapter, local = TRUE)
+  checked <- validate_daily_explorer_assets(file.path(output_dir, "daily-explorer"))
+  page <- file.path(output_dir, "pages", "daily-explorer.html")
+  if (!file.exists(page) || !grepl("../daily-explorer/index.html?embedded=1",
+      paste(readLines(page, warn = FALSE), collapse = "\n"), fixed = TRUE))
+    stop("Rendered Daily Explorer page is missing or unlinked; S3 sync stopped.")
+  # Ensure Quarto copied the newly staged payload, rather than an older render.
+  staged <- file.path(source_dir, "daily-data.json")
+  rendered <- file.path(output_dir, "daily-explorer", "daily-data.json")
+  if (!file.exists(staged) || !identical(unname(tools::md5sum(staged)), unname(tools::md5sum(rendered))))
+    stop("Rendered Daily Explorer payload is stale; S3 sync stopped.")
+  relative <- c("index.html", "explorer.js", "explorer.css", checked$images,
+    if(length(checked$weather_mean_images))c("circulation-means-manifest.json",checked$weather_mean_images),
+    swc_cache_validate_app(file.path(output_dir,"daily-explorer")))
+  source_paths <- file.path(source_dir, relative)
+  rendered_paths <- file.path(output_dir, "daily-explorer", relative)
+  if (!all(file.exists(source_paths)) || !identical(unname(tools::md5sum(source_paths)),
+      unname(tools::md5sum(rendered_paths))))
+    stop("Rendered Daily Explorer assets are stale; S3 sync stopped.")
+  invisible(checked)
 }
 
 swc_daily_publish_validate_stations <- function(output_dir) {
@@ -299,6 +493,38 @@ swc_daily_publish_validate_stations <- function(output_dir) {
   if (!all(file.exists(details)) || any(file.info(details)$size <= 0))
     stop("Rendered station details are missing; S3 sync stopped.",
          call. = FALSE)
+  explorer_js <- paste(readLines(file.path(station_dir, "explorer.js"), warn = FALSE), collapse = "\n")
+  chart_assets <- c(
+    if(grepl("SWCStationMonthlyClimatology",explorer_js,fixed=TRUE)) c("monthly-climatology.js","monthly-climatology.css"),
+    if(grepl("SWCStationChartTools",explorer_js,fixed=TRUE)) "station-chart-tools.js",
+    if(grepl("SWCStationTemperatureNormals",explorer_js,fixed=TRUE))
+      c("temperature-normals.js","temperature-normals.css"))
+  chart_paths <- file.path(station_dir,chart_assets)
+  if(length(chart_paths) && (!all(file.exists(chart_paths)) || any(file.info(chart_paths)$size<=0)))
+    stop("Rendered station chart assets are missing; S3 sync stopped.",call.=FALSE)
+  if(grepl("SWCStationMonthlyClimatology",explorer_js,fixed=TRUE))for(path in details) {
+    detail<-jsonlite::read_json(path,simplifyVector=TRUE)
+    validate_acis_station_monthly_detail(detail,sub("\\.json$","",basename(path)),rows$as_of[[1L]])
+  }
+  if(grepl("SWCStationMonthlyClimatology",explorer_js,fixed=TRUE)) {
+    station_html<-paste(readLines(file.path(station_dir,"index.html"),warn=FALSE),collapse="\n")
+    if(!grepl('src="monthly-climatology(\\.swc-[a-f0-9]{16})?\\.js"',station_html)||
+       !grepl('href="monthly-climatology(\\.swc-[a-f0-9]{16})?\\.css"',station_html))
+      stop("Rendered station page does not link monthly climatology assets; S3 sync stopped.",call.=FALSE)
+  }
+  swc_cache_validate_app(station_dir)
+  if (grepl("cumulative/index.html", explorer_js, fixed = TRUE)) {
+    context <- new.env(parent = environment())
+    if (!exists("validate_acis_station_cumulative_site", mode = "function"))
+      sys.source(file.path("R", "acis-station-cumulative-pilot.R"), envir = context)
+    get("validate_acis_station_cumulative_site", envir = context)(file.path(station_dir, "cumulative"),
+      unique(rows$uid), rows$as_of[[1L]])
+  }
+  if (grepl("seasonal/index.html", explorer_js, fixed = TRUE)) {
+    context <- new.env(parent=environment())
+    sys.source(file.path("R","acis-station-seasonal-pilot.R"),envir=context)
+    context$validate_station_seasonal_integration(station_dir)
+  }
   invisible(TRUE)
 }
 
@@ -312,7 +538,9 @@ swc_daily_publish_validate_snow <- function(
   }
   source_text <- paste(readLines(page_source, warn = FALSE), collapse = "\n")
   html <- paste(readLines(rendered, warn = FALSE), collapse = "\n")
-  filenames <- c("swe-observed.png", "swe-departure.png")
+  filenames <- c("swe-observed.png", "swe-departure.png", "swe-percent-median.png")
+  change_available <- grepl("swe-change-7day.png", source_text, fixed = TRUE)
+  if (change_available) filenames <- c(filenames, "swe-change-7day.png")
   references <- paste0("../maps/generated/snodas/current/", filenames)
   if (all(vapply(filenames, grepl, logical(1), x = source_text,
                  fixed = TRUE))) {
@@ -341,6 +569,18 @@ swc_daily_publish_validate_snow <- function(
       stop("Rendered Current Snow date is stale; S3 sync stopped.",
            call. = FALSE)
     }
+    map_date <- as.Date(date_label, format = "%B %d, %Y")
+    endpoints <- paste(map_date - 7L, "to", map_date)
+    if (is.na(map_date) || !grepl(endpoints, source_text, fixed = TRUE) ||
+        !grepl(endpoints, html, fixed = TRUE)) {
+      stop("Rendered Current Snow comparison dates are stale; S3 sync stopped.", call. = FALSE)
+    }
+    if (!change_available &&
+        (!grepl("Seven-day SWE change unavailable", source_text, fixed = TRUE) ||
+         !grepl("Seven-day SWE change unavailable", html, fixed = TRUE) ||
+         grepl("swe-change-7day.png", html, fixed = TRUE))) {
+      stop("Rendered Current Snow seven-day availability is stale; S3 sync stopped.", call. = FALSE)
+    }
   } else if (!grepl("waiting for a listed", source_text, fixed = TRUE) ||
              !grepl("waiting for a listed", html, fixed = TRUE)) {
     stop("Current Snow page is neither a verified map nor a waiting page; S3 sync stopped.",
@@ -352,13 +592,39 @@ swc_daily_publish_validate_snow <- function(
 swc_daily_publish_sync <- function(
     dry_run = FALSE, destination = swc_daily_publish_destination()) {
   source(swc_daily_publish_deploy_script(), local = TRUE)
-  deploy_swc_site(
+  weather_valid <- TRUE
+  weather_report <- NULL
+  weather_expected <- swc_daily_publish_weather_expected()
+  result <- deploy_swc_site(
     destination = swc_daily_publish_destination(destination),
     region = "us-west-2", dry_run = dry_run, delete = FALSE,
     render = TRUE, extra_validation = function(output_dir) {
       swc_daily_publish_validate_snow(output_dir)
       swc_daily_publish_validate_stations(output_dir)
+      swc_daily_publish_validate_explorer(output_dir)
+      assessment <- swc_daily_publish_validate_weather(output_dir,expected_enabled=weather_expected,
+        report_dir=file.path("data","diagnostics","weather-publication-status"))
+      weather_valid <<- isTRUE(assessment)
+      weather_report <<- attr(assessment,"weather_report")
     })
+  if (is.list(result)) result$weather_validation <- weather_valid
+  if (is.list(result)) result$weather_report <- weather_report
+  result
+}
+
+swc_daily_publish_update_interactive <- function(today=Sys.Date(),enabled=file.exists("site/pages/interactive-maps.qmd"),
+    .run=function() {
+      rscript <- file.path(R.home("bin"),if(.Platform$OS.type=="windows")"Rscript.exe" else "Rscript")
+      for(script in c("scripts/build-map-product-site.R","scripts/stage-cached-prism-monthly-site.R","scripts/stage-cached-interactive-map-site.R")) {
+        status <- system2(rscript,shQuote(script))
+        if(status!=0L) stop("Interactive Maps preparation failed: ",script)
+      }
+      as.list(read.csv("data/diagnostics/interactive-map-pilot/workflow-status.csv",stringsAsFactors=FALSE)[1,,drop=FALSE])
+    }) {
+  if(!isTRUE(enabled)) return(list(status="DISABLED"))
+  result <- .run()
+  if(!is.list(result)||length(result$status)!=1L||!result$status %in% c("READY","REUSED")) stop("Interactive Maps refresh returned an invalid result.")
+  result
 }
 
 run_swc_daily_publish <- function(
@@ -372,7 +638,11 @@ run_swc_daily_publish <- function(
     station_update = swc_daily_publish_update_stations,
     site_fingerprint = swc_daily_publish_site_fingerprint,
     publish = NULL,
-    notify = swc_ntfy_notify) {
+    notify = swc_ntfy_notify,
+    explorer_update = swc_daily_publish_update_explorer,
+    weather_update = swc_daily_publish_update_weather,
+    monthly_update = swc_daily_publish_update_monthly,
+    interactive_update = swc_daily_publish_update_interactive) {
   if (!is.logical(dry_run) || length(dry_run) != 1L || is.na(dry_run) ||
       !is.logical(force_publish) || length(force_publish) != 1L ||
       is.na(force_publish)) {
@@ -404,14 +674,14 @@ run_swc_daily_publish <- function(
     if (!dry_run) swc_ntfy_send_safe(event, message, notify = notify)
     invisible(NULL)
   }
-  prism <- snow <- stations <- publication <- NULL
+  prism <- snow <- stations <- explorer <- weather <- monthly <- interactive <- publication <- NULL
   finish <- function(event, failed_stage = NULL) {
     record$elapsed_seconds <<- round(as.numeric(difftime(
       Sys.time(), started, units = "secs")), 3)
     lines <- swc_daily_publish_summary_lines(
       record, prism, snow, stations,
       if (is.list(publication)) publication$validation else NULL,
-      failed_stage = failed_stage, destination = destination)
+      failed_stage = failed_stage, destination = destination, explorer = explorer, weather = weather, monthly = monthly, interactive = interactive)
     message(paste(lines, collapse = "\n"))
     if (!is.null(event)) send(event, paste(lines, collapse = "\n"))
     lines
@@ -432,6 +702,39 @@ run_swc_daily_publish <- function(
     send("progress", paste0("PRISM update complete: ",
                             if (record$prism_data_changed) "new or revised data"
                             else "no data change", "."))
+    stage <- "Daily Explorer update"
+    explorer <- explorer_update()
+    if (!is.list(explorer) || !identical(explorer$status, "STAGED"))
+      stop("Daily Explorer did not return a staged result; publication stopped.")
+    stage <- "optional weather maps"
+    weather <- tryCatch(weather_update(today),error=function(error) {
+      if (exists("disable_weather_circulation",mode="function"))
+        try(disable_weather_circulation(),silent=TRUE)
+      list(status="ERROR",error=conditionMessage(error))
+    })
+    if (!is.list(weather) || length(weather$status)!=1L || is.na(weather$status) ||
+        !weather$status %in% c("DISABLED","READY","PARTIAL","ERROR"))
+      weather <- list(status="ERROR",error="Invalid weather update status.")
+    if (weather$status %in% c("READY","PARTIAL")) {
+      counts <- c("days","built","reused","failed","pending")
+      valid_counts <- all(vapply(counts,function(name) is.numeric(weather[[name]]) &&
+        length(weather[[name]])==1L && is.finite(weather[[name]]) && weather[[name]]>=0,logical(1)))
+      if (!valid_counts || length(weather$latest)!=1L)
+        weather <- list(status="ERROR",error="Invalid weather update summary.")
+    }
+    if (identical(weather$status,"ERROR") && exists("disable_weather_circulation",mode="function"))
+      try(disable_weather_circulation(),silent=TRUE)
+    if (weather$status %in% c("ERROR","PARTIAL"))
+      send("warning","Weather maps are incomplete or unavailable; core publishing will continue. See the weather archive report.")
+    if(is.list(weather$period_means)&&identical(weather$period_means$status,"ERROR"))
+      send("warning","Weather period means failed; their selector is disabled for this run. Daily weather and core publishing continue.")
+    else if(is.list(weather$period_means)&&identical(weather$period_means$status,"PARTIAL"))
+      send("progress",sprintf("Weather means: %d complete periods; %d deferred, %d unavailable. See the cached-input build report.",
+        weather$period_means$periods,weather$period_means$deferred,weather$period_means$unavailable))
+    if (weather$status %in% c("READY","PARTIAL") && !is.null(weather$lag_days) &&
+        length(weather$lag_days)==1L && !is.na(weather$lag_days) && weather$lag_days>3L)
+      send("warning",paste0("Latest retained weather maps are ",weather$lag_days,
+        " days old. Core publishing will continue; check source freshness and backfill status."))
     stage <- "SNODAS update"
     snow <- tryCatch(snow_update(today), error = function(error) {
       list(maps = list(status = "ERROR"), error = conditionMessage(error))
@@ -467,11 +770,23 @@ run_swc_daily_publish <- function(
       send("warning", paste0("Station page updated with ", stations$pending,
                              " delayed station caches; see the station update log."))
     }
+    stage <- "monthly climate update"
+    monthly <- monthly_update(today)
+    if(!is.list(monthly)||length(monthly$status)!=1L||is.na(monthly$status)) stop("Monthly update returned an invalid result.")
+    if(!identical(monthly$status,"DISABLED")) {
+      if(isTRUE(monthly$needs_attention)) send("warning",swc_monthly_summary_line(monthly))
+      if(!isTRUE(monthly$publication_ready)) stop("Monthly Climate has no verified retained release; publication stopped.")
+      if(identical(monthly$status,"COMPLETE")) send("progress",swc_monthly_summary_line(monthly))
+    }
     send("progress", paste0(
       "Data checks complete. PRISM: ",
       if (record$prism_data_changed) "changed" else "unchanged",
       "; SNODAS: ", record$snow_status,
       "; stations: ", stations$status, "."))
+    stage <- "interactive viewer update"
+    interactive <- interactive_update(today)
+    if(!is.list(interactive)||length(interactive$status)!=1L||!interactive$status %in% c("READY","REUSED","DISABLED"))
+      stop("Interactive Maps refresh failed; publication stopped.")
     stage <- "site publication"
     current <- site_fingerprint()
     previous <- swc_daily_publish_read_marker(marker_path)
@@ -483,7 +798,7 @@ run_swc_daily_publish <- function(
       message("Site source is unchanged since the last successful sync; upload skipped.")
       lines <- finish("success")
       return(invisible(list(status = record$status, prism = prism,
-                            snow = snow, stations = stations,
+                            snow = snow, stations = stations, explorer = explorer, weather = weather, monthly = monthly, interactive = interactive,
                             destination = destination,
                             published = FALSE,
                             elapsed_seconds = record$elapsed_seconds,
@@ -491,6 +806,13 @@ run_swc_daily_publish <- function(
     }
     send("progress", "Rendering and validating the site, then syncing it to S3.")
     publication <- publish(dry_run = dry_run)
+    if(is.list(publication) && is.data.frame(publication$weather_report) &&
+        is.list(weather) && weather$status %in% c("READY","PARTIAL"))
+      weather$coverage <- publication$weather_report
+    if (is.list(publication) && identical(publication$weather_validation,FALSE)) {
+      weather <- list(status="ERROR",error="Rendered weather assets were quarantined.")
+      send("warning","Weather assets failed rendered validation; the optional panel was disabled. Core publication continued.")
+    }
     if (dry_run) {
       record$status <- "PREVIEW"
     } else {
@@ -501,7 +823,7 @@ run_swc_daily_publish <- function(
     }
     lines <- finish(if (dry_run) NULL else "success")
     invisible(list(status = record$status, prism = prism, snow = snow,
-                   stations = stations,
+                   stations = stations, explorer = explorer, weather = weather, monthly = monthly, interactive = interactive,
                    destination = destination,
                    published = record$published,
                    validation = if (is.list(publication)) publication$validation

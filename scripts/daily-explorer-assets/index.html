@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Daily Explorer · Southwest Climate Watch</title>
+  <link rel="stylesheet" href="explorer.css"><script src="explorer.js" defer></script>
+<!-- SWC analytics bootstrap: only the production site and top-level documents. -->
+<script>
+(() => {
+  if (window.location.hostname !== "cales.arizona.edu" ||
+      !/^\/climate\/watch(?:\/|$)/.test(window.location.pathname) ||
+      window.self !== window.top || window.__swcAnalyticsLoading) return;
+  window.__swcAnalyticsLoading = true;
+  const script = document.createElement("script");
+  script.src = "/climate/watch/assets/site-analytics.js";
+  script.async = true;
+  document.head.appendChild(script);
+})();
+</script>
+
+</head>
+<body>
+<main>
+  <header><div><p class="eyebrow" id="context-label">Southwest Climate Watch · Daily Explorer</p>
+    <h1>Daily Explorer</h1><p id="coverage">Loading cached PRISM observations…</p><p id="local-review-note" class="muted small" hidden></p></div>
+    <span class="badge" id="mode-badge">Local preview · Unpublished</span></header>
+  <p id="error" role="alert" hidden></p>
+  <section class="controls card" aria-label="Explore daily conditions">
+    <label>Water year<select id="year"></select></label>
+    <label>Season<select id="season"><option value="all">Full water year</option>
+      <option value="cool">Cool season · Oct–Mar</option><option value="warm">Warm season · Apr–Sep</option>
+      <option value="monsoon">Monsoon · Jun–Sep</option></select></label>
+    <label>Summary region<select id="region"><option value="AZNM">Arizona + New Mexico</option>
+      <option value="AZ">Arizona</option><option value="NM">New Mexico</option></select></label>
+    <label>Variable<select id="variable"><option value="pcpn">Precipitation</option>
+      <option value="tmean">Mean temperature</option><option value="maxt">Maximum temperature</option><option value="mint">Minimum temperature</option></select></label>
+    <label id="view-label">Display<select id="view"><option value="departure">Departure from normal</option>
+      <option value="observed">Observed temperature</option></select></label>
+  </section>
+  <section class="card timeline-card" aria-labelledby="timeline-title">
+    <div class="section-heading"><h2 id="timeline-title">Daily regional conditions</h2>
+      <label>Timeline metric<select id="metric"></select></label></div>
+    <p id="timeline-caption" class="muted"></p>
+    <div id="timeline" class="timeline" role="group" aria-label="Daily values; select a date"></div>
+    <p class="muted small">Select a bar to view that day. Hover or focus for its value. Gaps mean unavailable, not zero. The timeline matches the 7- or 30-day Map View; Single day shows the selected season.</p>
+  </section>
+  <section class="card map-card" aria-labelledby="map-title">
+    <div class="section-heading"><h2 id="map-title">Selected day</h2><div class="date-controls">
+      <button id="latest" type="button" aria-label="Go to the latest available map date">Latest</button>
+      <button id="previous" aria-label="Previous calendar day">←</button>
+      <input type="date" id="date" aria-label="Selected date">
+      <button id="next" aria-label="Next calendar day">→</button></div></div>
+    <div id="stats" class="stats" aria-live="polite"></div>
+    <p class="muted small">Maps always show Arizona, New Mexico, and surrounding context. The summary-region selector changes the timeline, statistics, and notable-day list.</p>
+    <img id="map" alt="" width="1116" height="780">
+    <p id="unavailable" class="empty" hidden></p>
+    <div class="map-actions"><a id="open-map" href="#" target="_blank" rel="noopener">Open map PNG ↗</a>
+      <label>Map view<select id="compare"><option value="single">Single day</option>
+        <option value="7">7 days</option><option value="30">30 days</option></select></label></div>
+    <p id="comparison-caption" class="muted small" aria-live="polite" hidden></p>
+    <div id="comparison" class="comparison" hidden></div>
+  </section>
+  <details id="circulation-panel" class="card circulation" hidden>
+    <summary>Weather maps<span id="circulation-date"></span></summary>
+    <p class="muted small">NOAA CPC CORe reanalysis · Pacific–North America context. The selected calendar date is used exactly; PRISM reporting periods may differ. These maps provide circulation context, not forecasts or evidence of causation.</p>
+    <div class="map-actions weather-view">
+      <div class="date-controls">
+        <button id="circulation-latest" type="button" aria-label="Go to the latest Explorer date">Latest</button>
+        <button id="circulation-previous" type="button" aria-label="Previous weather map calendar day">←</button>
+        <input type="date" id="circulation-date-input" aria-label="Weather selected date">
+        <button id="circulation-next" type="button" aria-label="Next weather map calendar day">→</button>
+      </div>
+      <label id="circulation-period-control" hidden>Weather period<select id="circulation-period" aria-label="Weather averaging period"><option value="1">Daily</option><option value="7">7-day mean</option><option value="30">30-day mean</option></select></label>
+    </div>
+    <p id="circulation-period-note" class="muted small" aria-live="polite" hidden></p>
+    <p id="circulation-status" role="status" aria-live="polite"></p>
+    <button id="circulation-show-daily" type="button" hidden>Show daily map for this date</button>
+    <button id="circulation-retry" type="button" hidden>Retry circulation maps</button>
+    <div id="circulation-tabs" class="circulation-tabs" role="tablist" aria-label="Circulation map" hidden>
+      <button id="circulation-tab-height500" type="button" role="tab" aria-selected="true" aria-controls="circulation-map-height500">500-mb heights</button>
+      <button id="circulation-tab-jet250" type="button" role="tab" aria-selected="false" aria-controls="circulation-map-jet250" tabindex="-1">250-mb jet</button>
+      <button id="circulation-tab-moisture" type="button" role="tab" aria-selected="false" aria-controls="circulation-map-moisture" tabindex="-1">Moisture &amp; low-level flow</button>
+    </div>
+    <div id="circulation-maps"></div>
+    <div id="circulation-view-fallback" class="map-actions weather-view">
+      <label id="circulation-view-control">Map view<select id="circulation-compare" aria-label="Weather map view"><option value="single">Single day</option><option value="7">7 days</option><option value="30">30 days</option></select></label>
+    </div>
+    <p class="muted small">500-mb contours show absolute heights in dam, with a shared 480–612 dam scale; blue/orange shading is not an anomaly. Purple outlines locate AZ/NM. Jet shading is the speed of mean 250-mb wind components in knots for the selected weather period, not mean scalar wind speed, a maximum or gust. Streamlines show mean flow, not storm tracks. No anomaly baseline is included.</p>
+    <p class="muted small">Moisture shading shows total precipitable water (0–3+ inches), with sea-level pressure contours every 4 hPa. Arrows show mean 850-mb flow, not surface winds or integrated vapor transport. Winds require above-ground screening at every sample in the selected period and are omitted where screening inputs are incomplete. H/L labels use matching surface-pressure screening and describe filtered pressure centers in that period, not tracked storms.</p>
+  </details>
+  <details class="card discussions">
+    <summary>Forecast discussions<span id="discussion-date"></span></summary>
+    <p id="discussion-no-date" class="muted" hidden>Choose a cached map date to see discussion archive searches.</p>
+    <div id="discussion-content" hidden>
+      <p id="discussion-window" class="muted small" aria-live="polite"></p>
+      <div class="discussion-columns">
+        <section aria-labelledby="discussion-local-title">
+          <h3 id="discussion-local-title">NWS Area Forecast Discussions</h3>
+          <ul id="discussion-local" class="discussion-links"></ul>
+          <details class="discussion-adjacent">
+            <summary>Surrounding offices</summary>
+            <ul id="discussion-adjacent" class="discussion-links"></ul>
+          </details>
+        </section>
+        <section aria-labelledby="discussion-national-title">
+          <h3 id="discussion-national-title">WPC national discussions</h3>
+          <ul id="discussion-national" class="discussion-links"></ul>
+          <p class="muted small">National coverage; not filtered to AZ/NM. Event discussions may not be issued every day.</p>
+        </section>
+      </div>
+      <section id="discussion-reader" class="discussion-reader" aria-labelledby="discussion-reader-title" hidden>
+        <div class="discussion-reader-heading">
+          <h3 id="discussion-reader-title">Selected archive</h3>
+          <div class="discussion-reader-actions">
+            <a id="discussion-original" target="_blank" rel="noopener noreferrer">Open in new tab ↗</a>
+            <button id="discussion-close" type="button">Close reader</button>
+          </div>
+        </div>
+        <p id="discussion-reader-status" class="muted small" role="status"></p>
+        <iframe id="discussion-frame" title="Archived forecast discussion" sandbox="" referrerpolicy="no-referrer"></iframe>
+      </section>
+      <p class="muted small">Select an office or product to load its archive search in the scrollable reader. Text comes directly from Iowa Environmental Mesonet (IEM), an external archive of NWS-issued text; nothing loads until selected. Open in new tab is available if embedding fails. Each search requests up to 100 issuances, oldest first, including updates/corrections when archived. Availability is not checked here; an empty result is not evidence that no discussion was issued.</p>
+      <p class="muted small">Issue date is not forecast valid date. Text may describe earlier conditions or several future days, and PRISM reporting periods may differ from UTC days. These are nearby-date forecast context, not verified explanations of observed outcomes or evidence of causation. Office coverage crosses state boundaries; links remain available when the summary region changes.</p>
+    </div>
+  </details>
+  <section class="card" aria-labelledby="notable-title">
+    <div class="section-heading"><h2 id="notable-title">Notable days</h2><label>Find days by<select id="ranking"></select></label></div>
+    <p class="muted small">Ordered within the selected season and summary region. These are browsing metrics, not verified impacts or historical records.</p>
+    <div class="table-scroll"><table><thead><tr><th>Date</th><th id="ranking-title">Value</th><th>Map</th></tr></thead>
+      <tbody id="notable"></tbody></table></div>
+  </section>
+  <details class="card methods"><summary>How to read this explorer</summary>
+    <p>Source: PRISM Climate Group daily grids via RCC-ACIS. Dates identify the source daily reporting period; they do not imply that all observations cover a local midnight-to-midnight day. Recent grids are preliminary and may be revised. Maps are built from cached PRISM grids after data updates.</p>
+    <p>Regional summaries use native grid cells whose centers fall within state boundaries, weighted by cell area. The combined region is weighted by area, not an average of the two state means. At least 95% of the region must have usable values for each displayed statistic. Coverage percentages refer to valid data, not the area affected by an event.</p>
+    <p>Daily mean temperature is (maximum + minimum) / 2, using only cells with both inputs. Its normal is the mean of the matching maximum- and minimum-temperature normals. Temperature departures subtract the 1991–2020 calendar-day mean using a centered five-day reference window. Warm/cold coverage for maximum and minimum temperature is the percentage above the 90th or below the 10th calendar-day percentile from that same baseline and window; mean-temperature percentile coverage is not calculated. These are daily coverage measures, not formal annual Climdex indices. Freezing means minimum temperature ≤32°F.</p>
+    <p>Precipitation coverage is the percentage receiving at least the stated amount. The spatial 99th percentile describes rainfall across the region that day, including dry cells; it is not a historical percentile. Absolute and seasonal-relative measures are deliberately separate. A zero-rain day can rank in a dry season; it is not automatically noteworthy.</p>
+    <p>All dates share fixed map color classes. Maps use native-resolution cells. Missing map cells use the background color, not the zero-value class. Missing reference data can leave departures or percentile coverage unavailable while observed values remain usable. The seven-day comparison is centered on the selected date; the 30-day grid ends on that date. Grids and their timelines can cross season and water-year boundaries using built dates, and retain unavailable days as gaps. Selecting a thumbnail updates the large map and, when needed, the water year and season selectors.</p>
+  </details>
+</main>
+</body>
+</html>

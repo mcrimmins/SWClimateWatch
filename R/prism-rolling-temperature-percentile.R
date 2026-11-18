@@ -559,7 +559,7 @@ build_prism_rolling_temperature_percentile_map <- function(
     title = paste0(days, "-day mean-temperature percentile rank"),
     subtitle = paste0(
       format_prism_map_period(start_date, date),
-      " relative to 1991-2020 | centered 5-day baseline"
+      " relative to ", prism_reference_baseline_label("percentile")
     ),
     caption = NULL,
     fill_label = "Percentile rank",

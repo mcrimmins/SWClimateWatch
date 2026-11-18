@@ -1,6 +1,6 @@
 ---
 title: "Freeze-free season departure"
-description-meta: "The displayed year's freeze-free season length is compared with the local median length from 1991-2020. Positive values mean a longer-than-median interval and negative values a shorter one; areas without both freeze dates or a reliable historical comparison are blank."
+description-meta: "The observed freeze-free interval is compared with a 1991-2020 median that includes censored historical bounds; positive means longer and negative means shorter. Areas lacking current endpoints, complete historical inputs or a uniquely identified median are blank."
 body-classes: product-page
 toc: false
 page-layout: full
@@ -11,7 +11,7 @@ page-layout: full
 :::
 
 ::: {.product-interpretation}
-The displayed year's freeze-free season length is compared with the local median length from 1991-2020. Positive values mean a longer-than-median interval and negative values a shorter one; areas without both freeze dates or a reliable historical comparison are blank.
+The observed freeze-free interval is compared with a 1991-2020 median that includes censored historical bounds; positive means longer and negative means shorter. Areas lacking current endpoints, complete historical inputs or a uniquely identified median are blank.
 :::
 
 ::: {.product-actions}

@@ -1,0 +1,51 @@
+source(file.path(project_root,'R/config.R'))
+source(file.path(project_root,'R/regional-daily-reference.R'))
+
+testthat::test_that('date matching accepts storage types but rejects missing or reordered days', {
+  dates <- seq(as.Date('1992-02-01'),as.Date('1992-02-29'),by='day')
+  integer_dates <- structure(as.integer(dates),class='Date')
+  double_dates <- structure(as.double(dates),class='Date')
+  testthat::expect_true(regional_daily_dates_match(integer_dates,double_dates))
+  testthat::expect_false(regional_daily_dates_match(rev(dates),dates))
+  testthat::expect_false(regional_daily_dates_match(dates[-29],dates))
+  testthat::expect_false(regional_daily_dates_match(c(dates[-29],as.Date(NA)),dates))
+  testthat::expect_false(regional_daily_dates_match(c(dates[-29],dates[28]),dates))
+})
+
+testthat::test_that('daily thresholds count inclusive endpoints and retain zeros', {
+  p <- rbind(c(0,.04,1,2),c(0,0,0,0))
+  lo <- rbind(c(32,33,20,40),rep(50,4)); hi <- rbind(c(90,89,100,80),rep(80,4))
+  x <- regional_daily_month_stats(p,lo,hi)
+  testthat::expect_equal(unname(x[1,c('wet_days','wet_sum','heavy_days','freeze_days','hot_days')]),c(3,3.04,2,2,2))
+  testthat::expect_equal(unname(x[2,c('wet_days','heavy_days','freeze_days','hot_days')]),rep(0,4))
+  testthat::expect_equal(unname(x[,'p_days']),c(4,4))
+})
+testthat::test_that('missing days withhold their variable without changing valid zeros', {
+  x <- regional_daily_month_stats(matrix(c(NA,0),1),matrix(c(20,40),1),matrix(c(90,100),1))
+  x <- regional_daily_finalize(x,2)
+  testthat::expect_true(all(is.na(x[,c('wet_days','wet_sum','heavy_days')])))
+  testthat::expect_equal(unname(x[,'freeze_days']),1)
+  testthat::expect_equal(unname(x[,'hot_days']),2)
+  x <- regional_daily_month_stats(matrix(c(1,0),1),matrix(c(100,30),1),matrix(c(90,80),1))
+  x <- regional_daily_finalize(x,2)
+  testthat::expect_true(is.na(x[,'hot_days']) && is.na(x[,'freeze_days']))
+  testthat::expect_equal(unname(x[,'heavy_days']),1)
+})
+testthat::test_that('intensity is pooled over wet days, not averaged yearly ratios', {
+  a <- regional_daily_finalize(regional_daily_month_stats(matrix(c(1,0),1),matrix(c(20,40),1),matrix(c(90,80),1)),2)
+  b <- regional_daily_finalize(regional_daily_month_stats(matrix(c(2,2),1),matrix(c(20,40),1),matrix(c(90,80),1)),2)
+  x <- regional_daily_average(list(a,b))
+  testthat::expect_equal(unname(x$values[,'wet_amount']),5/3)
+  testthat::expect_equal(unname(x$values[,'wet_days']),1.5)
+  testthat::expect_equal(unname(x$support[,'wet_days']),2)
+  a[,'wet_days'] <- a[,'wet_sum'] <- NA_real_
+  testthat::expect_true(is.na(regional_daily_average(list(a,b))$values[,'wet_amount']))
+  b[,'wet_days'] <- b[,'wet_sum'] <- 0
+  testthat::expect_true(is.na(regional_daily_average(list(b,b))$values[,'wet_amount']))
+  testthat::expect_equal(unname(regional_daily_average(list(b,b))$values[,'wet_days']),0)
+})
+testthat::test_that('all five map styles have consistent bins and units', {
+  specs <- regional_daily_specs()
+  testthat::expect_length(specs,5)
+  for (spec in specs) testthat::expect_equal(length(spec$labels)+1L,length(spec$breaks))
+})

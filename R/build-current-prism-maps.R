@@ -789,7 +789,7 @@ build_prism_temperature_departure_map <- function(
     states = states,
     title = paste(prism_temperature_label(variable), "departure"),
     subtitle = paste0(
-      format_prism_map_date(date), " relative to 1991-2020 | degrees F"
+      format_prism_map_date(date), " relative to ", prism_reference_year_label("normal"), " | degrees F"
     ),
     caption = NULL,
     fill_label = "Departure (degrees F)",
@@ -825,7 +825,7 @@ build_prism_rolling_temperature_departure_map <- function(
     title = paste0(days, "-day ", tolower(prism_temperature_label(variable)), " departure"),
     subtitle = paste0(
       format_prism_map_period(start_date, date),
-      " relative to 1991-2020 | degrees F"
+      " relative to ", prism_reference_year_label("normal"), " | degrees F"
     ),
     caption = NULL,
     fill_label = "Departure (degrees F)",
@@ -859,7 +859,7 @@ build_prism_extreme_warm_day_frequency_map <- function(
     title = paste0("Extreme warm days in the past ", days, " days"),
     subtitle = paste0(
       format_prism_map_period(start_date, date),
-      " | maximum temperature above local 1991-2020 90th percentile"
+      " | maximum temperature above local ", prism_reference_year_label("percentile"), " 90th percentile"
     ),
     caption = NULL,
     fill_label = "Number of days",
@@ -893,7 +893,7 @@ build_prism_extreme_cold_night_frequency_map <- function(
     title = paste0("Extreme cold nights in the past ", days, " days"),
     subtitle = paste0(
       format_prism_map_period(start_date, date),
-      " | minimum temperature below local 1991-2020 10th percentile"
+      " | minimum temperature below local ", prism_reference_year_label("percentile"), " 10th percentile"
     ),
     caption = NULL,
     fill_label = "Number of nights",
@@ -978,7 +978,7 @@ build_prism_freeze_day_anomaly_map <- function(
     title = paste0(days, "-day freeze-night anomaly"),
     subtitle = paste0(
       format_prism_map_period(start_date, date),
-      " | current count minus centered 5-day 1991-2020 average"
+      " | current count minus centered ", swc_prism$centered_window_days, "-day ", prism_reference_year_label("normal"), " average"
     ),
     caption = NULL,
     fill_label = "Difference (nights)",
@@ -1473,7 +1473,7 @@ build_prism_percentile_rank_map <- function(
     title = title,
     subtitle = paste0(
       format_prism_map_date(date),
-      " relative to 1991-2020 | centered 5-day baseline"
+      " relative to ", prism_reference_baseline_label("percentile")
     ),
     caption = NULL,
     fill_label = "Percentile rank",

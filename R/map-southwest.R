@@ -4,6 +4,27 @@ southwest_context_states <- c(
   "arizona", "california", "colorado", "nevada", "new mexico", "texas", "utah"
 )
 
+# Missing whole rows/columns (or a singleton axis) prevent geom_raster from
+# reliably inferring the native pixel spacing. Even uniformly skipped columns
+# can silently produce oversized pixels without a warning.
+southwest_raster_geometry <- function(data, resolution) {
+  regular <- function(values, step) {
+    axis <- sort(unique(values))
+    if(length(axis)<2L) return(FALSE)
+    tolerance <- max(abs(step)*1e-7,64*.Machine$double.eps*max(1,abs(axis)))
+    all(abs(diff(axis)-step)<=tolerance)
+  }
+  list(engine=if(regular(data$x,resolution[1L])&&regular(data$y,resolution[2L]))"raster" else "tile",
+    width=unname(resolution[1L]),height=unname(resolution[2L]))
+}
+
+southwest_raster_layer <- function(data,mapping,resolution,show.legend=NA) {
+  geometry <- southwest_raster_geometry(data,resolution)
+  if(geometry$engine=="raster") return(ggplot2::geom_raster(data=data,mapping=mapping,show.legend=show.legend))
+  ggplot2::geom_tile(data=data,mapping=mapping,width=geometry$width,height=geometry$height,
+    show.legend=show.legend,linewidth=0)
+}
+
 #' Build a Southwest raster map
 #'
 #' @param raster A single-layer terra SpatRaster.
@@ -21,6 +42,13 @@ southwest_context_states <- c(
 #' @param interstates Optional sf object containing selected interstate highways.
 #' @param cities Optional data frame with `city`, `longitude`, and `latitude`.
 #' @param city_label_fill_alpha Opacity of the white background behind city labels.
+#' @param city_label_style Use boxed `label` (default), plain `text`, or tightly backed `compact` labels.
+#' @param city_label_halo Add a thin white halo to plain text labels (default FALSE).
+#' @param city_label_size City text size in mm; default 3.05.
+#' @param city_label_fontface City text weight/style; default `bold`.
+#' @param city_label_halo_radius Radius of the plain-text halo; default 0.07.
+#' @param city_label_colour Optional text color override for text/compact labels.
+#' @param city_label_halo_colour Halo color for plain text; default white.
 #' @param tucson_label_southwest Place Tucson's label southwest of its marker
 #'   instead of letting the label-repelling algorithm place it.
 #' @param mask_to_states Whether to mask the raster to the supplied state polygons.
@@ -59,6 +87,7 @@ southwest_raster_map <- function(
     } else NULL,
     cities = NULL,
     city_label_fill_alpha = 0.60,
+    city_label_style = c("label", "text", "compact"),
     tucson_label_southwest = TRUE,
     mask_to_states = FALSE,
     county_colour = "#3f474c",
@@ -74,8 +103,27 @@ southwest_raster_map <- function(
     state_alpha = 1,
     state_linetype = "solid",
     product_id = NULL,
-    scale_type = NULL) {
+    scale_type = NULL,
+    city_label_halo = FALSE,
+    city_label_size = 3.05,
+    city_label_fontface = "bold",
+    city_label_halo_radius = 0.07,
+    city_label_colour = NULL,
+    city_label_halo_colour = "white") {
   check_swc_packages()
+  city_label_style <- match.arg(city_label_style)
+  text_colour <- if (is.null(city_label_colour)) {
+    if (isTRUE(city_label_halo)) "#34434a" else "#101820"
+  } else city_label_colour
+  city_label_fontface <- match.arg(city_label_fontface, c("plain", "bold", "italic", "bold.italic"))
+  if (length(city_label_size) != 1L || !is.numeric(city_label_size) ||
+      !is.finite(city_label_size) || city_label_size <= 0) {
+    stop("`city_label_size` must be one positive number.", call. = FALSE)
+  }
+  if (length(city_label_halo_radius) != 1L || !is.numeric(city_label_halo_radius) ||
+      !is.finite(city_label_halo_radius) || city_label_halo_radius < 0) {
+    stop("`city_label_halo_radius` must be one nonnegative number.", call. = FALSE)
+  }
 
   if (!inherits(raster, "SpatRaster") || terra::nlyr(raster) != 1L) {
     stop("`raster` must be a single-layer terra SpatRaster.", call. = FALSE)
@@ -178,16 +226,16 @@ southwest_raster_map <- function(
       right = TRUE
     )
     plot <- ggplot2::ggplot() +
-      ggplot2::geom_raster(
+      southwest_raster_layer(
         data = raster_df,
-        ggplot2::aes(x = x, y = y, fill = category),
+        ggplot2::aes(x = x, y = y, fill = category), resolution=terra::res(raster_region),
         show.legend = TRUE
       )
   } else {
     plot <- ggplot2::ggplot() +
-      ggplot2::geom_raster(
+      southwest_raster_layer(
         data = raster_df,
-        ggplot2::aes(x = x, y = y, fill = value)
+        ggplot2::aes(x = x, y = y, fill = value), resolution=terra::res(raster_region)
       )
   }
 
@@ -297,12 +345,12 @@ southwest_raster_map <- function(
       repel_cities <- if (nrow(tucson) == 1L) {
         cities[cities$city != "Tucson", , drop = FALSE]
       } else cities
-      if (nrow(repel_cities) > 0L) plot <- plot + ggrepel::geom_label_repel(
+      if (nrow(repel_cities) > 0L && city_label_style == "label") plot <- plot + ggrepel::geom_label_repel(
           data = repel_cities,
           ggplot2::aes(x = x, y = y, label = city),
           seed = 314,
-          size = 3.05,
-          fontface = "bold",
+          size = city_label_size,
+          fontface = city_label_fontface,
           colour = "#101820",
           fill = scales::alpha("white", city_label_fill_alpha),
           label.size = 0,
@@ -314,6 +362,29 @@ southwest_raster_map <- function(
           segment.size = 0.3,
           max.overlaps = Inf,
           inherit.aes = FALSE
+        )
+      if (nrow(repel_cities) > 0L && city_label_style == "text") plot <- plot + ggrepel::geom_text_repel(
+          data = repel_cities,
+          ggplot2::aes(x = x, y = y, label = city),
+          seed = 314, size = city_label_size, fontface = city_label_fontface,
+          colour = text_colour,
+          bg.colour = if (isTRUE(city_label_halo)) city_label_halo_colour else NA_character_,
+          bg.r = if (isTRUE(city_label_halo)) city_label_halo_radius else 0,
+          box.padding = grid::unit(0.18, "lines"),
+          point.padding = grid::unit(0.14, "lines"),
+          min.segment.length = 0,
+          segment.colour = scales::alpha("#101820", 0.6), segment.size = 0.3,
+          max.overlaps = Inf, inherit.aes = FALSE
+        )
+      if (nrow(repel_cities) > 0L && city_label_style == "compact") plot <- plot + ggrepel::geom_label_repel(
+          data = repel_cities, ggplot2::aes(x = x, y = y, label = city),
+          seed = 314, size = city_label_size, fontface = city_label_fontface,
+          colour = text_colour, fill = scales::alpha("#fffef8", 0.82),
+          linewidth = 0, label.size = 0,
+          label.padding = grid::unit(0.025, "lines"), label.r = grid::unit(0, "lines"),
+          box.padding = grid::unit(0.18, "lines"), point.padding = grid::unit(0.14, "lines"),
+          min.segment.length = 0, segment.colour = scales::alpha("#101820", 0.6),
+          segment.size = 0.3, max.overlaps = Inf, inherit.aes = FALSE
         )
       if (nrow(tucson) == 1L) {
         label_point <- sf::st_as_sf(
@@ -328,11 +399,36 @@ southwest_raster_map <- function(
             data = tucson,
             ggplot2::aes(x = label_x, y = label_y, xend = x, yend = y),
             colour = "#4c5961", linewidth = 0.28, inherit.aes = FALSE
-          ) +
-          ggplot2::geom_label(
+          )
+        if (city_label_style == "text" && isTRUE(city_label_halo)) {
+          plot <- plot + ggrepel::geom_text_repel(
             data = tucson,
             ggplot2::aes(x = label_x, y = label_y, label = city),
-            size = 3.05, fontface = "bold", colour = "#101820",
+            size = city_label_size, fontface = city_label_fontface, colour = text_colour,
+            bg.colour = city_label_halo_colour, bg.r = city_label_halo_radius,
+            seed = 314, force = 0, force_pull = 0, max.iter = 0,
+            box.padding = 0, point.padding = 0, min.segment.length = Inf,
+            max.overlaps = Inf, inherit.aes = FALSE
+          )
+        } else if (city_label_style == "text") {
+          plot <- plot + ggplot2::geom_text(
+            data = tucson,
+            ggplot2::aes(x = label_x, y = label_y, label = city),
+            size = city_label_size, fontface = city_label_fontface, colour = text_colour,
+            inherit.aes = FALSE
+          )
+        } else if (city_label_style == "compact") {
+          plot <- plot + ggplot2::geom_label(
+            data = tucson, ggplot2::aes(x = label_x, y = label_y, label = city),
+            size = city_label_size, fontface = city_label_fontface, colour = text_colour,
+            fill = scales::alpha("#fffef8", 0.82), linewidth = 0,
+            label.padding = grid::unit(0.025, "lines"), label.r = grid::unit(0, "lines"),
+            inherit.aes = FALSE
+          )
+        } else plot <- plot + ggplot2::geom_label(
+            data = tucson,
+            ggplot2::aes(x = label_x, y = label_y, label = city),
+            size = city_label_size, fontface = city_label_fontface, colour = "#101820",
             fill = scales::alpha("white", city_label_fill_alpha),
             linewidth = 0, label.padding = grid::unit(0.09, "lines"),
             inherit.aes = FALSE

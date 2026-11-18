@@ -35,6 +35,23 @@ documentation remain outside the website source tree.
 
 ## Local build
 
+The separate [monthly PRISM access pilot](docs/prism-monthly.md) verifies
+long-record monthly inputs and resumable regional caching. It is not part of
+the operational daily publisher by default. The
+[monthly runner integration](docs/monthly-daily-integration.md) is enabled with
+`SWC_MONTHLY_MAPS=true` after seeding and testing each VM checkout.
+
+For the reviewed Current Maps groupings and Monthly Climate page, see the
+[staging release guide](docs/monthly-and-grouped-maps-staging.md). Local review:
+`source("scripts/preview-climate-site.R")`. Rendered grouped/monthly publication
+checks are enabled; monthly calculations are opt-in through the daily runner.
+
+For the Daily Explorer timeline and single-, seven-, and 30-day map views, see
+[Daily Explorer](docs/daily-explorer.md). The daily publisher stages the
+current water year plus the preceding September automatically, retaining each
+day as the year progresses. Laptop preview commands do not upload anything;
+see that document for the VM staging and controlled-release checklist.
+
 Install Quarto and the R packages `terra`, `sf`, `ggplot2`, `ggrepel`, `magick`, `dplyr`,
 `lubridate`, `maps`, `httr2`, `jsonlite`, `digest`, and `testthat`, then run from the
 repository root. Enter the self-contained site project before starting Quarto:
@@ -90,7 +107,13 @@ network requests.
 
 Update mode intentionally revisits nine PRISM revision ages for each of the
 three downloaded variables, so an ordinary run may show as many as 27 small
-requests even when no new date is available. Each refreshed GeoTIFF is compared
+revision requests even when no new date is available. It then tries up to three
+additional requests for yesterday, admitting that date only when all three
+fields pass validation. Unavailable or incomplete optional data leave the last
+verified complete set in use. The request cap covers both steps. Set
+`SWC_PRISM_TRY_YESTERDAY=false` to use only the original two-day/revision queue.
+See [availability and fallback methods](docs/prism-data-methods.md#opportunistic-one-day-operational-lag).
+Each refreshed GeoTIFF is compared
 with its previous checksum. If all downloads are byte-identical, the workflow
 skips the archive-wide checksum scan, processing, all 51 product maps, and the
 overview map. A sub-second manifest comparison still checks for any raw file
@@ -269,9 +292,14 @@ source grids. A separate [bounded October-May daily updater](docs/snodas-daily-u
 refreshes directory listings, downloads at most five listed archives per run,
 resumes from verified regional files, and releases full-domain archives after
 checking the SWE/depth pair. It allows a brief June closeout for late May
-postings. It also stages observed SWE and daily median-departure maps only
-when their quality gate passes; the unified script can then render and deploy
-the site in the same manually started run. The [end-of-season snow archive pilot](docs/snodas-seasonal-archive.md)
+postings. Current Snow stages observed SWE, daily median departure, and SWE
+as a percent of the date-specific median when the current-map quality gate
+passes. Exact seven-day net SWE change is included when both endpoints pass
+verification and quality checks; otherwise a dated unavailable notice replaces
+that card. Percentages require a median of at least 1 inch and 18 reference years.
+The unified script can then render and deploy the site. See the
+[snow comparison methods and local preview](docs/snodas-next-steps.md#current-snow-integration).
+The [end-of-season snow archive pilot](docs/snodas-seasonal-archive.md)
 builds peak SWE and snow-covered-day maps from each completed October-May
 season for review. Its [read-only snow QC pilots](docs/snodas-seasonal-archive.md#read-only-event-level-qc-pilot)
 group high-SWE patches into episodes and screen for strong relative anomalies
@@ -357,6 +385,12 @@ Rscript scripts/validate-map-products.R --require-rendered
 See [PRISM map product workplan](docs/map-product-workplan.md) for completed
 products, the next implementation phases, deferred products, and the scientific
 rationale for the public map collection.
+
+The [consolidated development roadmap](docs/development-roadmap.md) retains the
+remaining site enhancements and operational work. Its
+[daily weather/circulation scope](docs/weather-circulation-scope.md) proposes a
+small 500-mb/jet/wind diagnostic pilot, comparing NOAA CORe and ERA5 access and
+daily cost before adding anything to production.
 
 Historical rolling-precipitation samples are cached by duration and ending
 calendar day. Repeated map updates reuse a cache when its processed-source
