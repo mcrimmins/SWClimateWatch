@@ -1,5 +1,9 @@
 # Interactive Snow: staging test
 
+**Completed:** the corrected Snow viewer and automatic updates were confirmed
+in production November 17, 2026. See the [release evidence](interactive-map-snow-daily.md).
+The manual trial instructions below are historical; no staging promotion remains.
+
 The initial manual opt-in at `050c7ec` passed staging review. For the automatic
 daily workflow and production promotion, use the superseding
 [daily release guide](interactive-map-snow-daily.md). The commands below record

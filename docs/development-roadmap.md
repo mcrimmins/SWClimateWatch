@@ -285,6 +285,39 @@ freeze behavior. The optional higher minimum wet-day count for intensity ranks
 remains deferred pending a coverage/runtime assessment; the current minimum and
 percentile algorithm are unchanged. See [assessment and cache migration notes](prism-code-review-fixes.md).
 
+### November 17 Interactive Snow and automatic updates - production complete
+
+The user confirmed the corrected release in staging and production, including
+the publication-order fix at `bf159b6`. Current Conditions in Interactive Maps
+now includes observed SWE, departure from median, supported percent of median
+and exact seven-day net SWE change. Zero observed SWE is transparent and remains
+0.00 inches in point tables; low typical snow, unsupported references and missing
+data remain distinct. The historical pilot example is not in operational builds.
+
+The shared daily/site-only workflow follows the verified Current Snow release,
+reuses unchanged bundles, invalidates them on date/source/endpoint revisions,
+and reconciles reset generated pages through the normal cached Snow quality
+gate. A new season without a verified snapshot waits rather than substituting
+the prior season. No new cron entry or cache transfer is required.
+
+The initial grouped-Snow checksum failure stopped upload safely. Snow is now
+reconciled before catalogs, synopsis and grouped pages record image hashes;
+all validation guards remain enabled. Corrected staging publication completed
+in 7m 06s; production completed in 7m 08s. Production evidence:
+
+- 54/54 current and 352/352 historic maps passed validation.
+- Source and rendered viewer checks passed for the November 17, 2026 Snow
+  release, with seven-day change available: 180 assets, 109,252,882 bytes.
+- Snow workflow reported `READY`, one snapshot and four metrics, in 7.766 seconds.
+- Production's separate weather check retained one missing CORe date:
+  29/30 recent and 76/77 Explorer dates, with no wind overlays withheld.
+
+Snow viewer integration, automatic updates and the ordering correction are
+complete; no promotion remains. Confirm the next scheduled production run's
+`Interactive Snow: ready/reused` line and date separately. Continue monitoring
+weather retries, monthly rollover and mobile memory/network performance. See
+the [completed release and operational guide](interactive-map-snow-daily.md).
+
 ## Priority order and working sequence
 
 This is the proposed working order, with one feature increment active at a time.
@@ -294,7 +327,8 @@ that work ahead of discretionary features.
 
 | Priority | Work | Next bounded step and completion evidence |
 | --- | --- | --- |
-| P0 — ongoing operations | Monitor the confirmed production release | Interactive Maps and raster plotting fixes are confirmed in production November 17. Check subsequent scheduled runs for viewer dates/cache reuse, plotting warnings, accepted monthly releases and weather retries/freshness. GA4 Realtime and the first automatic December monthly cycle still need confirmation. Earlier timing/coverage figures are historical snapshots. |
+| P0 — ongoing operations | Monitor the confirmed production release | Interactive Maps, automatic Snow viewer refresh, its publication-order correction and raster plotting fixes are confirmed in production November 17. Confirm the next scheduled Snow refresh/date/cache reuse; monitor plotting warnings, accepted monthly releases and weather retries/freshness. GA4 Realtime and the first automatic December monthly cycle still need confirmation. Earlier timing/coverage figures are historical snapshots. |
+| Complete — monitor | Interactive Snow viewer and automatic updates | User confirmed corrected staging and production November 17, including ordering fix `bf159b6`. Four Snow metrics follow the verified Current Snow release, preserve native cells/masks and transparent zero SWE, and refresh automatically in daily/site-only publication. Source/rendered checks passed for November 17 with seven-day change available; 54 current and 352 historic maps passed. Confirm the next scheduled run separately. See [release evidence and workflow](interactive-map-snow-daily.md). |
 | Complete — monitor | Raster plotting geometry fixes | User confirmed staging and production November 17 at `d00e5b9794a22cbf4c69222a913f31bccf00a2fe`. Native-size tiles protect sparse/singleton axes; dense maps retain the fast path. The two freeze-free products were rebuilt from cached grids. Local 63-field audit, seven-pair comparison and geometry/current/freeze/snow regression checks passed. No statistical-cache migration. See [findings and rebuild guide](raster-plot-geometry.md). |
 | Complete — monitor | PRISM comparison code-review fixes | User confirmed production November 15 after staging and cache rebuilds. Matched-date maximum ranks, freeze support/season guards, overdue lower bounds, category boundaries and configured labels are live. Monitor cache reuse and freeze-season behavior; a higher wet-day-intensity minimum remains optional. See [assessment](prism-code-review-fixes.md). |
 | Complete — monitor | Station loader, monthly manifest and browser freshness repairs | Production publication/header checks and the November 13 scheduled run close all three fixes. Retain automatic cache-policy handling, release reconciliation and station-loading regression checks. |
@@ -309,11 +343,12 @@ that work ahead of discretionary features.
 | Deferred until spring 2027 | Station heat metrics | Scope station-appropriate temperature thresholds, counts and departures; reuse existing hot-day/warm-night screening. No implementation before spring 2027. |
 | Alongside increments | Operational maintenance | Track freshness and source revisions, station audit age, raster warnings and measured cache/runtime behavior. Address specific failures promptly; schedule broader profiling as its own bounded task. |
 | Later — scope before building | New sources and statistical extensions | Local storm reports/hazard polygons, gauge conditions, historical odds, completed-year Explorer/historic-season integration, custom station dates, ENSO composites and further SPI products. Each needs its own source/method/performance assessment. |
-| Complete — monitor | Interactive Maps and automatic refresh | User confirmed production November 17 at `1c23270adfe1f17e47ff7f0cb9a4519f20a87f56`, after staging workflow/layout review. Includes 39 current choices, seven daily views, 28 monthly choices, linked point tables and automatic cached publication. First scheduled production refresh, monthly rollover and phone/throttled-network performance verification remain follow-ups. See [workflow](interactive-map-staging.md). |
+| Complete — monitor | Interactive Maps and automatic refresh | Initial production release confirmed November 17 at `1c23270adfe1f17e47ff7f0cb9a4519f20a87f56`; the completed Snow extension brings the current choices to 43, alongside seven daily views, 28 monthly choices, linked point tables and automatic cached publication. Scheduled-run confirmation, monthly rollover and phone/throttled-network performance verification remain follow-ups. See [initial workflow](interactive-map-staging.md) and [Snow extension](interactive-map-snow-daily.md). |
 | Later — polish | Consistency and optional interactions | Shared city-label styling, historic RONI labels at the next archive refresh, custom Analytics events and remaining documentation reconciliation. |
 
-November 17 status: Interactive Maps, automatic refresh and the final layout
-are confirmed in production. No promotion remains for this or the previously
+November 17 status: Interactive Maps, automatic Snow refresh, the grouped-Snow
+publication-order correction and the final layout are confirmed in production.
+No promotion remains for these or the previously
 completed station, weather, snow, regional climate and PRISM comparison releases.
 Observe subsequent scheduled-run behavior and monthly rollover separately.
 Heat metrics remain deferred until spring 2027; AI remains deferred. External
@@ -333,39 +368,13 @@ Numerical grids, masks, references and comparison caches are unchanged. No
 release step remains. Observe the next scheduled run separately. See
 [findings and rebuild guide](raster-plot-geometry.md).
 
-The Snow workflow below is authorized for implementation and release testing. The other proposals
-remain recommendations, not approval to implement:
+The Snow viewer and automatic workflow are complete in production as recorded
+above. The remaining proposals are recommendations, not approval to implement:
 
-1. **Snow in Interactive Maps — staging viewer accepted; automatic workflow ready for daily-cycle testing:** cached-source
-   assessment covers observed SWE, departure, supported percent of median and
-   exact seven-day change. Native 30-arcsecond grid has 1,297,116 cells; lossless
-   gzip bundles measured 0.104 MiB for the local published October 7 snapshot and
-   1.224 MiB for the explicitly labeled February 15, 2025 winter example.
-   Decoded data are 53.19 MiB per snapshot, plus browser working arrays; mobile
-   memory/performance remains a review target. Linked metrics and point tables
-   distinguish low typical snow, unsupported references, zero SWE and missing
-   exact endpoints. Existing operational screening and quality gates remain.
-   Full-cell round trips and browser decoding/controller checks passed. No
-   downloads or publication. Local combined-page integration now packages gzip
-   payloads with receipts, validates masks/values and metric/date links, and
-   includes managed asset cleanup. Daily Snow refresh and operational release
-   binding passed manual staging at `050c7ec` (November 16 snapshot, including
-   seven-day change). Automatic refresh is now implemented by default in the
-   shared daily/site-only viewer step. It reuses unchanged payloads, follows
-   date/source/endpoint changes, repairs reset generated pages through the
-   normal cached Snow map quality gate, and excludes old-season snapshots
-   while waiting for a new season. Daily-cycle staging verification and
-   production promotion remain; neither is claimed complete. No cache transfer
-   or cron edit is required. See [daily workflow and promotion commands](interactive-map-snow-daily.md)
-   and [local preview and assessment](interactive-map-snow-pilot.md).
-   The first production promotion stopped safely before upload on grouped Snow
-   image checksums. A publisher-order fix now reconciles cached Snow before
-   catalogs, synopsis and groups capture hashes; the checksum guard remains.
-   The correction needs a site-only staging check and renewed promotion.
-2. **Historic Years from monthly PRISM:** a larger separate increment. Pilot
+1. **Historic Years from monthly PRISM:** a larger separate increment. Pilot
    comparable existing years, choose/label historical ranking samples and review
    differences before replacing archive maps or extending the record.
-3. **Operational performance:** profile consecutive daily runs and outstanding
+2. **Operational performance:** profile consecutive daily runs and outstanding
    viewer mobile/network targets, using measured cache/runtime/payload evidence
    before changing product cadence or delivery architecture.
 

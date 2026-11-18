@@ -1,5 +1,16 @@
 # Automatic Interactive Snow refresh and promotion
 
+**Production complete November 17, 2026.** The user confirmed staging and
+production after the ordering correction (`bf159b6`). Production publication
+completed in 7m 08s; all 54 current and 352 historic maps passed. Source and
+rendered viewer validation passed for the November 17 Snow release, with
+seven-day change available (180 assets; 109,252,882 bytes). The Snow refresh
+reported `READY`, one snapshot/four metrics, in 7.766 seconds. The separate
+weather warning represented one missing date (76/77 Explorer coverage).
+
+No promotion remains. Confirm the next scheduled daily Snow refresh separately;
+the commands below are retained as release/recovery instructions.
+
 The user accepted the Snow viewer on staging at `050c7ec47884542ab93b6adeb178b1de60979f18`.
 This increment enables automatic Snow refresh by default in the existing shared
 Interactive Maps staging step. Both the daily runner and site-only publisher
@@ -157,9 +168,9 @@ For this correction commit, include `scripts/deploy-site-s3.R`,
 `scripts/test-interactive-map-snow-workflow.R`,
 `tests/testthat/test-deploy-site-s3.R`,
 `tests/testthat/test-interactive-snow-publication-order.R`, and the updated
-roadmap/release guide. Repeat a site-only staging publication first, then promote
-its exact commit using the locked production block above. A full daily download
-cycle or cache transfer is not required to test this ordering correction.
+roadmap/release guide. The corrected site-only staging publication passed in
+7m 06s, and its exact commit was successfully promoted to production. No cache
+transfer or full daily download cycle was needed for this correction.
 
 The fixture suite covers unchanged reuse, reset-page reconciliation, same-date
 revisions, new dates, endpoint availability, corrupted cached payloads, changed
