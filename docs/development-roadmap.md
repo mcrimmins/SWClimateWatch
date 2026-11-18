@@ -358,6 +358,10 @@ remain recommendations, not approval to implement:
    production promotion remain; neither is claimed complete. No cache transfer
    or cron edit is required. See [daily workflow and promotion commands](interactive-map-snow-daily.md)
    and [local preview and assessment](interactive-map-snow-pilot.md).
+   The first production promotion stopped safely before upload on grouped Snow
+   image checksums. A publisher-order fix now reconciles cached Snow before
+   catalogs, synopsis and groups capture hashes; the checksum guard remains.
+   The correction needs a site-only staging check and renewed promotion.
 2. **Historic Years from monthly PRISM:** a larger separate increment. Pilot
    comparable existing years, choose/label historical ranking samples and review
    differences before replacing archive maps or extending the record.

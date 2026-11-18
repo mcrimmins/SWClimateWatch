@@ -100,6 +100,22 @@ swc_deploy_run <- function(command, args, label) {
   invisible(status)
 }
 
+swc_deploy_stage_cached_sources <- function(rscript, destination,
+    interactive = file.exists("site/pages/interactive-maps.qmd"), .run = swc_deploy_run) {
+  # Snow reconciliation may replace image bytes after a checkout or revision.
+  # Complete it before any catalog, narrative or grouped-page image inventory.
+  if (interactive) .run(rscript, "scripts/prepare-interactive-map-snow-current.R", "Prepare cached Current Snow")
+  .run(rscript, "scripts/build-map-product-site.R", "Build and validate map catalog")
+  .run(rscript, "scripts/stage-daily-explorer.R", "Stage cached Daily Explorer")
+  .run(rscript, c("scripts/stage-conditions-synopsis.R", destination), "Stage cached template synopsis")
+  .run(rscript, "scripts/stage-current-map-groups.R", "Stage grouped Current Maps")
+  .run(rscript, "scripts/stage-cached-prism-monthly-site.R", "Stage cached Monthly Climate")
+  .run(rscript, "scripts/stage-cached-climate-of-region.R", "Stage cached Climate of the Region")
+  .run(rscript, "scripts/stage-cached-snodas-seasonal-anomalies.R", "Stage cached historical snow anomalies")
+  if (interactive) .run(rscript, "scripts/stage-cached-interactive-map-site.R", "Refresh cached Interactive Maps")
+  invisible(NULL)
+}
+
 swc_deploy_validation_summary <- function(
     current_path = file.path("data", "diagnostics", "map-product-status.csv"),
     archive_path = file.path("data", "diagnostics", "archive-publication-status.csv")) {
@@ -169,15 +185,8 @@ deploy_swc_site <- function(
   if (render) {
     source(file.path("R","site-cache.R"),local=TRUE)
     quarto <- swc_deploy_quarto()
-    swc_deploy_run(rscript, "scripts/build-map-product-site.R", "Build and validate map catalog")
-    swc_deploy_run(rscript, "scripts/stage-daily-explorer.R", "Stage cached Daily Explorer")
-    swc_deploy_run(rscript, c("scripts/stage-conditions-synopsis.R", destination), "Stage cached template synopsis")
-    swc_deploy_run(rscript, "scripts/stage-current-map-groups.R", "Stage grouped Current Maps")
-    swc_deploy_run(rscript, "scripts/stage-cached-prism-monthly-site.R", "Stage cached Monthly Climate")
-    swc_deploy_run(rscript, "scripts/stage-cached-climate-of-region.R", "Stage cached Climate of the Region")
-    swc_deploy_run(rscript, "scripts/stage-cached-snodas-seasonal-anomalies.R", "Stage cached historical snow anomalies")
+    swc_deploy_stage_cached_sources(rscript, destination)
     if (file.exists("site/pages/interactive-maps.qmd")) {
-      swc_deploy_run(rscript,"scripts/stage-cached-interactive-map-site.R","Refresh cached Interactive Maps")
       source(file.path("R","interactive-map-site.R"),local=TRUE)
       validate_interactive_map_site()
     }

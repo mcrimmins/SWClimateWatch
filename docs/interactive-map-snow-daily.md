@@ -46,7 +46,9 @@ Then in Windows Command Prompt:
 cd /d C:\Users\Crimmins\RProjects\SWClimateWatch
 git add R/daily-publish.R R/interactive-map-snow-current.R
 git add scripts/stage-cached-interactive-map-site.R scripts/check-interactive-map-snow-current.R scripts/production.env.example scripts/test-interactive-map-snow-workflow.R
+git add scripts/deploy-site-s3.R scripts/prepare-interactive-map-snow-current.R
 git add tests/testthat/test-interactive-map-workflow.R tests/testthat/test-interactive-map-snow-workflow.R
+git add tests/testthat/test-deploy-site-s3.R tests/testthat/test-interactive-snow-publication-order.R
 git add docs/development-roadmap.md docs/interactive-map-snow-pilot.md docs/interactive-map-snow-staging.md docs/interactive-map-snow-daily.md
 git diff --cached --stat
 git diff --cached --check
@@ -137,6 +139,27 @@ Confirm its next run reports the verified Snow date and matching change
 availability. No persistent setting needs adding unless deliberately opting out.
 
 ## Local validation evidence
+
+### Publication-order correction
+
+The first production promotion attempt stopped at grouped-map validation:
+`snow_swe`, `snow_departure` and `snow_percent` failed, and no S3 upload occurred.
+The site-only publisher had recorded grouped-page image hashes before the new
+viewer step reconciled the cached Current Snow maps. Their replacement bytes
+then differed from those recorded hashes. The publisher now prepares cached
+Snow before catalogs, synopsis and groups capture any image inventory. The late
+viewer step finds the same verified release. All existing rendered checksum
+guards remain enabled. Regression tests exercise this sequence with revised
+image bytes and verify that a Snow preparation failure stops downstream stages.
+
+For this correction commit, include `scripts/deploy-site-s3.R`,
+`scripts/prepare-interactive-map-snow-current.R`,
+`scripts/test-interactive-map-snow-workflow.R`,
+`tests/testthat/test-deploy-site-s3.R`,
+`tests/testthat/test-interactive-snow-publication-order.R`, and the updated
+roadmap/release guide. Repeat a site-only staging publication first, then promote
+its exact commit using the locked production block above. A full daily download
+cycle or cache transfer is not required to test this ordering correction.
 
 The fixture suite covers unchanged reuse, reset-page reconciliation, same-date
 revisions, new dates, endpoint availability, corrupted cached payloads, changed

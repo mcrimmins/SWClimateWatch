@@ -39,7 +39,11 @@ testthat::test_that("live publish entry point uses the dedicated confirmed prefi
 
 testthat::test_that("site renders reconcile monthly pages from cached local releases first", {
   script<-readLines(file.path(project_root,"scripts/deploy-site-s3.R"))
-  stage<-grep('swc_deploy_run(rscript, "scripts/stage-cached-prism-monthly-site.R"',script,fixed=TRUE)
+  calls <- character()
+  swc_deploy_stage_cached_sources("Rscript", "s3://fixture/watch-staging/", TRUE,
+    function(command, args, label) calls <<- c(calls, args[[1L]]))
+  testthat::expect_equal(sum(calls == "scripts/stage-cached-prism-monthly-site.R"), 1L)
+  stage<-grep('swc_deploy_stage_cached_sources(rscript, destination)',script,fixed=TRUE)
   render<-grep('swc_deploy_run(quarto, c("render", "site")',script,fixed=TRUE)
   testthat::expect_length(stage,1L)
   testthat::expect_true(stage<render)
