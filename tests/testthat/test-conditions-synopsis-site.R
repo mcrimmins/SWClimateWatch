@@ -83,10 +83,17 @@ testthat::test_that("published comparisons use the prior successful snapshot eve
 })
 
 testthat::test_that("all deploy paths stage and validate synopsis before upload and commit afterward", {
-  script <- paste(readLines(file.path(project_root, "scripts/deploy-site-s3.R")), collapse = "\n")
-  stage <- regexpr('scripts/stage-conditions-synopsis.R', script, fixed = TRUE)[[1L]]
-  render <- regexpr('c("render", "site")', script, fixed = TRUE)[[1L]]
-  validate <- regexpr('validate_conditions_synopsis_publication(output_dir, destination)', script, fixed = TRUE)[[1L]]
+  deploy <- new.env(parent = globalenv())
+  sys.source(file.path(project_root, "scripts/deploy-site-s3.R"), envir = deploy)
+  stages <- character()
+  deploy$swc_deploy_stage_cached_sources("Rscript", "s3://fixture/watch-staging/", TRUE,
+    .run = function(command, args, label) stages <<- c(stages, args[[1L]]))
+  testthat::expect_equal(sum(stages == "scripts/stage-conditions-synopsis.R"), 1L)
+  # Inspect the publisher body, not helper definitions elsewhere in the file.
+  script <- gsub("[[:space:]]+", "", paste(deparse(body(deploy$deploy_swc_site)), collapse = ""))
+  stage <- regexpr('swc_deploy_stage_cached_sources(rscript,destination)', script, fixed = TRUE)[[1L]]
+  render <- regexpr('c("render","site")', script, fixed = TRUE)[[1L]]
+  validate <- regexpr('validate_conditions_synopsis_publication(output_dir,destination)', script, fixed = TRUE)[[1L]]
   upload <- regexpr('swc_deploy_sync_args(output_dir', script, fixed = TRUE)[[1L]]
   commit <- regexpr('commit_conditions_synopsis_publication(destination)', script, fixed = TRUE)[[1L]]
   testthat::expect_true(stage > 0 && stage < render && render < validate && validate < upload && upload < commit)
