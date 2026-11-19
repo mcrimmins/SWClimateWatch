@@ -112,6 +112,7 @@ swc_deploy_stage_cached_sources <- function(rscript, destination,
   .run(rscript, "scripts/stage-cached-prism-monthly-site.R", "Stage cached Monthly Climate")
   .run(rscript, "scripts/stage-cached-climate-of-region.R", "Stage cached Climate of the Region")
   .run(rscript, "scripts/stage-cached-snodas-seasonal-anomalies.R", "Stage cached historical snow anomalies")
+  .run(rscript, "scripts/stage-cached-historic-monthly-archive.R", "Stage cached monthly Historic Years")
   if (interactive) .run(rscript, "scripts/stage-cached-interactive-map-site.R", "Refresh cached Interactive Maps")
   invisible(NULL)
 }

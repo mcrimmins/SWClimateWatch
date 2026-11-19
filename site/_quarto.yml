@@ -8,6 +8,7 @@ project:
     - assets/snodas-seasonal-anomalies.json
     - assets/current-map-groups/**
     - maps/generated/prism/monthly/**
+    - maps/generated/prism/seasonal-archive/**
     - maps/generated/prism/regional-reference/**
     - stations/**
     - daily-explorer/**

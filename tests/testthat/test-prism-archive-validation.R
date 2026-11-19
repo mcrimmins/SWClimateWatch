@@ -39,6 +39,18 @@ archive_validation_fixture <- function() {
        products = products, roni = roni)
 }
 
+testthat::test_that("monthly markers cannot bypass validation without a verified release", {
+  fixture <- archive_validation_fixture()
+  on.exit(unlink(fixture$root, recursive = TRUE), add = TRUE)
+  page <- file.path(fixture$site_dir, "pages/archive/wy1982.qmd")
+  cat("\n<!-- HISTORIC MONTHLY RELEASE -->\n", file = page, append = TRUE)
+  old <- getwd(); setwd(project_root); on.exit(setwd(old), add = TRUE)
+  testthat::expect_error(validate_prism_archive_publication(
+    site_dir = fixture$site_dir, expected_years = fixture$years,
+    products = fixture$products, roni = fixture$roni, report_path = NULL,
+    monthly_release_root = file.path(fixture$root, "missing-release")), "bundle is missing")
+})
+
 testthat::test_that("Historic Years validation checks every source and rendered map", {
   fixture <- archive_validation_fixture()
   result <- validate_prism_archive_publication(

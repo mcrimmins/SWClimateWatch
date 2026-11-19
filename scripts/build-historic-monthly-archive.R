@@ -1,0 +1,10 @@
+# Long, resumable local build. Existing archive pages and maps stay untouched.
+source("scripts/load-prism-monthly.R")
+source("R/map-reference-layers.R")
+source("R/map-product-scales.R")
+source("R/map-southwest.R")
+source("R/historic-monthly-pilot.R")
+source("R/historic-monthly-archive.R")
+historic_monthly_archive <- build_historic_monthly_archive()
+print(historic_monthly_archive$summary, row.names = FALSE)
+print(check_historic_monthly_archive_maps(), row.names = FALSE)

@@ -1,0 +1,5 @@
+source("scripts/load-prism-monthly.R")
+source("R/map-product-site.R")
+source("R/historic-monthly-pilot.R")
+source("R/historic-monthly-site-preview.R")
+source("R/historic-monthly-publication.R")

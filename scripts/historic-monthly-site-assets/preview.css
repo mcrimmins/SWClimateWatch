@@ -1,0 +1,9 @@
+.historic-review-notice { border-left: 3px solid #9a4b26; padding: .35rem .8rem; margin-bottom: 1rem; font-size: .9rem; color: var(--bs-secondary-color); }
+.historic-review-notice p { margin: 0; }
+.historic-review-details { margin: 1.3rem 0; padding: .85rem 1rem; border: 1px solid var(--bs-border-color); border-radius: .4rem; }
+.historic-review-details summary { font-weight: 600; cursor: pointer; }
+.historic-review-details[open] summary { margin-bottom: 1rem; }
+.archive-year-intro .archive-roni-badge { white-space: normal; }
+.panel-tabset .nav-tabs { gap: .25rem; margin-bottom: 1rem; }
+.panel-tabset .dashboard-map-card { min-width: 0; }
+.panel-tabset .dashboard-map-card img { max-width: 100%; height: auto; }

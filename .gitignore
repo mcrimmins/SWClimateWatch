@@ -34,3 +34,4 @@ docs/prism-data-methods.html
 logs/
 
 **/*.quarto_ipynb
+/swc-historic-monthly-release.tar.gz

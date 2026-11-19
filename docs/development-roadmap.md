@@ -1,6 +1,6 @@
 # Development roadmap
 
-Planning review: November 17, 2026. This is the consolidated backlog, not a
+Planning review: November 18, 2026. This is the consolidated backlog, not a
 commitment to enable every candidate product. No production settings change
 when this document is edited.
 
@@ -13,6 +13,13 @@ Monthly PRISM development is underway in a separate conversation; do not modify
 its implementation files as part of roadmap planning.
 
 ## Operational baseline
+
+November 18 repository baseline: [PR #1](https://github.com/mcrimmins/SWClimateWatch/pull/1)
+merged `codex/daily-explorer` into `main` with merge commit
+`e1deb03681f286f7f6a7c7b5eac60a3ddc729ec6`. The laptop now uses that `main`;
+both VM checkouts are pinned to the same commit. The merge and checkout
+transition are complete. This did not publish the site or change the daily cron.
+The next scheduled production run remains a separate operational confirmation.
 
 November 13 operational review: the station update, monthly manifest and browser
 freshness repairs are complete in production. The scheduled daily run succeeded;
@@ -318,6 +325,36 @@ complete; no promotion remains. Confirm the next scheduled production run's
 weather retries, monthly rollover and mobile memory/network performance. See
 the [completed release and operational guide](interactive-map-snow-daily.md).
 
+### November 18 merge into main and VM transition - complete
+
+PR #1 preserved the feature history with a merge commit: 48 reviewed feature
+commits, 503 changed files, and no competing main-side changes. The reviewed
+head `72bb3bb` and merged `main` have identical tracked file contents. Review
+corrected one obsolete synopsis publication-order test assertion; no production
+code needed changing during review.
+
+Clean-source verification passed 3,878 R assertions across 143 test files with
+zero failures, errors or test warnings. Eighteen JavaScript suites passed,
+including native PRISM/Snow payload checks; syntax checks passed for 481 R
+files, 19 JavaScript files and six shell scripts. One live RCC-ACIS integration
+test and one optional generated weather-preview check were skipped. There is
+no tracked GitHub Actions workflow; these are local checks, not CI results.
+
+The laptop fast-forward completed after a transient Git index lock cleared.
+Generated page edits are saved in stashes; untracked experiments and cached
+data were preserved. Staging and production VM checkouts then moved to
+`e1deb03681f286f7f6a7c7b5eac60a3ddc729ec6`. Both runner readiness checks
+finished with exit 0 on November 18, with the correct separate destinations,
+required packages/tools and seed assets. Production's "Local staging preflight:
+INCOMPLETE" label reflects its live destination, not a failed dependency check.
+AWS permissions, machine capacity and a new full publication were not tested by
+those readiness checks.
+
+No merge/promotion task remains for this baseline. Keep VM releases pinned and
+use new `codex/...` branches from updated `main` for subsequent increments.
+Record the next scheduled production result separately; GA4 Realtime, source
+freshness/retries and the December 1-5 monthly rollover remain follow-ups.
+
 ## Priority order and working sequence
 
 This is the proposed working order, with one feature increment active at a time.
@@ -328,6 +365,9 @@ that work ahead of discretionary features.
 | Priority | Work | Next bounded step and completion evidence |
 | --- | --- | --- |
 | P0 — ongoing operations | Monitor the confirmed production release | Interactive Maps, automatic Snow viewer refresh, its publication-order correction and raster plotting fixes are confirmed in production November 17. Confirm the next scheduled Snow refresh/date/cache reuse; monitor plotting warnings, accepted monthly releases and weather retries/freshness. GA4 Realtime and the first automatic December monthly cycle still need confirmation. Earlier timing/coverage figures are historical snapshots. |
+| Complete — monitor | Merge into main and align laptop/VM checkouts | PR #1 merged November 18 at `e1deb036`; laptop `main` and both pinned VM checkouts match. Reviewed source passed 3,878 R assertions and 18 JavaScript suites; both VM readiness checks exited 0. No new publication occurred. Confirm the next scheduled production run separately. |
+| P1 — staging testing | Historic Years from monthly PRISM | The user accepted all 44 existing WY1982-WY2025 pages locally: 924 monthly maps, retaining 176 daily-detail and 84 Snow maps. Full numeric and rendered validation passed with zero requests. Portable publication export, cached staging reconciliation and checks are prepared; staging review and production promotion remain pending. No extension toward WY1896 is enabled. |
+| P2 — recommended, pending selection | Operational and viewer performance | Profile consecutive new-date runs and outstanding phone/throttled-network targets before changing cadence, payloads or architecture. |
 | Complete — monitor | Interactive Snow viewer and automatic updates | User confirmed corrected staging and production November 17, including ordering fix `bf159b6`. Four Snow metrics follow the verified Current Snow release, preserve native cells/masks and transparent zero SWE, and refresh automatically in daily/site-only publication. Source/rendered checks passed for November 17 with seven-day change available; 54 current and 352 historic maps passed. Confirm the next scheduled run separately. See [release evidence and workflow](interactive-map-snow-daily.md). |
 | Complete — monitor | Raster plotting geometry fixes | User confirmed staging and production November 17 at `d00e5b9794a22cbf4c69222a913f31bccf00a2fe`. Native-size tiles protect sparse/singleton axes; dense maps retain the fast path. The two freeze-free products were rebuilt from cached grids. Local 63-field audit, seven-pair comparison and geometry/current/freeze/snow regression checks passed. No statistical-cache migration. See [findings and rebuild guide](raster-plot-geometry.md). |
 | Complete — monitor | PRISM comparison code-review fixes | User confirmed production November 15 after staging and cache rebuilds. Matched-date maximum ranks, freeze support/season guards, overdue lower bounds, category boundaries and configured labels are live. Monitor cache reuse and freeze-season behavior; a higher wet-day-intensity minimum remains optional. See [assessment](prism-code-review-fixes.md). |
@@ -346,8 +386,10 @@ that work ahead of discretionary features.
 | Complete — monitor | Interactive Maps and automatic refresh | Initial production release confirmed November 17 at `1c23270adfe1f17e47ff7f0cb9a4519f20a87f56`; the completed Snow extension brings the current choices to 43, alongside seven daily views, 28 monthly choices, linked point tables and automatic cached publication. Scheduled-run confirmation, monthly rollover and phone/throttled-network performance verification remain follow-ups. See [initial workflow](interactive-map-staging.md) and [Snow extension](interactive-map-snow-daily.md). |
 | Later — polish | Consistency and optional interactions | Shared city-label styling, historic RONI labels at the next archive refresh, custom Analytics events and remaining documentation reconciliation. |
 
-November 17 status: Interactive Maps, automatic Snow refresh, the grouped-Snow
-publication-order correction and the final layout are confirmed in production.
+November 18 status: PR #1 is merged; laptop and both VM checkouts match the
+reviewed main baseline and VM readiness checks passed. Interactive Maps,
+automatic Snow refresh, the grouped-Snow publication-order correction and the
+final layout are confirmed in production.
 No promotion remains for these or the previously
 completed station, weather, snow, regional climate and PRISM comparison releases.
 Observe subsequent scheduled-run behavior and monthly rollover separately.
@@ -369,14 +411,136 @@ release step remains. Observe the next scheduled run separately. See
 [findings and rebuild guide](raster-plot-geometry.md).
 
 The Snow viewer and automatic workflow are complete in production as recorded
-above. The remaining proposals are recommendations, not approval to implement:
+above. The user approved the bounded monthly archive pilot November 18; its
+scope is recorded below. Archive replacement/backfill and the performance
+proposal remain separate decisions:
 
 1. **Historic Years from monthly PRISM:** a larger separate increment. Pilot
    comparable existing years, choose/label historical ranking samples and review
-   differences before replacing archive maps or extending the record.
+   differences before replacing archive maps or extending the record. Start
+   with three contrasting existing water years and precipitation totals plus
+   day-weighted mean temperature from complete monthly inputs, using the fixed
+   1991-2020 normal for departures. Compare against the current archive and
+   document differences in inputs, coverage and methods; exact agreement is
+   not assumed. Select the ranking sample explicitly before adding ranks.
+   Keep pilot outputs isolated; archive replacement, long-record backfill
+   and daily-runner integration require separate review.
 2. **Operational performance:** profile consecutive daily runs and outstanding
    viewer mobile/network targets, using measured cache/runtime/payload evidence
    before changing product cadence or delivery architecture.
+
+**November 18 approved local Historic Years pilot:** use WY2002, WY2005 and
+WY2020 as contrasting review examples. Each year has precipitation total,
+precipitation percentile rank, mean temperature, temperature departure and
+temperature percentile rank for October-September, October-March, April-June
+spring and July-September monsoon, plus September SPI-12. The user approved
+the spring addition and revised monsoon window so the three seasons cover
+all twelve months without gaps or overlaps; the monsoon window differs from
+June 15-September 30. This changes only the Historic Years pilot definitions,
+not existing station or operational seasonal products.
+That is 21 maps per year and 63 maps overall. Retrospective ranks use the common
+complete-water-year record from WY1896 through the latest completed September,
+including later years when describing historical targets. Temperature departures
+use matching 1991-2020 seasons; SPI retains the existing fixed calibration and
+support/fit guards. Preserve tied-record and common-zero precipitation safeguards.
+
+The isolated builder `scripts/build-historic-monthly-pilot.R` uses verified
+monthly caches without downloading or writing shared SPI fits. Its diagnostic
+reference windows and checksummed outputs are resumable. The local gallery
+compares years with linked period/metric controls; September SPI is restricted
+to Water year. Cached daily-derived precipitation totals, where present, provide
+a separate numerical comparison report. Existing daily ranks have a different
+reference record and high/low temperature departures are different metrics;
+do not require identical results or replace them silently. Review via
+`scripts/check-historic-monthly-pilot.R` and
+`scripts/preview-historic-monthly-pilot.R` before any site integration.
+
+Initial local verification November 18, before the spring/monsoon revision:
+all 48 products built and passed saved-grid
+rank/departure/SPI, mask, source and output-checksum validation. An unchanged
+rerun reused all 48 maps and all three reference-window caches with zero requests.
+Twenty-three focused R assertions and 84 selector combinations passed, with
+browser review of SPI period switching/restoration and single-year filtering.
+All 396 existing PRISM archive page/image files remained byte-identical. The
+six comparable precipitation-total grids had mean absolute monthly-versus-daily
+cell differences of about 0.0003-0.0013 inches; this is diagnostic agreement,
+not a rule permitting automatic replacement. The user accepted that initial
+visual review, then selected April-June spring and July-September monsoon.
+The expanded 63-map pilot requires renewed local review. No operational page,
+catalog, update workflow or deployment is changed. Updated checks enforce
+the four periods, all 21 products per year, and reconstruction of full-year
+precipitation and day-weighted mean temperature from the three seasons.
+
+Expanded local verification November 18: all 63 maps built with zero requests
+and passed rank/departure/SPI, mask, window, gallery and checksum checks. Seasonal
+precipitation sums and actual-day-weighted temperatures reconstruct each full
+water year, including leap-year handling. Twenty-six focused R assertions and
+112 selector combinations passed. All 396 existing archive page/image files
+remain byte-identical. The 63-map gallery is ready for user review; no existing
+maps or pages have been replaced.
+
+Local precipitation display refinement: retain the same total-precipitation
+breaks and range, but anchor each intended colour to its category midpoint.
+This prevents unequal low-amount bins from collapsing toward white; the first
+five classes have stronger, decreasing-lightness separation. The 63-map pilot
+was refreshed with no downloads, and all 15 numeric TIFFs remained byte-identical.
+A regression check covers actual class-midpoint colour mapping and low-bin
+contrast; the focused R tests now pass 31 assertions.
+
+Local page integration November 18: the user accepted the maps and selected
+an isolated three-page layout review before replacing the archive. Run
+`scripts/build-historic-monthly-site-preview.R`, then
+`scripts/preview-historic-monthly-pages.R`. The separate Quarto project lives
+under `data/diagnostics/historic-monthly-site-preview`; the main site sources
+and `site/_site` are unchanged. Its sidebar links the three pilot years, with
+Water year / Cool season / Spring / Monsoon tabs and precipitation rank plus
+temperature departure leading each period. Methods, retained daily-derived
+October-March detail and Snow open as grouped sections below; WY2002 has an
+explicit Snow-availability note. Historical RONI values/periods/source links are
+preserved with the agreed magnitude/range-condition wording, not current CPC
+official-status claims.
+
+Verification: 45 focused page-assembly/preservation/checksum assertions passed;
+all three rendered pages passed with 63 monthly maps, 12 retained daily-detail
+maps and eight Snow maps. Browser checks covered period tabs, section expansion,
+year navigation and image loading. All 396 original PRISM archive page/image
+files remain byte-identical. No archive replacement, production navigation,
+catalog or scheduled-workflow change is enabled by this local layout preview.
+
+**Full existing-year local expansion selected:** discover the existing
+`site/pages/archive/wy*.qmd` years rather than hard-coding a new archive span.
+The current set is WY1982-WY2025: 44 pages, 21 monthly maps each (924), with
+176 retained daily-derived detail maps and 84 available Snow maps. Build maps
+with `scripts/build-historic-monthly-archive.R`, build/render the separate site
+with `scripts/build-historic-monthly-archive-pages.R`, then run
+`scripts/check-historic-monthly-archive.R` and open
+`scripts/preview-historic-monthly-archive.R`. Outputs live in separate
+`data/diagnostics/historic-monthly-archive` and `historic-monthly-archive-site`
+folders; original archive pages/maps and the approved three-year preview remain
+unchanged. The larger review sidebar groups years by decade.
+
+Map batches checkpoint each year/period and hold an output-folder lock. Matching
+pilot references, fits and approved maps can seed the new folder only after
+signature/checksum verification, with cached paths rewritten to the new location.
+Numeric checks also checkpoint verified input/output signatures; repeated checks
+still verify source/output integrity, season partition and exact year coverage.
+A partial year set cannot pass the all-existing-years validation gate. This is
+manual local expansion, not a new daily-workflow dependency or download cycle.
+
+Tooling verification: all 44 source pages passed content preservation and
+idempotent page assembly tests, including historical RONI wording, daily-detail
+cards and available Snow sections. A separate four-year end-to-end smoke test
+added WY1982 to the three accepted years: 84 maps, 21 built and 63 reused, zero
+requests. Its four rendered pages passed with 16 daily-detail and eight Snow
+maps; unchanged numeric checks were reused on a second validation. All 396
+original PRISM archive page/image files remained unchanged. The complete local
+run subsequently passed: 44 years, 924 monthly maps (861 built, 63 reused),
+zero requests; numeric validation PASS and rendered validation PASS with all
+176 daily-detail and 84 Snow maps. The user accepted the local pages November 18.
+Staging uses a separate portable publication bundle, with final map footers,
+relative paths, exact year/product/date coverage and PNG checksums. Cached
+reconciliation preserves the VM's Snow sections; monthly publication checks
+run before S3 upload. Production promotion remains pending staging review.
 
 November 13 local snow increment: the reviewed three-year anomaly maps now have
 an isolated full Historic Years page preview with four snow cards, original
@@ -490,7 +654,7 @@ those pages are next refreshed.
 | Completed-year Daily Explorer | Decide what remains public at water-year rollover, then test dated manifests, navigation, retention, storage and rebuild costs before historical backfill. | Moderate-large |
 | Station metadata and additional extremes | Scope station/component history and historical extremes comparisons. Calendar-date plot records and the station climatology section are now bounded increments in the [November 6 scope](#station-and-regional-climatology-agreed-november-6-2026); heat metrics are deferred until spring 2027. Any additional formal indices need explicit periods, thresholds, completeness, ties and baseline definitions. | Variable |
 | Station custom date periods | Assess a start/end-date selector alongside presets, initially bounded to the recent daily data already published. Separate basic summaries from historical comparisons; benchmark map/table recalculation, lazy loading, payload size and browser responsiveness before implementation. | Moderate; full historical comparisons substantially larger |
-| Interactive raster map page (requested November 8, 2026) | Confirmed live November 17: 39 current choices, seven daily views, 28 monthly choices, native-cell queries, linked controls and automatic cached publication. Monitor scheduled production refresh/monthly rollover; measure outstanding mobile/network performance. Snow and freeze-date extensions require separate pilots. | Core complete; monitor |
+| Interactive raster map page (requested November 8, 2026) | Confirmed live November 17, including the Snow extension: 43 current choices, seven daily views, 28 monthly choices, native-cell queries, linked controls and automatic cached publication. Monitor scheduled production refresh/monthly rollover; measure outstanding mobile/network performance. Freeze-date extensions remain separate pilots. | Core and Snow complete; monitor |
 | Shared city-label styling | Consider the smaller Daily Explorer labels for other maps; review representative precipitation, temperature and snow backgrounds before a site-wide rebuild. | Small-moderate |
 | Station audit maintenance | Establish a repeatable full-record audit refresh cadence, visible audit age and automatic cautions; avoid a manual station-by-station approval requirement. | Moderate |
 | Product freshness visibility | Weather activation/coverage audit is live. November 8 production reports 30/30 recent and 68/68 Explorer dates with no pending dates or withheld/unknown wind overlays, closing the earlier coverage-gap follow-up at this snapshot. Monitor recurrence; extend source-specific freshness reporting to PRISM, snow and stations later. | Small-moderate |
@@ -499,7 +663,7 @@ those pages are next refreshed.
 | Validated SPI module | Separately validate fitting, zero precipitation, reference period and SPI-1/3/6/12 behavior; do not substitute raw standardized precipitation anomalies. | Large |
 | Daily weather and circulation diagnostics | Daily and 7-/30-day three-map CORe integration, retained backfill, automatic gap/mean retries and publication checks are live. Monitor source availability, queues and cache/runtime behavior. Anomaly baselines/additional fields remain separate; IVT remains deferred. | Live; monitor |
 | Archived forecast discussions in Daily Explorer | Date-bound AFD/WPC links and the fixed-size embedded reader are live and user-tested. Metadata indexing and optional SPC/report sources remain future work. | Indexing effort pending |
-| Long-term monthly PRISM maps | Monthly Climate rankings and SPI plus automatic revision-aware updates are live. January 1895–October 2026 inputs are verified. External hotlink exports remain to close; the requested monthly-based Historic Years rebuild and regional climate normals page remain separate future work. | Core release live; extensions scoped separately |
+| Long-term monthly PRISM maps | Monthly Climate rankings and SPI plus automatic revision-aware updates are live. January 1895–October 2026 inputs are verified. Stable monthly image exports and the 39-map Climate of the Region page are complete; external dashboard embedding remains unconfirmed. All 44 monthly-based Historic Years pages passed local review; staging testing is selected. | Core/reference pages live; archive replacement in staging preparation |
 | Local storm reports and watch/warning polygons | Scope archived reports and NWS hazard polygons alongside Daily Explorer and/or seasonal summaries, including event-time matching, deduplication, data availability and efficient caching. | Longer-term; scope first |
 | Historic-season station and Daily Explorer content | Decide which station summaries, extreme-event views and daily-map navigation belong in historic seasons; define retention, completeness and storage limits. | Longer-term; scope first |
 | Hydrological observations and gauge-condition maps | Assess gauge data access, station coverage and useful streamflow/stage condition metrics, with historical context and bounded update costs. | Longer-term; scope first |
@@ -1366,8 +1530,12 @@ and [production guidance](https://developers.openai.com/api/docs/guides/producti
 Follow the [priority order above](#priority-order-and-working-sequence).
 Interactive Maps and automatic refresh are confirmed live November 17; no
 promotion remains. The raster plotting fixes are also confirmed live November 17; no promotion
-remains. The next recommended feature is a bounded snow-viewer source/payload
-assessment and local pilot, followed by monthly-based archive work if selected.
+remains. Interactive Snow and automatic refresh are also confirmed complete;
+PR #1 merged November 18 and both VM readiness checks passed at the main baseline.
+The selected next release is the monthly-PRISM Historic Years archive for
+WY1982-WY2025: local numeric/rendered validation and user review are complete;
+staging testing is next. Profile operational/mobile performance
+as a separate increment, and confirm the next scheduled production run.
 Station seasonal histories, daily chart/CSV/layout enhancements, monthly
 climatology and 7-/30-day weather means/retries are confirmed in production.
 The November 13 full run closes the station/monthly/cache repair checks.

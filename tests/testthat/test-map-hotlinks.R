@@ -33,6 +33,21 @@ hotlink_fixture <- function(root) {
   list(products=products,metadata=metadata,registry=file.path(root,"registry.rds"),json=json,png=png)
 }
 
+testthat::test_that("monthly Historic Years maps receive stable year and season catalog paths", {
+  root <- tempfile(); on.exit(unlink(root, recursive = TRUE), add = TRUE)
+  f <- hotlink_fixture(root)
+  path <- "maps/generated/prism/historic-monthly/wy2024/spring/temperature_rank.png"
+  f$png(path)
+  writeLines(paste0('<img alt="Spring temperature rank" src="../../', path, '">'),
+    file.path(root, "pages/archive/wy2024.html"))
+  rows <- stage_map_hotlinks(root, "s3://bucket/climate/watch-staging/", f$products, f$metadata, f$registry)
+  monthly <- rows[rows$id == "archive/prism/historic-monthly/wy2024/spring/temperature_rank", ]
+  testthat::expect_equal(nrow(monthly), 1L)
+  testthat::expect_equal(monthly$path, path)
+  testthat::expect_equal(monthly$url, paste0("https://cales.arizona.edu/climate/watch-staging/", path))
+  testthat::expect_silent(validate_map_hotlinks(root))
+})
+
 testthat::test_that("all published map families receive predictable latest or dated links", {
   root<-tempfile();on.exit(unlink(root,recursive=TRUE),add=TRUE);f<-hotlink_fixture(root)
   rows<-stage_map_hotlinks(root,"s3://bucket/climate/watch-staging/",f$products,f$metadata,f$registry)

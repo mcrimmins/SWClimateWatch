@@ -100,7 +100,7 @@ map_hotlink_rows <- function(root, products, metadata_dir="data/diagnostics") {
     doc<-xml2::read_html(page)
     for(img in xml2::xml_find_all(doc,"//img")) {
       src<-xml2::xml_attr(img,"src")
-      if(is.na(src)||!grepl("^../../maps/generated/(prism|snodas)/seasonal-archive/wy[0-9]{4}/[A-Za-z0-9_-]+[.]png$",src))next
+      if(is.na(src)||!grepl("^../../maps/generated/((prism|snodas)/seasonal-archive/wy[0-9]{4}|prism/historic-monthly/wy[0-9]{4}/(water-year|cool-season|spring|monsoon))/[A-Za-z0-9_-]+[.]png$",src))next
       source<-substring(src,7L);id<-sub("^maps/generated/","archive/",sub("[.]png$","",source))
       label<-xml2::xml_attr(img,"alt");if(is.na(label)||!nzchar(label))label<-basename(source)
       add(id,"Historic seasons",label,source,date=toupper(sub("[.]html$","",basename(page))),page=paste0("pages/archive/",basename(page)))

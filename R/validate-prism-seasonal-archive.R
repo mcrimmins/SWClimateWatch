@@ -14,7 +14,8 @@ validate_prism_archive_publication <- function(
     minimum_image_bytes = 10000,
     require_rendered = FALSE,
     report_path = file.path("data", "diagnostics", "archive-publication-status.csv"),
-    fail = TRUE) {
+    fail = TRUE,
+    monthly_release_root = "data/processed/historic-monthly-release") {
   expected_years <- as.integer(expected_years)
   if (!length(expected_years) || anyNA(expected_years) ||
       anyDuplicated(expected_years) || any(!expected_years %in% roni$water_year)) {
@@ -41,6 +42,17 @@ validate_prism_archive_publication <- function(
     stop("The xml2 package is required to inspect rendered archive pages.", call. = FALSE)
   }
   navigation_path <- file.path(site_dir, "_quarto.yml")
+  monthly_pages <- file.path(site_dir, "pages/archive", paste0("wy", expected_years, ".qmd"))
+  monthly <- vapply(monthly_pages, function(path) file.exists(path) &&
+    any(readLines(path, warn = FALSE) == "<!-- HISTORIC MONTHLY RELEASE -->"), logical(1))
+  if (any(monthly)) {
+    # A marker alone never bypasses validation. Require the complete portable
+    # release and validate every new monthly map/link before legacy checks.
+    source("scripts/load-historic-monthly-publication.R", local = TRUE)
+    validate_historic_monthly_publication(root = monthly_release_root, site_dir = site_dir,
+      rendered = require_rendered, expected_years = expected_years)
+    if (!all(monthly)) stop("Historic monthly page migration is incomplete.")
+  }
   navigation <- if (file.exists(navigation_path)) {
     trimws(readLines(navigation_path, warn = FALSE))
   } else character()
@@ -122,14 +134,17 @@ validate_prism_archive_publication <- function(
         paste0("[Open full-resolution PNG](", image_ref, ")"),
         page_lines, fixed = TRUE
       )
-      if (sum(source_image_line) != 1L) {
+      # Four superseded legacy images remain verified for existing hotlinks,
+      # while the new release validator checks their monthly replacements.
+      linked <- !any(monthly) || product %in% c("maxt_departure", "mint_departure", "wet_day_count_percentile", "wet_day_intensity")
+      if (linked && sum(source_image_line) != 1L) {
         problems <- c(problems, "source page image link is missing or duplicated")
       }
-      if (sum(source_download_line) != 1L) {
+      if (linked && sum(source_download_line) != 1L) {
         problems <- c(problems, "source page download link is missing or duplicated")
       }
       if (isTRUE(require_rendered)) {
-        if (file.exists(rendered_path) && !is.null(rendered)) {
+        if (linked && file.exists(rendered_path) && !is.null(rendered)) {
           if (sum(rendered_images == image_ref) != 1L) {
             problems <- c(problems, "rendered page image link is missing or duplicated")
           }
