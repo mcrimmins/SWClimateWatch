@@ -44,7 +44,7 @@ historic_preview_map_card <- function(row) {
   description <- switch(row$metric,
     precipitation_total = "Total precipitation, in inches.",
     precipitation_rank = "Wet/dry standing among matching complete historical periods.",
-    temperature_mean = "Mean temperature, in degrees F; monthly values weighted by days.",
+    temperature_mean = "Average temperature over the selected period (\u00b0F).",
     temperature_departure = "Warmer or cooler than the matching 1991-2020 normal, in degrees F.",
     temperature_rank = "Warm/cold standing among matching complete historical periods.",
     spi12 = "October-September standardized precipitation; negative is drier, positive is wetter.")
