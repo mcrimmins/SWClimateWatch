@@ -3,4 +3,5 @@ scripts/run-production-daily.sh text eol=lf
 scripts/test-climate-of-region-staging.sh text eol=lf
 scripts/test-prism-comparison-staging.sh text eol=lf
 scripts/test-historic-monthly-staging.sh text eol=lf
+scripts/test-historic-monthly-backfill-staging.sh text eol=lf
 scripts/production.env.example text eol=lf

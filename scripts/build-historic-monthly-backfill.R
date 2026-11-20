@@ -1,0 +1,10 @@
+# Long, resumable cached-only build of all 86 earlier years.
+source("scripts/load-prism-monthly.R")
+source("R/map-reference-layers.R")
+source("R/map-product-scales.R")
+source("R/map-southwest.R")
+source("R/historic-monthly-pilot.R")
+source("R/historic-monthly-backfill.R")
+historic_monthly_backfill <- build_historic_monthly_backfill()
+print(historic_monthly_backfill$summary, row.names = FALSE)
+message("Local backfill map build complete. Validate before rendering pages; nothing published.")

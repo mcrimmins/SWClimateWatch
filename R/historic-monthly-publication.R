@@ -75,8 +75,8 @@ export_historic_monthly_release <- function(source_dir = "data/diagnostics/histo
   invisible(historic_monthly_release_records(root, expected_years))
 }
 
-historic_monthly_publication_page <- function(lines, rows) {
-  page <- historic_preview_page(lines, rows)
+historic_monthly_publication_page <- function(lines, rows, parts = NULL) {
+  page <- historic_preview_page(lines, rows, parts = parts)
   notice <- which(page == "::: {.historic-review-notice}")
   if (length(notice) != 1L) stop("Could not identify local-only review notice.")
   page <- page[-seq.int(notice, notice + 3L)]
@@ -90,7 +90,9 @@ stage_historic_monthly_release <- function(root = historic_monthly_release_root(
   # Construct all pages before changing any. Preserve each VM's own Snow section.
   planned <- lapply(pages, function(path) {
     year <- as.integer(sub("wy([0-9]+)[.]qmd$", "\\1", basename(path)))
-    historic_monthly_publication_page(readLines(path, warn = FALSE), rows[rows$water_year == year, ])
+    selected <- rows[rows$water_year == year, ]
+    if (year < 1982L) historic_monthly_publication_page(character(), selected, historic_preview_early_parts(year))
+    else historic_monthly_publication_page(readLines(path, warn = FALSE), selected)
   })
   for (i in seq_len(nrow(rows))) historic_preview_copy(file.path(root, "maps", rows$relative_map[i]),
     file.path(site_dir, "maps/generated/prism/historic-monthly", rows$relative_map[i]))
@@ -98,6 +100,7 @@ stage_historic_monthly_release <- function(root = historic_monthly_release_root(
   for (i in seq_along(pages)) {
     # Page-scoped styles avoid changing the rest of the site's tab layouts.
     style <- c("", "```{=html}", "<style>", css, "</style>", "```", "")
+    dir.create(dirname(pages[i]), recursive = TRUE, showWarnings = FALSE)
     writeLines(c(planned[[i]], style), pages[i], useBytes = TRUE)
   }
   invisible(validate_historic_monthly_publication(root, site_dir, rendered = FALSE, expected_years = expected_years))
@@ -113,7 +116,13 @@ validate_historic_monthly_publication <- function(root = historic_monthly_releas
     if (sum(page == "<!-- HISTORIC MONTHLY RELEASE -->") != 1L ||
         any(grepl("Local layout review", page, fixed = TRUE)) ||
         !identical(sub("### ", "", page[startsWith(page, "### ")]), historic_monthly_periods()$label)) stop("Historic monthly source layout is incorrect: ", year)
-    if (sum(startsWith(trimws(page), "![")) != 25L + ifelse(year >= 2005L, 4L, 0L))
+    image_count <- 21L + ifelse(year >= 1982L, 4L, 0L) + ifelse(year >= 2005L, 4L, 0L)
+    if (year < 1982L && (any(grepl("\\]\\{[.]archive-roni-badge\\}|/seasonal-archive/", page)) ||
+        !any(grepl("Historical ENSO context has not been attached", page, fixed = TRUE)) ||
+        !any(grepl("no daily maps from another year", page, fixed = TRUE)) ||
+        !any(grepl("SNODAS seasonal archive begins in WY2005", page, fixed = TRUE))))
+      stop("Early Historic Years availability or ENSO context is incorrect: ", year)
+    if (sum(startsWith(trimws(page), "![")) != image_count)
       stop("Historic daily-detail or Snow image count changed: ", year)
     for (ref in refs) if (sum(grepl(paste0("](", ref, ")"), page, fixed = TRUE)) != 2L) stop("Missing/duplicate historic monthly source link: ", ref)
     targets <- file.path(site_dir, "maps/generated/prism/historic-monthly", selected$relative_map)
@@ -121,17 +130,26 @@ validate_historic_monthly_publication <- function(root = historic_monthly_releas
     if (rendered) {
       html <- xml2::read_html(file.path(site_dir, "_site/pages/archive", paste0("wy", year, ".html")))
       imgs <- xml2::xml_attr(xml2::xml_find_all(html, "//img[@src]"), "src")
-      if (sum(startsWith(imgs, "../../maps/generated/"), na.rm = TRUE) != 25L + ifelse(year >= 2005L, 4L, 0L))
+      if (sum(startsWith(imgs, "../../maps/generated/"), na.rm = TRUE) != image_count)
         stop("Historic rendered daily-detail or Snow image count changed: ", year)
       links <- xml2::xml_attr(xml2::xml_find_all(html, "//a[@href]"), "href")
       for (ref in refs) if (sum(imgs == ref) != 1L || sum(links == ref) != 1L) stop("Historic rendered link mismatch: ", ref)
       if (!identical(unname(tools::md5sum(file.path(site_dir, "_site/maps/generated/prism/historic-monthly", selected$relative_map))), selected$md5)) stop("Historic rendered PNG checksum mismatch: ", year)
       tabs <- trimws(xml2::xml_text(xml2::xml_find_all(html, "//a[@role='tab']")))
       if (!identical(tabs, historic_monthly_periods()$label)) stop("Historic rendered season tabs mismatch: ", year)
+      if (year < 1982L) {
+        text <- xml2::xml_text(html)
+        if (length(xml2::xml_find_all(html, "//*[contains(@class,'archive-roni-badge')]")) ||
+            !grepl("no daily maps from another year", text, fixed = TRUE) ||
+            !grepl("SNODAS seasonal archive begins in WY2005", text, fixed = TRUE) ||
+            !grepl("Historical ENSO context has not been attached", text, fixed = TRUE))
+          stop("Early Historic Years rendered availability or ENSO context is incorrect: ", year)
+      }
     }
   }
   result <- data.frame(status = "PASS", years = length(unique(rows$water_year)), monthly_maps = nrow(rows), rendered = rendered)
-  dir.create("data/diagnostics/historic-monthly-publication", recursive = TRUE, showWarnings = FALSE)
-  write.csv(result, "data/diagnostics/historic-monthly-publication/summary.csv", row.names = FALSE)
+  report_dir <- if (all(rows$water_year < 1982L)) "data/diagnostics/historic-monthly-backfill-publication" else "data/diagnostics/historic-monthly-publication"
+  dir.create(report_dir, recursive = TRUE, showWarnings = FALSE)
+  write.csv(result, file.path(report_dir, "summary.csv"), row.names = FALSE)
   result
 }

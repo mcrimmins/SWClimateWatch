@@ -1,5 +1,6 @@
 for (file in c("prism-monthly", "prism-monthly-temperature", "historic-monthly-pilot", "map-product-site",
-    "historic-monthly-site-preview", "historic-monthly-publication"))
+    "historic-monthly-site-preview", "historic-monthly-publication", "prism-seasonal-archive",
+    "historic-monthly-backfill-publication"))
   source(file.path(project_root, "R", paste0(file, ".R")))
 
 publication_fixture <- function(root, years = 1982:2025) {
@@ -22,6 +23,44 @@ publication_fixture <- function(root, years = 1982:2025) {
     file.path(root, "release.json"), auto_unbox = TRUE)
   rows
 }
+
+testthat::test_that("early publication creates repeatable monthly-only pages with no invented historical context", {
+  root <- tempfile(); dir.create(root); on.exit(unlink(root, recursive = TRUE), add = TRUE)
+  release <- file.path(root, "release"); dir.create(release)
+  years <- c(1896L, 1977L)
+  rows <- publication_fixture(release, years)
+  site <- file.path(root, "site"); dir.create(site)
+  old <- getwd(); setwd(project_root); on.exit(setwd(old), add = TRUE)
+  stage_historic_monthly_release(release, site, expected_years = years)
+  testthat::expect_equal(validate_historic_monthly_publication(release, site, FALSE, years)$monthly_maps, 42L)
+  pages <- file.path(site, "pages/archive", paste0("wy", years, ".qmd"))
+  hashes <- unname(tools::md5sum(pages))
+  stage_historic_monthly_release(release, site, expected_years = years)
+  testthat::expect_identical(unname(tools::md5sum(pages)), hashes)
+  for (page in pages) {
+    text <- readLines(page, warn = FALSE)
+    testthat::expect_equal(sum(startsWith(text, "![")), 21L)
+    testthat::expect_false(any(grepl("Local layout review|Local pilot", text)))
+    testthat::expect_true(any(grepl("Historical ENSO context has not been attached", text, fixed = TRUE)))
+  }
+  cat("\n[Invented RONI 0.0]{.archive-roni-badge}\n", file = pages[1], append = TRUE)
+  testthat::expect_error(validate_historic_monthly_publication(release, site, FALSE, years), "ENSO context")
+})
+
+testthat::test_that("combined navigation includes all 130 years once and rejects incomplete migrations", {
+  root <- tempfile(); dir.create(file.path(root, "pages/archive"), recursive = TRUE)
+  on.exit(unlink(root, recursive = TRUE), add = TRUE)
+  file.copy(file.path(project_root, "site/_quarto.yml"), file.path(root, "_quarto.yml"))
+  for (year in 1896:2025) writeLines("fixture", file.path(root, "pages/archive", paste0("wy", year, ".qmd")))
+  historic_monthly_backfill_navigation(root)
+  config <- readLines(file.path(root, "_quarto.yml"))
+  hrefs <- trimws(config[grepl("href: pages/archive/wy", config, fixed = TRUE)])
+  testthat::expect_equal(length(hrefs), 130L)
+  testthat::expect_false(anyDuplicated(hrefs) > 0L)
+  testthat::expect_setequal(hrefs, sprintf("- href: pages/archive/wy%d.qmd", 1896:2025))
+  unlink(file.path(root, "pages/archive/wy1896.qmd"))
+  testthat::expect_error(historic_monthly_backfill_navigation(root), "required combined")
+})
 
 testthat::test_that("portable release rejects missing files, corruption, unsafe paths and incomplete years", {
   root <- tempfile(); dir.create(root); on.exit(unlink(root, recursive = TRUE))

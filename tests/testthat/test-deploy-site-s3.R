@@ -1,5 +1,14 @@
 source(file.path(project_root, "scripts", "deploy-site-s3.R"), local = TRUE)
 
+testthat::test_that("earlier-year archive validation runs before any publication upload", {
+  lines <- readLines(file.path(project_root, "scripts/deploy-site-s3.R"))
+  check <- grep('"scripts/check-historic-monthly-backfill-publication.R"', lines, fixed = TRUE)
+  upload <- grep('"Upload stable map links"', lines, fixed = TRUE)
+  testthat::expect_length(check, 1L)
+  testthat::expect_length(upload, 1L)
+  testthat::expect_true(check < upload)
+})
+
 testthat::test_that("deployment requires an explicit dedicated S3 prefix", {
   destination <- "s3://cales-climate-reports/climate/sw-climate-watch/"
   testthat::expect_equal(swc_deploy_destination(destination), destination)

@@ -54,8 +54,18 @@ historic_preview_map_card <- function(row) {
     paste0("[Open full-resolution PNG](", path, "){.btn .btn-sm .btn-outline-primary}"), ":::", ":::", "")
 }
 
-historic_preview_page <- function(lines, records) {
-  parts <- historic_preview_source_parts(lines)
+historic_preview_early_parts <- function(year) {
+  if (length(year) != 1L || is.na(year) || year != floor(year) || year < 1896L || year >= 1982L)
+    stop("Monthly-only pilot page years must be WY1896-WY1981.")
+  list(intro = c("---", paste0('title: "Water year ', year, '"'),
+    paste0('subtitle: "October 1, ', year - 1L, ' to September 30, ', year, '"'),
+    "page-layout: full", "toc: false", "bread-crumbs: false", "body-classes: archive-year-page", "---", "",
+    "Monthly PRISM reconstruction. Historical ENSO context has not been attached to this pilot year.", ""),
+    daily = character(), snow = character(), roni = NA_real_)
+}
+
+historic_preview_page <- function(lines, records, parts = NULL) {
+  if (is.null(parts)) parts <- historic_preview_source_parts(lines)
   years <- unique(records$water_year)
   if (length(years) != 1L) stop("Supply one year's preview maps.")
   year <- years[[1L]]; specs <- historic_monthly_periods()
@@ -84,11 +94,17 @@ historic_preview_page <- function(lines, records) {
     "Monthly PRISM precipitation totals require every month at each cell. Mean temperature uses monthly maximum/minimum means and actual day weights, including leap days. Missing months are not filled.", "",
     "Percentiles use matching completed-water-year periods over the displayed retrospective record, including the target once and including later years when describing older years. They require at least 30 years and 90% of eligible windows. Record categories include meaningful ties, require complete history, and suppress common-zero dry records.", "",
     "Temperature departures require at least 27 matching 1991-2020 reference seasons. September SPI-12 uses the fixed, zero-adjusted gamma-MLE calibration shown on its map; unsupported or poor-fit cells are withheld. SPI is precipitation-only, not a streamflow, temperature-demand or official drought measure.", "",
-    "The DJF RONI badge describes index-magnitude conditions, not an independently verified official ENSO episode. The existing historical value, period and source link are retained; no current CPC advisory is applied to a historical year. These maps do not attribute local conditions solely to ENSO.", "",
+    if (is.finite(parts$roni))
+      "The DJF RONI badge describes index-magnitude conditions, not an independently verified official ENSO episode. The existing historical value, period and source link are retained; no current CPC advisory is applied to a historical year. These maps do not attribute local conditions solely to ENSO."
+    else "A verified historical DJF RONI value has not been attached to this pilot. No ENSO classification or current advisory is substituted. These maps do not attribute local conditions solely to ENSO.", "",
     "</details>", "",
-    '<details class="historic-review-details"><summary>Daily-derived detail (October-March)</summary>', "",
-    "These retained maps use the existing daily PRISM archive. Wet-day ranks retain the WY1982-WY2025 daily comparison record, separately from the monthly ranks above. High/low temperature departures describe afternoons and nights separately; wet-day statistics require daily observations and cannot be reconstructed from monthly totals.", "",
-    ":::: {.dashboard-map-grid}", parts$daily, "::::", "", "</details>", "", snow)
+    paste0('<details class="historic-review-details"><summary>',
+      if (length(parts$daily)) "Daily-derived detail (October-March)" else "Daily-detail availability", "</summary>"), "",
+    if (length(parts$daily)) c(
+      "These retained maps use the existing daily PRISM archive. Wet-day ranks retain the WY1982-WY2025 daily comparison record, separately from the monthly ranks above. High/low temperature departures describe afternoons and nights separately; wet-day statistics require daily observations and cannot be reconstructed from monthly totals.", "",
+      ":::: {.dashboard-map-grid}", parts$daily, "::::", "") else c(
+      "Daily-derived detail is not included in this monthly-data pilot. Existing daily-detail maps cover WY1982-WY2025. Monthly grids cannot reconstruct daily extremes or wet-day statistics; no daily maps from another year are substituted.", ""),
+    "</details>", "", snow)
 }
 
 historic_preview_copy <- function(from, to) {
@@ -102,7 +118,8 @@ historic_preview_copy <- function(from, to) {
 
 build_historic_monthly_site_preview <- function(
     pilot_dir = "data/diagnostics/historic-monthly-pilot",
-    output_dir = "data/diagnostics/historic-monthly-site-preview", site_dir = "site", expected_years = NULL) {
+    output_dir = "data/diagnostics/historic-monthly-site-preview", site_dir = "site", expected_years = NULL,
+    allow_early = FALSE) {
   summary <- read.csv(file.path(pilot_dir, "summary.csv"))
   records <- read.csv(file.path(pilot_dir, "manifest.csv"), stringsAsFactors = FALSE)
   years <- sort(unique(records$water_year))
@@ -119,10 +136,15 @@ build_historic_monthly_site_preview <- function(
   plan <- list()
   for (year in years) {
     source <- file.path(site_dir, "pages/archive", paste0("wy", year, ".qmd"))
-    inputs <- c(inputs, source)
-    lines <- readLines(source, warn = FALSE, encoding = "UTF-8")
     rows <- records[records$water_year == year, ]
-    page <- historic_preview_page(lines, rows)
+    if (year < 1982L && isTRUE(allow_early)) {
+      page <- historic_preview_page(character(), rows, parts = historic_preview_early_parts(year))
+    } else {
+      if (!file.exists(source)) stop("Existing Historic Years source page is missing: ", year)
+      inputs <- c(inputs, source)
+      lines <- readLines(source, warn = FALSE, encoding = "UTF-8")
+      page <- historic_preview_page(lines, rows)
+    }
     destination <- file.path(root, "pages/archive", paste0("wy", year, ".qmd"))
     dir.create(dirname(destination), recursive = TRUE, showWarnings = FALSE)
     writeLines(page, destination, useBytes = TRUE)
@@ -150,7 +172,7 @@ build_historic_monthly_site_preview <- function(
   historic_preview_copy("scripts/historic-monthly-site-assets/preview.css", file.path(root, "preview.css"))
   inputs <- c(inputs, "scripts/historic-monthly-site-assets/preview.css")
   plan <- do.call(rbind, plan)
-  if (any(plan$monthly_maps != 21L) || any(plan$daily_detail_maps != 4L) ||
+  if (any(plan$monthly_maps != 21L) || any(plan$daily_detail_maps != ifelse(plan$water_year < 1982L & isTRUE(allow_early), 0L, 4L)) ||
       any(plan$snow_maps != ifelse(plan$water_year >= 2005, 4L, 0L))) stop("Preview content counts differ from the selected scope.")
   config <- list(project = list(type = "website", `output-dir` = "_site",
     render = c("index.qmd", plan$page), resources = c("maps/**", "assets/**")),
@@ -167,7 +189,9 @@ build_historic_monthly_site_preview <- function(
   yaml::write_yaml(config, file.path(root, "_quarto.yml"), handlers = list(
     logical = function(x) structure(ifelse(x, "true", "false"), class = "verbatim")))
   writeLines(c("---", 'title: "Historic Years - local layout review"', "toc: false", "---", "",
-    sprintf("Review %d Historic Years pages with the new monthly maps, retained daily-derived detail and available seasonal snow. The published archive is unchanged.", length(years)), "",
+    sprintf(if (any(years < 1982L))
+      "Review %d earlier Historic Years pages with monthly maps and explicit daily-detail, Snow and ENSO availability notes. The published archive is unchanged."
+      else "Review %d Historic Years pages with the new monthly maps, retained daily-derived detail and available seasonal snow. The published archive is unchanged.", length(years)), "",
     sprintf("- [Water year %d](pages/archive/wy%d.qmd)", years, years), "",
     "Each page has 21 monthly maps in Water year / Cool season / Spring / Monsoon tabs. Daily-derived detail and snow open as grouped sections below. Map links open full-resolution PNGs."), file.path(root, "index.qmd"))
   write.csv(plan, file.path(root, "preview-plan.csv"), row.names = FALSE)
@@ -178,7 +202,7 @@ build_historic_monthly_site_preview <- function(
   # Store only paths relative to this isolated preview, independent of render output.
   write.csv(data.frame(file = outputs, md5 = unname(tools::md5sum(file.path(root, outputs)))),
     file.path(root, "output-checksums.csv"), row.names = FALSE)
-  validate_historic_monthly_site_preview(root, rendered = FALSE)
+  validate_historic_monthly_site_preview(root, rendered = FALSE, allow_early = allow_early)
   root
 }
 
@@ -191,7 +215,8 @@ historic_preview_navigation <- function(years) {
     contents = lapply(years[years >= decade & years < decade + 10L], link)))
 }
 
-validate_historic_monthly_site_preview <- function(root = "data/diagnostics/historic-monthly-site-preview", rendered = TRUE, expected_years = NULL) {
+validate_historic_monthly_site_preview <- function(root = "data/diagnostics/historic-monthly-site-preview", rendered = TRUE, expected_years = NULL,
+    allow_early = FALSE) {
   inputs <- read.csv(file.path(root, "source-checksums.csv"), stringsAsFactors = FALSE)
   outputs <- read.csv(file.path(root, "output-checksums.csv"), stringsAsFactors = FALSE)
   if (anyNA(inputs$md5) || !identical(unname(tools::md5sum(inputs$path)), inputs$md5))
@@ -200,7 +225,8 @@ validate_historic_monthly_site_preview <- function(root = "data/diagnostics/hist
     stop("Copied preview content changed; rebuild before review.")
   plan <- read.csv(file.path(root, "preview-plan.csv"), stringsAsFactors = FALSE)
   if (!nrow(plan) || anyDuplicated(plan$water_year) || any(plan$monthly_maps != 21L) ||
-      any(plan$daily_detail_maps != 4L) || any(plan$snow_maps != ifelse(plan$water_year >= 2005L, 4L, 0L)))
+      any(plan$water_year < 1982L & !isTRUE(allow_early)) ||
+      any(plan$daily_detail_maps != ifelse(plan$water_year < 1982L, 0L, 4L)) || any(plan$snow_maps != ifelse(plan$water_year >= 2005L, 4L, 0L)))
     stop("Preview plan does not contain complete Historic Years pages.")
   if (!is.null(expected_years) && !identical(sort(plan$water_year), sort(as.integer(expected_years))))
     stop("Rendered plan is missing or has extra Historic Years pages.")
@@ -214,7 +240,7 @@ validate_historic_monthly_site_preview <- function(root = "data/diagnostics/hist
     if (length(refs) != plan$monthly_maps[i] + plan$daily_detail_maps[i] + plan$snow_maps[i])
       stop("A rendered page has missing or unexpected map images.")
     if (sum(grepl("/historic-monthly-pilot/", refs, fixed = TRUE)) != 21L ||
-        sum(grepl("/prism/seasonal-archive/", refs, fixed = TRUE)) != 4L ||
+        sum(grepl("/prism/seasonal-archive/", refs, fixed = TRUE)) != plan$daily_detail_maps[i] ||
         sum(grepl("/snodas/", refs, fixed = TRUE)) != plan$snow_maps[i])
       stop("Rendered monthly, daily-detail or Snow group has the wrong images.")
     for (ref in refs) {
@@ -225,8 +251,13 @@ validate_historic_monthly_site_preview <- function(root = "data/diagnostics/hist
         stop("Rendered preview map is missing or differs from its source: ", ref)
     }
     html <- paste(readLines(path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
-    if (!grepl("range conditions", xml2::xml_text(doc), fixed = TRUE) ||
-        grepl("googletagmanager|gtag[(]", html)) stop("Rendered RONI wording or preview analytics scope is invalid.")
+    if (grepl("googletagmanager|gtag[(]", html)) stop("Preview analytics scope is invalid.")
+    if (plan$water_year[i] >= 1982L) {
+      if (!grepl("range conditions", xml2::xml_text(doc), fixed = TRUE)) stop("Rendered RONI wording is invalid.")
+    } else if (!grepl("Historical ENSO context has not been attached", xml2::xml_text(doc), fixed = TRUE) ||
+        grepl("archive-roni-badge|range conditions", html) ||
+        !grepl("no daily maps from another year", xml2::xml_text(doc), fixed = TRUE))
+      stop("Monthly-only pilot has an unsupported historical context or missing availability note.")
     if (length(xml2::xml_find_all(doc, "//details[@class='historic-review-details' and not(@open)]")) != 3L)
       stop("Expected methods, daily-detail and Snow sections collapsed by default.")
   }

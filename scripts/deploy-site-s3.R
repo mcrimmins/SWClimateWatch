@@ -209,6 +209,7 @@ deploy_swc_site <- function(
   swc_deploy_run(rscript, "scripts/check-prism-monthly-publication.R", "Validate Monthly Climate")
   swc_deploy_run(rscript, "scripts/check-climate-of-region-publication.R", "Validate Climate of the Region")
   swc_deploy_run(rscript, "scripts/check-snodas-seasonal-anomaly-publication.R", "Validate historical snow anomalies")
+  swc_deploy_run(rscript, "scripts/check-historic-monthly-backfill-publication.R", "Validate earlier Historic Years")
   if (file.exists("site/pages/interactive-maps.qmd"))
     swc_deploy_run(rscript,"scripts/check-interactive-map-publication.R","Validate Interactive Maps before upload")
   source(file.path("R", "daily-publish.R"), local = TRUE)

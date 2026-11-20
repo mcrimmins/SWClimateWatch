@@ -1,0 +1,10 @@
+# Cached-only map build; separate outputs from the accepted WY1982-2025 archive.
+source("scripts/load-prism-monthly.R")
+source("R/map-reference-layers.R")
+source("R/map-product-scales.R")
+source("R/map-southwest.R")
+source("R/historic-monthly-pilot.R")
+source("R/historic-monthly-early-pilot.R")
+historic_monthly_early_pilot <- build_historic_monthly_early_pilot()
+print(historic_monthly_early_pilot$summary, row.names = FALSE)
+message("Early pilot maps built locally. Run scripts/check-historic-monthly-early-pilot.R next.")
