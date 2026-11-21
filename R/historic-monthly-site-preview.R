@@ -59,13 +59,13 @@ historic_preview_early_parts <- function(year) {
     stop("Monthly-only pilot page years must be WY1896-WY1981.")
   list(intro = c("---", paste0('title: "Water year ', year, '"'),
     paste0('subtitle: "October 1, ', year - 1L, ' to September 30, ', year, '"'),
-    "page-layout: full", "toc: false", "bread-crumbs: false", "body-classes: archive-year-page", "---", "",
-    "Monthly PRISM reconstruction. Historical ENSO context has not been attached to this pilot year.", ""),
+    "page-layout: full", "toc: false", "bread-crumbs: false", "body-classes: archive-year-page", "---", ""),
     daily = character(), snow = character(), roni = NA_real_)
 }
 
 historic_preview_page <- function(lines, records, parts = NULL) {
   if (is.null(parts)) parts <- historic_preview_source_parts(lines)
+  parts$intro <- parts$intro[!grepl("Monthly PRISM reconstruction. Historical ENSO context has not been attached to this pilot year.", parts$intro, fixed = TRUE)]
   years <- unique(records$water_year)
   if (length(years) != 1L) stop("Supply one year's preview maps.")
   year <- years[[1L]]; specs <- historic_monthly_periods()
@@ -252,10 +252,11 @@ validate_historic_monthly_site_preview <- function(root = "data/diagnostics/hist
     }
     html <- paste(readLines(path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
     if (grepl("googletagmanager|gtag[(]", html)) stop("Preview analytics scope is invalid.")
+    if (grepl("Historical ENSO context has not been attached", xml2::xml_text(doc), fixed = TRUE))
+      stop("Removed pilot introduction is still present.")
     if (plan$water_year[i] >= 1982L) {
       if (!grepl("range conditions", xml2::xml_text(doc), fixed = TRUE)) stop("Rendered RONI wording is invalid.")
-    } else if (!grepl("Historical ENSO context has not been attached", xml2::xml_text(doc), fixed = TRUE) ||
-        grepl("archive-roni-badge|range conditions", html) ||
+    } else if (grepl("archive-roni-badge|range conditions", html) ||
         !grepl("no daily maps from another year", xml2::xml_text(doc), fixed = TRUE))
       stop("Monthly-only pilot has an unsupported historical context or missing availability note.")
     if (length(xml2::xml_find_all(doc, "//details[@class='historic-review-details' and not(@open)]")) != 3L)

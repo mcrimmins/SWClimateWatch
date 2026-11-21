@@ -115,10 +115,10 @@ validate_historic_monthly_publication <- function(root = historic_monthly_releas
     refs <- paste0("../../maps/generated/prism/historic-monthly/", selected$relative_map)
     if (sum(page == "<!-- HISTORIC MONTHLY RELEASE -->") != 1L ||
         any(grepl("Local layout review", page, fixed = TRUE)) ||
+        any(grepl("Historical ENSO context has not been attached", page, fixed = TRUE)) ||
         !identical(sub("### ", "", page[startsWith(page, "### ")]), historic_monthly_periods()$label)) stop("Historic monthly source layout is incorrect: ", year)
     image_count <- 21L + ifelse(year >= 1982L, 4L, 0L) + ifelse(year >= 2005L, 4L, 0L)
     if (year < 1982L && (any(grepl("\\]\\{[.]archive-roni-badge\\}|/seasonal-archive/", page)) ||
-        !any(grepl("Historical ENSO context has not been attached", page, fixed = TRUE)) ||
         !any(grepl("no daily maps from another year", page, fixed = TRUE)) ||
         !any(grepl("SNODAS seasonal archive begins in WY2005", page, fixed = TRUE))))
       stop("Early Historic Years availability or ENSO context is incorrect: ", year)
@@ -129,6 +129,8 @@ validate_historic_monthly_publication <- function(root = historic_monthly_releas
     if (!identical(unname(tools::md5sum(targets)), selected$md5)) stop("Historic source PNG checksum mismatch: ", year)
     if (rendered) {
       html <- xml2::read_html(file.path(site_dir, "_site/pages/archive", paste0("wy", year, ".html")))
+      if (grepl("Historical ENSO context has not been attached", xml2::xml_text(html), fixed = TRUE))
+        stop("Removed pilot introduction remains in rendered Historic Years page: ", year)
       imgs <- xml2::xml_attr(xml2::xml_find_all(html, "//img[@src]"), "src")
       if (sum(startsWith(imgs, "../../maps/generated/"), na.rm = TRUE) != image_count)
         stop("Historic rendered daily-detail or Snow image count changed: ", year)
@@ -141,8 +143,7 @@ validate_historic_monthly_publication <- function(root = historic_monthly_releas
         text <- xml2::xml_text(html)
         if (length(xml2::xml_find_all(html, "//*[contains(@class,'archive-roni-badge')]")) ||
             !grepl("no daily maps from another year", text, fixed = TRUE) ||
-            !grepl("SNODAS seasonal archive begins in WY2005", text, fixed = TRUE) ||
-            !grepl("Historical ENSO context has not been attached", text, fixed = TRUE))
+            !grepl("SNODAS seasonal archive begins in WY2005", text, fixed = TRUE))
           stop("Early Historic Years rendered availability or ENSO context is incorrect: ", year)
       }
     }

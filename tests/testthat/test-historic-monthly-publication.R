@@ -41,7 +41,7 @@ testthat::test_that("early publication creates repeatable monthly-only pages wit
     text <- readLines(page, warn = FALSE)
     testthat::expect_equal(sum(startsWith(text, "![")), 21L)
     testthat::expect_false(any(grepl("Local layout review|Local pilot", text)))
-    testthat::expect_true(any(grepl("Historical ENSO context has not been attached", text, fixed = TRUE)))
+    testthat::expect_false(any(grepl("Historical ENSO context has not been attached|Monthly PRISM reconstruction", text)))
   }
   cat("\n[Invented RONI 0.0]{.archive-roni-badge}\n", file = pages[1], append = TRUE)
   testthat::expect_error(validate_historic_monthly_publication(release, site, FALSE, years), "ENSO context")

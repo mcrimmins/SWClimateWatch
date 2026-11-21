@@ -22,7 +22,7 @@ testthat::test_that("early pages include only requested monthly maps and honest 
     testthat::expect_equal(sum(startsWith(page, "![")), 21L)
     testthat::expect_identical(sub("### ", "", page[startsWith(page, "### ")]), historic_monthly_periods()$label)
     testthat::expect_true(grepl(paste0("October 1, ", year - 1L, " to September 30, ", year), text, fixed = TRUE))
-    testthat::expect_true(grepl("Historical ENSO context has not been attached", text, fixed = TRUE))
+    testthat::expect_false(grepl("Historical ENSO context has not been attached|Monthly PRISM reconstruction", text))
     testthat::expect_false(grepl("archive-roni-badge|range conditions|/seasonal-archive/", text))
     testthat::expect_true(grepl("no daily maps from another year", text, fixed = TRUE))
     testthat::expect_true(grepl("SNODAS seasonal archive begins in WY2005", text, fixed = TRUE))
