@@ -1,0 +1,24 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Station custom date pilot</title><link rel="stylesheet" href="styles.css"></head>
+<body><main><header id="pilot-heading"><p class="eyebrow">Southwest Climate Watch · local review</p><h1>Explore a station's historical observations</h1>
+<p>Choose any period within a station's cached record. Only the selected station and requested years are loaded.</p></header>
+<section class="controls" aria-label="Custom period controls"><label class="station-picker">Station<select id="station"></select></label>
+<label>Start date<input id="start" type="date"></label><label>End date<input id="end" type="date"></label>
+<button id="apply">Show period</button><button id="cancel" disabled>Cancel loading</button></section>
+<p id="coverage"></p><div class="presets"><button data-days="7">Latest 7 days</button><button data-days="30">Latest 30 days</button><button data-days="365">Latest 365 days</button><button data-days="3653">Latest 10 years</button><button id="full">Full record</button></div>
+<p id="status" role="status" aria-live="polite">Loading station list…</p>
+<section id="results" hidden><h2 id="period"></h2><div id="summary" class="cards"></div>
+<p id="chart-help" class="chart-help">Hover, tap or click either plot to inspect the same date below both charts. Use the buttons or left/right arrow keys to move through dates.</p>
+<div class="plots"><figure><h3 id="precip-title">Precipitation</h3><canvas id="precip" width="1000" height="270" tabindex="0" aria-describedby="chart-help precip-selection" aria-label="Precipitation over the selected period; use left and right arrow keys to select a date" role="img"></canvas>
+<div class="chart-navigation"><button id="precip-previous" type="button">← Previous day</button><button id="precip-next" type="button">Next day →</button></div>
+<div id="precip-selection" class="chart-readout" aria-live="polite" aria-atomic="true"></div></figure>
+<figure><h3 id="temp-title">High and low temperature</h3><canvas id="temp" width="1000" height="270" tabindex="0" aria-describedby="chart-help temp-selection" aria-label="High and low temperatures over the selected period; use left and right arrow keys to select a date" role="img"></canvas>
+<div class="chart-navigation"><button id="temp-previous" type="button">← Previous day</button><button id="temp-next" type="button">Next day →</button></div>
+<div id="temp-selection" class="chart-readout" aria-live="polite" aria-atomic="true"></div></figure></div>
+<p id="plot-note"></p>
+<h2>Extremes within this selected period</h2><div class="table-wrap"><table><thead><tr><th>Measure</th><th>Value</th><th>Date(s)</th></tr></thead><tbody id="extremes"></tbody></table></div>
+<button id="download">Download selected daily observations (CSV)</button>
+<p id="csv-status" role="status" aria-live="polite"></p><a id="csv-ready" hidden>Save prepared CSV</a></section>
+<details><summary>How to read these plots</summary><p>Missing and flagged observations remain gaps. Trace precipitation counts as zero measured inches and is labeled separately. An incomplete precipitation result is an observed subtotal, not a complete period total. Temperature means use days with both eligible high and low observations; coverage is shown explicitly.</p>
+<p>Long selections group daily observations into at most 600 intervals for display. Precipitation bars show observed interval totals; outlined bars are incomplete. Temperature lines show interval averages over paired days. Statistics and CSV exports always use the original daily observations. Extremes here describe the selected period, not historical records. Custom-period historical ranks, normals and anomalies are not calculated in this pilot.</p><p>Station and ThreadEx histories may include gaps, moves or component changes; these plots do not establish a homogeneous climate-trend series. Data-through dates reflect the local cache, not a fresh data request.</p></details>
+<details><summary>Performance review</summary><p>Four concurrent annual-file requests; a 24-year in-memory file cache; at most 600 plotted intervals. Historical files are never loaded for unselected stations. Byte counts describe uncompressed annual JSON payloads; the browser HTTP cache may respond.</p><button id="benchmark">Measure this station: short, annual, decade and full-record selections</button><pre id="metrics"></pre><div id="bench-results"></div></details>
+</main><script src="model.js"></script><script src="app.js"></script></body></html>

@@ -36,6 +36,8 @@ logs/
 **/*.quarto_ipynb
 /swc-historic-monthly-release.tar.gz
 /swc-historic-monthly-backfill-release.tar.gz
+/swc-station-history-seed.tar.gz
+/swc-station-history-seed.tar.gz.sha256
 # Earlier archive pages are derived from the verified portable backfill release.
 /site/pages/archive/wy189[6-9].qmd
 /site/pages/archive/wy19[0-7][0-9].qmd

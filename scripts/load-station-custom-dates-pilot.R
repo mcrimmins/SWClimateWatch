@@ -1,0 +1,6 @@
+source("R/config.R")
+source("R/acis-station-inventory.R")
+source("R/acis-station-daily-pilot.R")
+source("R/acis-station-current-prototype.R")
+source("R/acis-station-explorer-prototype.R")
+source("R/station-custom-dates-pilot.R")

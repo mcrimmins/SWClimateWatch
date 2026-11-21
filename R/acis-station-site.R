@@ -78,6 +78,12 @@ swc_station_beta_snapshot <- function(directory) {
     sys.source(file.path("R","acis-station-seasonal-pilot.R"),envir=context)
     context$validate_station_seasonal_integration(directory)
   }
+  if (grepl('src="station-history-tabs(\\.swc-[a-f0-9]{16})?\\.js"', html)) {
+    context <- new.env(parent=environment())
+    sys.source(file.path("R","station-history-integration.R"),envir=context)
+    context$validate_station_history_integration(directory)
+    swc_cache_validate_app(file.path(directory,"custom-history"))
+  }
   list(date = as.Date(rows$as_of[[1L]]), rows = rows,
        stations = length(unique(rows$uid)),
        mapped = length(unique(rows$uid[rows$role == "fixed"])),
@@ -130,6 +136,14 @@ swc_station_beta_stage <- function(
       dir.exists(file.path(source_dir, "seasonal")) &&
       !file.copy(file.path(source_dir, "seasonal"), stage, recursive = TRUE))
     stop("Could not copy seasonal station resources; last good page retained.")
+  history_html <- paste(readLines(file.path(source_dir,"index.html"),warn=FALSE),collapse="\n")
+  if (grepl('src="station-history-tabs(\\.swc-[a-f0-9]{16})?\\.js"',history_html)) {
+    extra <- c("station-history-tabs.js","station-history-tabs.css","integration-summary.csv","history-checksums.csv")
+    if (!all(file.copy(file.path(source_dir,extra),stage)) ||
+        !file.copy(file.path(source_dir,"custom-history"),stage,recursive=TRUE))
+      stop("Could not copy historical station resources; last good page retained.")
+    swc_cache_version_app(file.path(stage,"custom-history"))
+  }
   swc_cache_version_app(stage)
   swc_station_beta_snapshot(stage)
   had_previous <- dir.exists(destination)

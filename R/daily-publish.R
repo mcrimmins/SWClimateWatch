@@ -513,6 +513,13 @@ swc_daily_publish_validate_stations <- function(output_dir) {
       stop("Rendered station page does not link monthly climatology assets; S3 sync stopped.",call.=FALSE)
   }
   swc_cache_validate_app(station_dir)
+  station_history_html <- paste(readLines(file.path(station_dir,"index.html"),warn=FALSE),collapse="\n")
+  if (grepl('src="station-history-tabs(\\.swc-[a-f0-9]{16})?\\.js"',station_history_html)) {
+    history_context <- new.env(parent=environment())
+    sys.source(file.path("R","station-history-integration.R"),envir=history_context)
+    history_context$validate_station_history_integration(station_dir)
+    swc_cache_validate_app(file.path(station_dir,"custom-history"))
+  }
   if (grepl("cumulative/index.html", explorer_js, fixed = TRUE)) {
     context <- new.env(parent = environment())
     if (!exists("validate_acis_station_cumulative_site", mode = "function"))

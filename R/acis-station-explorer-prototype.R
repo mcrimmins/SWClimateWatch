@@ -575,7 +575,7 @@ acis_station_explorer_rows <- function(stations, as_of,
   do.call(rbind, unlist(results, recursive = FALSE))
 }
 
-acis_station_explorer_daily_detail <- function(station, cache, as_of) {
+acis_station_explorer_daily_detail <- function(station, cache, as_of, full_record = FALSE) {
   as_of <- as.Date(as_of)
   if (length(as_of) != 1L || is.na(as_of) ||
       (!is.null(cache) &&
@@ -655,7 +655,7 @@ acis_station_explorer_daily_detail <- function(station, cache, as_of) {
   }
   first <- min(vapply(acis_station_explorer_periods, function(period)
     as.numeric(acis_station_period_dates(as_of, period)$start), numeric(1)))
-  recent <- dates >= as.Date(first, origin = "1970-01-01")
+  recent <- if (isTRUE(full_record)) rep(TRUE, length(dates)) else dates >= as.Date(first, origin = "1970-01-01")
   list(
     uid = as.integer(station$uid), sid = station$sid, name = station$name,
     state = station$state, role = station$role,

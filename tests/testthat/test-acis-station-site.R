@@ -21,6 +21,30 @@ station_beta_fixture <- function(path, date) {
   invisible(rows)
 }
 
+testthat::test_that("history staging copies and versions both apps and rejects missing annual data", {
+  withr::local_dir(project_root)
+  root <- tempfile();dir.create(root);on.exit(unlink(root,recursive=TRUE),add=TRUE)
+  site <- file.path(root,"site");dir.create(site);writeLines("project:",file.path(site,"_quarto.yml"))
+  source <- file.path(root,"source");station_beta_fixture(source,"2026-11-03")
+  writeLines('<script id="explorer-data">2026-11-03</script><script src="station-history-tabs.js"></script><link href="station-history-tabs.css">',file.path(source,"index.html"))
+  for(file in c("station-history-tabs.js","station-history-tabs.css"))writeLines("/* fixture */",file.path(source,file))
+  child <- file.path(source,"custom-history");dir.create(child)
+  writeLines('requestedUid; /* swc-station-history-selection */ function selectInterval(){}',file.path(child,"app.js"))
+  writeLines('<script src="app.js"></script><div id="precip-selection"></div><div id="temp-selection"></div><button id="precip-next"></button><button id="temp-next"></button>',file.path(child,"index.html"))
+  for(file in c("catalog.json","year.json"))writeLines("{}",file.path(child,file))
+  write.csv(data.frame(status="READY",stations=1,historical_chunks=1),file.path(source,"integration-summary.csv"),row.names=FALSE)
+  write.csv(data.frame(file=c("catalog.json","year.json"),md5=unname(tools::md5sum(file.path(child,c("catalog.json","year.json"))))),file.path(source,"history-checksums.csv"),row.names=FALSE)
+  destination <- file.path(site,"stations")
+  result <- swc_station_beta_stage(source,destination)
+  testthat::expect_equal(result$stations,1)
+  testthat::expect_true(file.exists(file.path(destination,"custom-history/year.json")))
+  testthat::expect_match(paste(readLines(file.path(destination,"index.html")),collapse=""),"station-history-tabs[.]swc-")
+  testthat::expect_match(paste(readLines(file.path(destination,"custom-history/index.html")),collapse=""),"app[.]swc-")
+  unlink(file.path(child,"year.json"))
+  testthat::expect_error(swc_station_beta_stage(source,destination),"checksum mismatch")
+  testthat::expect_true(file.exists(file.path(destination,"custom-history/year.json")))
+})
+
 testthat::test_that("staging rejects invalid or older source without losing the good page", {
   root <- tempfile("swc-station-stage-")
   site <- file.path(root, "site")

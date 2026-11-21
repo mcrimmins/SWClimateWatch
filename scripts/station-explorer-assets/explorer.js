@@ -749,7 +749,8 @@
       `${date(station.period_start)}–${date(station.as_of)}` +
       (station.role === "fixed" ? "" : " · ThreadEx area series");
     exportSelection = null;
-    detailContentEl.textContent = "Loading station detail…";
+    if (!window.SWCStationHistoryTabs?.prepare(detailContentEl, String(station.uid)))
+      detailContentEl.textContent = "Loading station detail…";
     const uid = String(station.uid);
     if (!/^https?:$/.test(window.location.protocol)) {
       detailContentEl.textContent = "Open this preview through the local server to load station detail.";
@@ -769,7 +770,8 @@
       if (Number(detail.uid) !== Number(uid) || detail.as_of !== current.as_of) {
         throw new Error("Station detail does not match the preview date.");
       }
-      detailContentEl.innerHTML = detailContent(current, detail);
+      if (window.SWCStationHistoryTabs) window.SWCStationHistoryTabs.render(detailContentEl, detailContent(current, detail), current);
+      else detailContentEl.innerHTML = detailContent(current, detail);
       window.SWCStationMonthlyClimatology.mount(detailContentEl.querySelector(".station-climatology"),detail.monthly_climatology);
       exportSelection = {station:current,detail};
     } catch (error) {
@@ -1024,6 +1026,7 @@
     days[next].focus();
   });
   document.getElementById("detail-close").addEventListener("click", () => {
+    window.SWCStationHistoryTabs?.close(detailContentEl);
     selectedUid = null;
     exportSelection = null;
     detailEl.hidden = true;
