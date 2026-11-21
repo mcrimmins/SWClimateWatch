@@ -4,7 +4,9 @@
   lapply(sys.frames(),function(frame)frame$ofile))
 source(file.path(dirname(tail(.swc_station_module_files,1)[[1]]),"acis-station-monthly-climatology.R"),local=TRUE)
 source(file.path(dirname(tail(.swc_station_module_files,1)[[1]]),"site-cache.R"),local=TRUE)
-rm(.swc_station_module_files)
+for (.swc_history_module in c("station-custom-dates-pilot.R","station-history-integration.R","station-history-daily.R"))
+  source(file.path(dirname(tail(.swc_station_module_files,1)[[1]]),.swc_history_module),local=TRUE)
+rm(.swc_station_module_files,.swc_history_module)
 
 swc_station_beta_files <- c(
   "index.html", "explorer.js", "explorer.css", "leaflet.js", "leaflet.css",
@@ -140,7 +142,7 @@ swc_station_beta_stage <- function(
   if (grepl('src="station-history-tabs(\\.swc-[a-f0-9]{16})?\\.js"',history_html)) {
     extra <- c("station-history-tabs.js","station-history-tabs.css","integration-summary.csv","history-checksums.csv")
     if (!all(file.copy(file.path(source_dir,extra),stage)) ||
-        !file.copy(file.path(source_dir,"custom-history"),stage,recursive=TRUE))
+        !file.copy(file.path(source_dir,"custom-history"),stage,recursive=TRUE,copy.date=TRUE))
       stop("Could not copy historical station resources; last good page retained.")
     swc_cache_version_app(file.path(stage,"custom-history"))
   }
@@ -199,7 +201,9 @@ run_swc_station_beta_update <- function(today = Sys.Date(),
     # The publication screen writes the fully screened page and readiness files.
     sys.source(file.path("scripts", "audit-acis-station-publication.R"),
                envir = environment())
-    snapshot <- swc_station_beta_stage()
+    completion <- swc_station_beta_finish(source_dir=file.path(swc_acis_station_dir,"station-explorer-prototype"))
+    snapshot <- completion$snapshot
+    history <- completion$history
     row$status <- if (length(update$failures) || any(update$after$pending))
       "UPDATED_WITH_STALE_STATIONS" else "UPDATED"
     row$station_date <- as.character(snapshot$date)
@@ -213,7 +217,8 @@ run_swc_station_beta_update <- function(today = Sys.Date(),
          stations = snapshot$stations, mapped = snapshot$mapped,
          pending = row$pending_caches, failures = update$failures,
          provisional_30day = snapshot$provisional_30day,
-         partial_temperature_30day = snapshot$partial_temperature_30day)
+         partial_temperature_30day = snapshot$partial_temperature_30day,
+         history = history)
   }, error = function(error) {
     row$error <<- conditionMessage(error)
     stop(error)

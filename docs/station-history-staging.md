@@ -1,5 +1,8 @@
 # Historical Station Conditions — staging trial
 
+The manual trial below passed staging review November 21. Daily integration
+testing follows [the daily release guide](station-history-daily.md).
+
 November 21: the user confirmed both saved browser CSVs passed. Local chart,
 CSV, narrow-layout, cache-reuse and snapshot tests passed. This increment is a
 manual staging trial. Daily history refresh and production promotion remain

@@ -169,6 +169,10 @@ swc_daily_publish_summary_lines <- function(record, prism = NULL, snow = NULL,
         stations$pending > 0L)
       station_line <- paste0(station_line, "; ", stations$pending, " delayed")
     lines <- c(lines, paste0(station_line, "."))
+    h <- stations$history
+    if(is.data.frame(h)&&nrow(h)==1L&&all(c("status","stations","years","built","reused","seconds")%in%names(h)))
+      lines <- c(lines,sprintf("Station history: %s; %d stations, %d annual chunks; %d rebuilt, %d reused; 0 extra observation requests (%ss).",
+        h$status,h$stations,h$years,h$built,h$reused,h$seconds))
   }
   if (is.list(explorer) && all(c("days", "maps", "built", "reused") %in% names(explorer))) {
     lines <- c(lines, sprintf("Daily Explorer: %d days, %d maps; %d dates rebuilt, %d reused.",

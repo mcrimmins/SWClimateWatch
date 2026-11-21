@@ -311,7 +311,7 @@ testthat::test_that("final notices report elapsed time and fresh run statistics"
                explorer_update = daily_publish_explorer_fixture,
                station_update = function(today) list(
                  status = "UPDATED", stations = 62L, mapped = 51L,
-                 pending = 0L),
+                 pending = 0L,history=data.frame(status="READY",stations=62L,years=5948L,built=62L,reused=5886L,seconds=10)),
                site_fingerprint = function() "new-site", publish = publish,
                notify = function(event, message)
                  notices[[length(notices) + 1L]] <<- list(
@@ -322,6 +322,7 @@ testthat::test_that("final notices report elapsed time and fresh run statistics"
   testthat::expect_match(success, "PRISM: 27 checked, 3 changed, 3 processed; maps rebuilt")
   testthat::expect_match(success, "PRISM date: 2026-09-30 (fallback; latest complete set retained).", fixed = TRUE)
   testthat::expect_match(success, "Stations: updated; 62 records \\(51 mapped\\)")
+  testthat::expect_match(success,"Station history: READY; 62 stations, 5948 annual chunks; 62 rebuilt, 5886 reused",fixed=TRUE)
   testthat::expect_match(success, "51/51 current, 352/352 historic passed")
   testthat::expect_false(grepl("legacy", success, fixed = TRUE))
   testthat::expect_true(is.finite(first$elapsed_seconds))

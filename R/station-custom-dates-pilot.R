@@ -66,7 +66,9 @@ build_station_custom_dates_pilot <- function(stations = acis_reference_station_t
   if (is.null(lock)) stop("Another custom-date pilot build is running.")
   on.exit(filelock::unlock(lock), add = TRUE)
   write.csv(data.frame(status = "BUILDING"), file.path(root, "update-summary.csv"), row.names = FALSE)
-  policy <- digest::digest(list(body(acis_station_explorer_daily_detail), body(station_custom_chunk), station_custom_codes))
+  # Source-reference environments differ between RStudio, Rscript and the
+  # isolated daily loader. Hash code text so an unchanged policy reuses data.
+  policy <- station_custom_policy_signature()
   records <- list(); reports <- list()
   for (i in seq_len(nrow(stations))) {
     station <- stations[i, ]; uid <- station$uid
@@ -99,6 +101,8 @@ build_station_custom_dates_pilot <- function(stations = acis_reference_station_t
     }
     cache <- acis_station_read_daily_cache(path, uid)
     if (is.null(cache)) stop("Invalid daily cache: ", uid)
+    if (is.list(old$catalog) && (min(cache$daily$date) > as.Date(old$catalog$first) || cache$as_of < as.Date(old$catalog$last)))
+      stop("Refusing to shorten an existing historical station record: ", uid)
     raw_years <- as.integer(format(cache$daily$date, "%Y"))
     years <- seq.int(as.integer(format(min(cache$daily$date), "%Y")), as.integer(format(cache$as_of, "%Y")))
     rows <- list(); built <- reused <- 0L
@@ -155,4 +159,10 @@ build_station_custom_dates_pilot <- function(stations = acis_reference_station_t
     catalog_bytes = file.info(file.path(root, "catalog.json"))$size, seconds = round(proc.time()[["elapsed"]] - started, 3))
   write.csv(summary, file.path(root, "update-summary.csv"), row.names = FALSE)
   list(summary = summary, root = root)
+}
+
+station_custom_policy_signature <- function() {
+  code <- lapply(list(acis_station_explorer_daily_detail, station_custom_chunk),
+    function(f) paste(deparse(body(f),width.cutoff=500L),collapse="\n"))
+  digest::digest(list("station-history-code-policy-v2",code,station_custom_codes))
 }

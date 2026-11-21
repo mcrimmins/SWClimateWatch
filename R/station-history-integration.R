@@ -4,7 +4,7 @@ station_history_browser_files <- function(files) {
   files[!grepl("^cumulative/", files) & grepl("[.](html|js|css|json|png|svg|gif|woff2?)$|^(station-explorer-data|coverage-by-station|coverage-summary)[.]csv$|^leaflet-package-LICENSE$", files)]
 }
 
-station_history_copy <- function(paths, from, to, source_hashes = NULL) {
+station_history_copy <- function(paths, from, to, source_hashes = NULL, preserve_dates = FALSE) {
   source <- file.path(from, paths); target <- file.path(to, paths)
   if (any(!file.exists(source))) stop("Missing integration asset: ", source[!file.exists(source)][1L])
   exists <- file.exists(target); changed <- !exists
@@ -12,7 +12,7 @@ station_history_copy <- function(paths, from, to, source_hashes = NULL) {
   if (any(exists)) changed[exists] <- (if (is.null(source_hashes)) unname(tools::md5sum(source[exists])) else unname(source_hashes[exists])) != unname(tools::md5sum(target[exists]))
   if (any(changed)) {
     for (directory in unique(dirname(target[changed]))) dir.create(directory, recursive = TRUE, showWarnings = FALSE)
-    if (!all(file.copy(source[changed], target[changed], overwrite = TRUE))) stop("Could not copy one or more integration assets.")
+    if (!all(file.copy(source[changed], target[changed], overwrite = TRUE, copy.date = preserve_dates))) stop("Could not copy one or more integration assets.")
   }
   sum(changed)
 }
