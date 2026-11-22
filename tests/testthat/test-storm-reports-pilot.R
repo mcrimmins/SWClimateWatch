@@ -1,4 +1,27 @@
 source(testthat::test_path("..","..","R","storm-reports-pilot.R"))
+
+testthat::test_that("new relative output paths resolve before the containment guard",{
+  withr::local_dir(testthat::test_path("..",".."))
+  source_dir<-"site/daily-explorer"
+  candidate<-tempfile("new-storm-output-",tmpdir="data/diagnostics")
+  target<-file.path(candidate,"nested")
+  testthat::expect_false(dir.exists(candidate))
+  resolved<-storm_reports_output_path(target,source_dir)
+  resolver<-storm_reports_output_path
+  environment(resolver)<-list2env(list(normalizePath=function(path,...) {
+    if(!dir.exists(path))stop("Must resolve an existing ancestor, not a nonexistent path.")
+    base::normalizePath(path,...)
+  }),parent=environment(storm_reports_output_path))
+  testthat::expect_identical(resolver(target,source_dir),resolved)
+  testthat::expect_true(startsWith(resolved,paste0(normalizePath("data/diagnostics",winslash="/"),"/")))
+  testthat::expect_true(endsWith(resolved,paste0(basename(candidate),"/nested")))
+  testthat::expect_false(dir.exists(candidate)) # Guard does not create anything.
+  testthat::expect_error(storm_reports_output_path("data/diagnostics-elsewhere/new",source_dir),"under data/diagnostics")
+  testthat::expect_error(storm_reports_output_path("data/diagnostics/../outside",source_dir),"dot segments")
+  testthat::expect_error(storm_reports_output_path("data/diagnostics",source_dir),"under data/diagnostics")
+  testthat::expect_error(storm_reports_output_path("data/diagnostics","data/diagnostics"),"under data/diagnostics")
+  testthat::expect_error(storm_reports_output_path(source_dir,source_dir),"under data/diagnostics")
+})
 storm_fixture<-function(valid="2026-09-01T00:00:00Z",...) {
   list(type="Feature",properties=modifyList(list(valid=valid,state="AZ",typetext="HAIL",magnitude="0",unit="INCH",
     qualifier="M",city="Test",county="Test",source="Public",remark="<script>alert('x')</script>",

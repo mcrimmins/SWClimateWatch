@@ -1,6 +1,29 @@
 # Local-only NWS Local Storm Report adapter. No production workflow hooks.
 storm_reports_endpoint <- "https://mesonet.agron.iastate.edu/geojson/lsr.geojson"
 
+storm_reports_output_path <- function(output_dir,source_dir) {
+  root<-normalizePath("data/diagnostics",winslash="/",mustWork=TRUE)
+  if(length(output_dir)!=1L||is.na(output_dir)||!nzchar(output_dir))stop("Use one pilot output directory.")
+  if(any(strsplit(gsub("\\\\","/",output_dir),"/",fixed=TRUE)[[1]]%in%c(".","..")))
+    stop("Pilot output path must not contain dot segments.")
+  # Linux normalizePath(mustWork=FALSE) may leave nonexistent paths relative.
+  # Resolve the nearest existing ancestor before checking containment, without
+  # creating directories outside the permitted diagnostics tree.
+  ancestor<-output_dir;pending<-character()
+  while(!dir.exists(ancestor)) {
+    if(file.exists(ancestor))stop("Pilot output path contains a file instead of a directory.")
+    parent<-dirname(ancestor)
+    if(identical(parent,ancestor))stop("Cannot resolve pilot output directory.")
+    pending<-c(basename(ancestor),pending);ancestor<-parent
+  }
+  output<-do.call(file.path,as.list(c(normalizePath(ancestor,winslash="/",mustWork=TRUE),pending)))
+  compare<-function(x)if(.Platform$OS.type=="windows")tolower(x)else x
+  if(!startsWith(compare(output),paste0(compare(root),"/")))stop("Pilot output must be under data/diagnostics.")
+  if(identical(compare(output),compare(normalizePath(source_dir,winslash="/",mustWork=TRUE))))
+    stop("Use a separate pilot output directory.")
+  output
+}
+
 storm_reports_timeline <- function(reports, dates, cached_dates) {
   times<-as.POSIXct(vapply(reports,`[[`,character(1),"valid"),format="%Y-%m-%dT%H:%M:%SZ",tz="UTC")
   setNames(lapply(c("prism","utc"),function(timing) lapply(dates,function(date) {
@@ -91,10 +114,7 @@ read_storm_reports_cache <- function(start, end, refresh=FALSE,
 build_storm_reports_pilot <- function(source_dir="site/daily-explorer",
     output_dir="data/diagnostics/daily-explorer-storm-reports",refresh=FALSE,
     copy_maps=TRUE,full_window=FALSE) {
-  root<-normalizePath("data/diagnostics",winslash="/",mustWork=TRUE)
-  output<-normalizePath(output_dir,winslash="/",mustWork=FALSE)
-  if(!startsWith(output,paste0(root,"/")))stop("Pilot output must be under data/diagnostics.")
-  if(identical(output,normalizePath(source_dir,winslash="/",mustWork=TRUE)))stop("Use a separate pilot output directory.")
+  output_dir<-storm_reports_output_path(output_dir,source_dir)
   payload<-jsonlite::read_json(file.path(source_dir,"daily-data.json"))
   dates<-vapply(payload$days,`[[`,character(1),"date")
   start<-min(as.Date(dates));end<-max(as.Date(dates))+1
