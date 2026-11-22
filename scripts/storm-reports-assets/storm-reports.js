@@ -47,6 +47,7 @@
   let catalog, selection={date:"",region:"AZNM"}, map, layer, hoverCard, selected="", epoch=0, all=[], filtered=[], page=0;
   const markers=new Map(), cache=new Map(), pageSize=40;
   let catalogError="";
+  let reportDataState="loading";
   let timelineEpoch=0;
   async function renderReportTimeline() {
     const timeline=$("timeline");if(!timeline?.querySelectorAll)return;
@@ -99,6 +100,7 @@
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,
       attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
     layer=L.layerGroup().addTo(map);
+    map.on("moveend",renderInView);
     // Keep hover text inside the map instead of letting Leaflet size a tooltip
     // relative to an 18px marker or place it beyond the map's edge.
     hoverCard=node("div");hoverCard.className="storm-hover-card";hoverCard.hidden=true;
@@ -128,6 +130,50 @@
     return box;
   }
   function hidePreview(){if(hoverCard)hoverCard.hidden=true;}
+  function renderInView() {
+    const count=$("storm-view-count"),context=$("storm-view-context");
+    $("storm-view-reset-types").disabled=$("storm-type").value==="all";
+    $("storm-view-types").replaceChildren();$("storm-view-extremes").replaceChildren();
+    if(reportDataState==="loading"||reportDataState==="unavailable") {
+      count.textContent=reportDataState==="loading"?"Loading reports…":"Report data unavailable";
+      context.textContent="See the date range and coverage status above the map.";
+      $("storm-view-all").disabled=true;return;
+    }
+    const bounds=map?.getBounds();
+    const result=StormReportStats.summarize(filtered,r=>!bounds||bounds.contains([r.lat,r.lon]));
+    count.textContent=`${result.inView} report${result.inView===1?"":"s"} in view`;
+    context.textContent=`${result.total} matching reports · ${result.outside} outside map${result.unmapped?` · ${result.unmapped} without usable coordinates`:""}${reportDataState==="partial"?". Partial time coverage: counts and maxima use available reports only.":""}${!map?". Map unavailable; showing all located reports.":""}`;
+    $("storm-view-all").disabled=result.total===result.unmapped;
+    for(const [type,n]of result.types) {
+      const button=node("button",`${type} · ${n}`);button.type="button";
+      button.style.setProperty("--report-color",groups[category(type)].color);
+      button.setAttribute("aria-label",`Filter to ${type}, ${n} reports in view`);
+      button.addEventListener("click",()=>{$("storm-type").value=type;renderReports();});
+      $("storm-view-types").append(button);
+    }
+    if(!result.inView)$("storm-view-types").append(node("p","No matching reports in this map area."));
+    const labels={rain:"Largest reported rainfall",hail:"Largest reported hail",wind:"Highest reported wind gust"};
+    for(const metric of ["rain","hail","wind"]) {
+      const value=result.extremes[metric],card=node("div");card.className="storm-view-extreme";
+      card.append(node("h4",labels[metric]));
+      if(value.value===null)card.append(node("p","No report with comparable magnitude and units in view."));
+      else {
+        const amount=`${value.value.toFixed(metric==="wind"?1:2)} ${value.unit}`;
+        const winner=value.reports[0],button=node("button",`${amount} · ${winner.city}, ${winner.state}`);
+        button.type="button";button.addEventListener("click",()=>select(winner,{pan:true,scroll:true}));
+        card.append(button,node("p",`${eventLabel(winner)} · ${winner.qualifier}`));
+        if(value.reports.length>1) {
+          const ties=node("details");ties.append(node("summary",`${value.reports.length} tied reports`));
+          for(const report of value.reports) {
+            const tied=node("button",`${report.city}, ${report.state} · ${eventLabel(report)} · ${report.qualifier}`);
+            tied.type="button";tied.addEventListener("click",()=>select(report,{pan:true,scroll:true}));ties.append(tied);
+          }
+          card.append(ties);
+        }
+      }
+      $("storm-view-extremes").append(card);
+    }
+  }
   function updateSelectionStyles() {
     const active=markers.get(selected);
     for(const m of new Set(markers.values())) {
@@ -230,7 +276,7 @@
       const g=groups[key],span=node("span",`${g.symbol} ${g.label}`);span.style.setProperty("--report-color",g.color);$("storm-legend").append(span);
     }
     if([...locations.values()].some(rows=>rows.length>1))$("storm-legend").append(node("small","Numbered circles = reports sharing a location; click to choose. Rain amounts are individual reports, not window totals."));
-    page=0;renderTable();updateSelectionStyles();
+    page=0;renderTable();updateSelectionStyles();renderInView();
   }
   async function loadDay(entry) {
     if(!entry||!['READY','EMPTY'].includes(entry.status))throw new Error("Date not cached");
@@ -252,14 +298,15 @@
     $("storm-previous").disabled=!$("date").min||date<=$("date").min;
     $("storm-next").disabled=!$("date").max||date>=$("date").max;
     if(!$("storm-panel").open)return;
-    $("storm-status").textContent="Loading cached reports…";
+    reportDataState="loading";$("storm-status").textContent="Loading cached reports…";
     all=[];renderReports();
     const manifest=await catalogPromise;if(token!==epoch)return;
-    if(!manifest){$("storm-status").textContent=`Reports unavailable: ${catalogError}. This does not mean no reports occurred.`;return;}
+    if(!manifest){reportDataState="unavailable";renderInView();$("storm-status").textContent=`Reports unavailable: ${catalogError}. This does not mean no reports occurred.`;return;}
     const entries=new Map(manifest.days.map(x=>[x.date,x]));
     const results=await Promise.allSettled(dates.map(d=>loadDay(entries.get(d))));
     if(token!==epoch)return;
     const missing=dates.filter((_,i)=>results[i].status==="rejected");
+    reportDataState=missing.length===dates.length?"unavailable":missing.length?"partial":"ready";
     all=results.filter(x=>x.status==="fulfilled").flatMap(x=>x.value).filter(r=>{
       const time=Date.parse(r.valid);
       return time>=window.start&&time<window.end&&(region==="AZNM"||r.state===region);
@@ -294,6 +341,11 @@
   $("storm-type").addEventListener("change",renderReports);
   $("storm-clear").addEventListener("click",clearSelection);
   $("storm-search").addEventListener("input",renderReports);
+  $("storm-view-reset-types").addEventListener("click",()=>{$("storm-type").value="all";renderReports();});
+  $("storm-view-all").addEventListener("click",()=>{
+    hidePreview();const points=filtered.filter(StormReportStats.mapped).map(r=>[r.lat,r.lon]);
+    if(points.length&&map)map.fitBounds(points,{padding:[24,24],maxZoom:9});
+  });
   $("storm-page-previous").addEventListener("click",()=>{page=Math.max(0,page-1);renderTable();});
   $("storm-page-next").addEventListener("click",()=>{page=Math.min(Math.ceil(filtered.length/pageSize)-1,page+1);renderTable();});
   const requestDate=date=>document.dispatchEvent(new CustomEvent("swc:request-date",{detail:{date}}));

@@ -91,6 +91,26 @@ unrelated listener is not stopped.
   report is chosen. The chooser respects current type/search/date/region filters.
   Nearby positions remain geographically distinct, with map zoom and the table
   available to distinguish them. No location offsets or event merging are used.
+- **Reports in view** is a collapsible panel beside the map on desktop and below
+  it on narrow screens. It counts individual reports within the map bounds after
+  date/window/timing, region, report-type and text filters. It shows the matching
+  total, outside-map count and reports without usable coordinates separately.
+  Panning/zooming changes this panel, while the table retains all matching rows.
+  Clicking a type count applies the existing type filter. All types resets only
+  that filter, retaining text search, dates/timing, region and the map extent.
+  Fit map to matching reports fits all located filtered reports without clearing
+  those filters.
+- The panel links the largest reported rainfall, hail size and wind gust to the
+  existing pinned selection and table row. It retains tied reports individually,
+  displays event time and measured/estimated qualifier, and never sums rainfall.
+  Comparison uses source numeric magnitudes with recognized units: rain/hail in
+  inches or converted millimeters, wind gusts in mph or converted knots, m/s or
+  km/h. Missing/unknown units and nonnumeric/negative values are excluded from
+  extrema but remain counted as reports. Wind damage/downburst narratives do not
+  become gust measurements. Accumulation durations can differ, so these are
+  reported maxima in the view, not standardized daily amounts or climate records.
+  Partial/unavailable time coverage remains explicit. Bounds changes use loaded
+  reports and do not request more observation data.
 - Map markers use labeled category colors (a number indicates multiple reports,
   potentially of different types). The table renders 40 rows per page, with internal scrolling at
   narrow widths and no whole-page horizontal overflow in the local phone test.

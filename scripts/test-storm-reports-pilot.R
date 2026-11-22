@@ -26,5 +26,7 @@ node_candidates<-c(getOption("swc.interactive.node",""),unname(Sys.which("node")
   Sys.glob(file.path(Sys.getenv("ProgramFiles"),"WindowsApps","OpenAI.CodexPrimaryRuntime.*","dependencies","node","bin","node.exe")))
 node_candidates<-node_candidates[nzchar(node_candidates)&file.exists(node_candidates)&!dir.exists(node_candidates)]
 if(!length(node_candidates))stop("R checks passed; JavaScript checks still need Node. Set options(swc.interactive.node='C:/path/to/node.exe') and rerun. Preview remains available.")
-status<-system2(node_candidates[[1]],"tests/storm-reports-controls.cjs")
-if(status!=0)stop("Storm report controller checks failed.")
+for(script in c("tests/storm-reports-controls.cjs","tests/storm-report-view-stats.cjs")) {
+  status<-system2(node_candidates[[1]],script)
+  if(status!=0)stop("Storm report browser checks failed: ",script)
+}

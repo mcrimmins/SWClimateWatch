@@ -50,9 +50,10 @@ validate_storm_reports_publication <- function(directory,require_enabled=TRUE) {
     }
   }
   html<-paste(readLines(file.path(directory,"index.html"),warn=FALSE),collapse="\n")
-  for(id in c("storm-panel","storm-timing","storm-timeline-note","storm-timeline-detail","storm-clear"))
+  for(id in c("storm-panel","storm-timing","storm-timeline-note","storm-timeline-detail","storm-clear",
+    "storm-view-panel","storm-view-count","storm-view-types","storm-view-extremes","storm-view-all","storm-view-reset-types"))
     if(!grepl(paste0('id="',id,'"'),html,fixed=TRUE))stop("Missing report control: ",id)
-  for(asset in c("explorer.js","storm-reports.js","storm-reports.css","leaflet.js","leaflet.css"))
+  for(asset in c("explorer.js","storm-reports.js","report-view-stats.js","storm-reports.css","leaflet.js","leaflet.css"))
     if(!file.exists(file.path(directory,asset)))stop("Missing report browser asset: ",asset)
   js<-paste(readLines(file.path(directory,"explorer.js"),warn=FALSE),collapse="\n")
   if(!grepl("swc:daily-selection",js,fixed=TRUE)||!grepl("dataset.reportDate",js,fixed=TRUE))stop("Explorer/report selection bridge is missing.")

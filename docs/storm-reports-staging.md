@@ -71,6 +71,12 @@ Review <https://cales.arizona.edu/climate/watch-staging/daily-explorer/>:
   strip stays daily/all-types when report type/search or trailing windows change.
 - Rain amounts and distinct flood/flash-flood markers, previews, pinned selection,
   clear selection, coincident report chooser, table pages and bulletin links work.
+- Reports in view updates counts and rainfall/hail/wind-gust maxima when panning,
+  zooming or changing filters. Clicking a maximum pins the corresponding report.
+  Type counts apply the shared type filter; All types clears only that filter.
+  Fit map to matching reports changes extent while retaining filters. Missing
+  coordinates, unavailable magnitudes/units, partial coverage and ties are explicit.
+  The panel is beside the map on desktop and below it on narrow screens.
 - Existing daily/7-/30-day weather maps still work, including unavailable states.
 - The phone layout remains contained, with report table scrolling internally.
 

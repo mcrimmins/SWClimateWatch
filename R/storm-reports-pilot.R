@@ -139,7 +139,7 @@ build_storm_reports_pilot <- function(source_dir="site/daily-explorer",
   # Only this isolated preview gets the report module and selection bridge.
   for(asset in c("index.html","explorer.css","explorer.js"))
     copy(file.path("scripts/daily-explorer-assets",asset),file.path(output_dir,asset))
-  for(asset in c("storm-reports.js","storm-reports.css","storm-reports-panel.html"))
+  for(asset in c("storm-reports.js","report-view-stats.js","storm-reports.css","storm-reports-panel.html"))
     copy(file.path("scripts/storm-reports-assets",asset),file.path(output_dir,asset))
   for(asset in c("leaflet.js","leaflet.css","leaflet-package-LICENSE"))
     copy(file.path("site/stations",asset),file.path(output_dir,asset))
@@ -156,7 +156,7 @@ build_storm_reports_pilot <- function(source_dir="site/daily-explorer",
   html<-paste(readLines(file.path(output_dir,"index.html"),warn=FALSE),collapse="\n")
   panel<-paste(readLines("scripts/storm-reports-assets/storm-reports-panel.html",warn=FALSE),collapse="\n")
   html<-sub('<details id="circulation-panel"',paste0(panel,'\n<details id="circulation-panel"'),html,fixed=TRUE)
-  html<-sub('</head>','<link rel="stylesheet" href="leaflet.css"><link rel="stylesheet" href="storm-reports.css"><script src="leaflet.js" defer></script><script src="storm-reports.js" defer></script></head>',html,fixed=TRUE)
+  html<-sub('</head>','<link rel="stylesheet" href="leaflet.css"><link rel="stylesheet" href="storm-reports.css"><script src="leaflet.js" defer></script><script src="report-view-stats.js" defer></script><script src="storm-reports.js" defer></script></head>',html,fixed=TRUE)
   html<-sub("The summary-region selector changes the timeline, statistics, and notable-day list.",
     "The summary-region selector changes the timeline, statistics, notable-day list and storm-report map/table.",html,fixed=TRUE)
   html<-sub('<div id="timeline"',paste0('<p id="storm-timeline-note" class="muted small">Loading daily report counts…</p><div id="storm-timeline-legend" class="storm-legend"></div>\n<div id="timeline"'),html,fixed=TRUE)

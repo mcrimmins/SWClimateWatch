@@ -27,13 +27,15 @@ const manifest={schema_version:1,fetched_utc:'2026-11-22T00:00:00Z',start:'2026-
 const summary=(date,total,complete=true)=>({date,complete,regions:{AZNM:{total,types:total?{RAIN:1,'FLASH FLOOD':total-1}:{}},AZ:{total:total?1:0,types:total?{RAIN:1}:{}},NM:{total:Math.max(0,total-1),types:total>1?{'FLASH FLOOD':total-1}:{}}}});
 manifest.timeline={utc:[summary('2026-09-01',2),summary('2026-09-02',0)],prism:[summary('2026-09-01',1,false),summary('2026-09-02',1)]};
 const listeners={},requests=[];let failDay=false,releaseFirst=null,holdFirst=false;
-const markerInstances=[],panCalls=[];
-const fakeMap={setView(){return this;},panTo(p){panCalls.push(p);},invalidateSize(){},fitBounds(){}};
+const markerInstances=[],panCalls=[],mapEvents={};let containsPoint=()=>true;
+const fakeMap={setView(){return this;},panTo(p){panCalls.push(p);},invalidateSize(){},fitBounds(){},
+  on(k,fn){mapEvents[k]=fn;return this;},getBounds(){return {contains:p=>containsPoint(p)};}};
 const leaflet={map:()=>fakeMap,tileLayer:()=>({addTo(){}}),layerGroup:()=>({addTo(){return this;},clearLayers(){markerInstances.length=0;}}),
   divIcon:x=>x,marker:(p,options)=>{const e=element(),m={position:p,options,events:{},getElement:()=>e,
     on(k,fn){this.events[k]=fn;return this;},addTo(){markerInstances.push(this);return this;}};return m;}};
 const context=vm.createContext({console,Date,Map,Set,Promise,URLSearchParams,
   L:leaflet,
+  StormReportStats:require('../scripts/storm-reports-assets/report-view-stats.js'),
   Option:function(text,value){return Object.assign(element('option'),{textContent:text,value});},
   CustomEvent:class{constructor(type,args={}){this.type=type;this.detail=args.detail;}},
   document:{getElementById:id=>controls[id],createElement:element,
@@ -60,6 +62,11 @@ const change=async(id,value)=>{controls[id].value=value;await controls[id].liste
   assert.equal(timelineButtons[2].querySelector('.storm-day-summary').children[0].textContent,'?');
   timelineButtons[0].onfocus();assert.match(controls['storm-timeline-detail'].textContent,/RAIN: 1/);
   assert.equal(controls['storm-rows'].children.length,1);
+  assert.equal(controls['storm-view-count'].textContent,'1 report in view');
+  assert.match(controls['storm-view-extremes'].children[0].children[1].textContent,/4.29 in/);
+  containsPoint=()=>false;mapEvents.moveend();assert.equal(controls['storm-view-count'].textContent,'0 reports in view');
+  assert.match(controls['storm-view-context'].textContent,/1 outside map/);
+  containsPoint=()=>true;mapEvents.moveend();
   assert.match(markerInstances[0].options.icon.className,/rain-amount/);
   assert.equal(markerInstances[0].options.icon.html,'4+');
   assert.equal(markerInstances[0].options.icon.iconSize.join(','),'26,18');
@@ -76,12 +83,26 @@ const change=async(id,value)=>{controls[id].value=value;await controls[id].liste
   assert.equal(controls['storm-detail'].children[0],chosen); // Hover leaves full details pinned.
   assert.equal(markerInstances[0].options.title,undefined); // No competing browser tooltip.
   controls['storm-clear'].listeners.click();assert.equal(controls['storm-clear'].disabled,true);
+  controls['storm-view-types'].children[0].listeners.click();
+  assert.equal(controls['storm-type'].value,'RAIN');
+  assert.equal(controls['storm-view-reset-types'].disabled,false);
+  controls['storm-search'].value='Test';
+  controls['storm-view-reset-types'].listeners.click();
+  assert.equal(controls['storm-type'].value,'all');
+  assert.equal(controls['storm-view-reset-types'].disabled,true);
+  assert.equal(controls['storm-search'].value,'Test'); // Type reset retains other filters.
+  assert.equal(controls['storm-timing'].value,'utc');assert.equal(controls['storm-window'].value,'1');
+  controls['storm-search'].value='';
+  controls['storm-view-extremes'].children[0].children[1].listeners.click();
+  assert.equal(controls['storm-clear'].disabled,false); // Extreme selects the same pinned report.
+  controls['storm-clear'].listeners.click();
   await change('storm-type','SNOW');assert.match(controls['storm-page-status'].textContent,/0 matching/);
   await select('2026-09-02');assert.equal(controls['storm-type'].value,'SNOW'); // No silent filter reset.
   await change('storm-type','all');await change('storm-window','7');
   assert.match(controls['storm-status'].textContent,/PARTIAL.*Aug 27, 2026, 00:00 UTC/);
   failDay=true;await change('storm-window','1');await select('2026-09-03');
   assert.match(controls['storm-status'].textContent,/0 reports.*UNAVAILABLE/);
+  assert.equal(controls['storm-view-count'].textContent,'Report data unavailable');
   failDay=false;await select('2026-09-04');await select('2026-09-03');
   assert.match(controls['storm-status'].textContent,/2 reports.*Complete/); // Failed cache entry retries.
   assert.equal(markerInstances.length,1); // Exact coincident reports share a numbered marker.

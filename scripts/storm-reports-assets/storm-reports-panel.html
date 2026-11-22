@@ -13,7 +13,22 @@
   </div>
   <p id="storm-window-caption"></p>
   <p id="storm-status" role="status" aria-live="polite">Loading report catalog…</p>
-  <div id="storm-map" role="region" aria-label="Local storm report map"></div>
+  <div class="storm-map-layout">
+    <div id="storm-map" role="region" aria-label="Local storm report map"></div>
+    <details id="storm-view-panel" class="storm-view-panel" open>
+      <summary>Reports in view</summary>
+      <div class="storm-view-body">
+        <p id="storm-view-count" role="status" aria-live="polite">Loading reports…</p>
+        <p id="storm-view-context" class="muted small"></p>
+        <div class="storm-view-type-heading"><h4>Report types</h4><button id="storm-view-reset-types" type="button" disabled>All types</button></div>
+        <div id="storm-view-types" class="storm-view-types" aria-label="Report counts by type"></div>
+        <div id="storm-view-extremes" aria-label="Largest reported values in view"></div>
+        <button id="storm-view-all" type="button">Fit map to matching reports</button>
+        <p class="muted small">Panel uses the visible map area and current filters. The table lists all matching reports. Counts are reports, not unique storms.</p>
+        <p class="muted small">Reported maxima, not historical records. Rainfall accumulations may cover different durations. Amounts shown in inches; wind gusts in mph.</p>
+      </div>
+    </details>
+  </div>
   <div id="storm-legend" class="storm-legend" aria-label="Report categories"></div>
   <section class="storm-selection" aria-labelledby="storm-selected-title">
     <div class="storm-selection-heading"><h3 id="storm-selected-title">Selected report</h3><button id="storm-clear" type="button" disabled>Clear selection</button></div>
