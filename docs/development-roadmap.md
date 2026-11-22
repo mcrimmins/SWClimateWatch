@@ -1,6 +1,6 @@
 # Development roadmap
 
-Planning review: November 18, 2026. This is the consolidated backlog, not a
+Planning review: November 22, 2026. This is the consolidated backlog, not a
 commitment to enable every candidate product. No production settings change
 when this document is edited.
 
@@ -14,12 +14,18 @@ its implementation files as part of roadmap planning.
 
 ## Operational baseline
 
-November 18 repository baseline: [PR #1](https://github.com/mcrimmins/SWClimateWatch/pull/1)
+Historical November 18 repository baseline: [PR #1](https://github.com/mcrimmins/SWClimateWatch/pull/1)
 merged `codex/daily-explorer` into `main` with merge commit
-`e1deb03681f286f7f6a7c7b5eac60a3ddc729ec6`. The laptop now uses that `main`;
-both VM checkouts are pinned to the same commit. The merge and checkout
-transition are complete. This did not publish the site or change the daily cron.
-The next scheduled production run remains a separate operational confirmation.
+`e1deb03681f286f7f6a7c7b5eac60a3ddc729ec6`. The laptop and both VM checkouts
+were aligned at that point. Subsequent feature releases are recorded below;
+this historical baseline does not assert that current checkouts remain pinned
+to the merge commit. The merge itself did not publish or change the daily cron.
+
+November 22 current release confirmation: the historical Selected Station
+viewer and automatic daily history refresh are complete in production. The
+November 21 production workflow and source/rendered checks passed; see the
+release evidence below. No staging or production promotion remains for this
+increment. Monitor the next scheduled run separately.
 
 November 13 operational review: the station update, monthly manifest and browser
 freshness repairs are complete in production. The scheduled daily run succeeded;
@@ -83,6 +89,10 @@ Live features include:
   cool-season and monsoon precipitation comparisons include historical bounds,
   year selection and closest progression. Monthly climatology offers 1991-2020
   and full available record distributions with linked tables and coverage.
+  The historical viewer and automatic updates are confirmed in production:
+  Current conditions / Explore station history tabs, custom dates across the
+  available record, lazy annual loading, linked chart tables and daily CSV
+  exports. Arbitrary custom-period ranks/anomalies remain outside this release.
 - Current Snow observed SWE, absolute departure, supported percent of median,
   and exact seven-day net change. Historic peak SWE and snow-covered-day maps
   are published, including seasonal peak-SWE departure and percent-of-median
@@ -355,6 +365,34 @@ use new `codex/...` branches from updated `main` for subsequent increments.
 Record the next scheduled production result separately; GA4 Realtime, source
 freshness/retries and the December 1-5 monthly rollover remain follow-ups.
 
+### November 21 historical station viewer — production complete
+
+The user confirmed production appearance on November 22 after successful
+staging review and the November 21 production run (finished at 18:08 Arizona
+time). The production report showed:
+
+- Published in **26m 59s**, runner exit **0**; station page date **November 20**.
+- **62 station records / 51 mapped**; **5,948 historical annual chunks** passed
+  full checks in both staged and rendered output, with matching page dates.
+- History **READY**: **12 rebuilt, 5,936 reused**, **zero extra observation
+  requests**, and **16.153 s** history preparation. That timer does not measure
+  the complete station staging, Quarto render or S3-upload overhead.
+- **6,018 files copied** when preparing the production overlay. This release
+  copy count is not an annual-recomputation count or a steady daily baseline.
+- Daily weather coverage **30/30 recent and 81/81 Explorer dates**, no pending
+  dates/withheld winds/unknown overlays; all **60 weather means / 180 maps**
+  available without deferred or unavailable periods.
+- **54/54 current and 352/352 historic map checks** passed. Monthly Climate
+  remained complete through October 2026 with no new requests.
+
+The persisted `SWC_STATION_HISTORY=true` production setting uses the existing
+daily cron. Stable code-text signatures, affected-year reuse, timestamp
+preservation and atomic station-page retention protect subsequent updates.
+Both short and long saved browser CSVs passed user review. Full-record browser
+loading remains bounded; phone-width laptop checks passed, while physical-phone
+and slower-network measurements remain separate follow-ups. No further feature
+promotion is pending. See [daily release and validation guide](station-history-daily.md).
+
 ## Priority order and working sequence
 
 This is the proposed working order, with one feature increment active at a time.
@@ -364,10 +402,12 @@ that work ahead of discretionary features.
 
 | Priority | Work | Next bounded step and completion evidence |
 | --- | --- | --- |
-| P0 — ongoing operations | Monitor the confirmed production release | Interactive Maps, automatic Snow viewer refresh, its publication-order correction and raster plotting fixes are confirmed in production November 17. Confirm the next scheduled Snow refresh/date/cache reuse; monitor plotting warnings, accepted monthly releases and weather retries/freshness. GA4 Realtime and the first automatic December monthly cycle still need confirmation. Earlier timing/coverage figures are historical snapshots. |
+| P0 — ongoing operations | Monitor the confirmed production release | Historical Station Conditions and automatic refresh are confirmed complete in production November 22, following the successful November 21 workflow and full payload checks. Check the next scheduled history/Snow refresh and reuse; monitor plotting warnings, weather freshness/retries and the December monthly cycle. GA4 Realtime collection still needs confirmation. |
 | Complete — monitor | Merge into main and align laptop/VM checkouts | PR #1 merged November 18 at `e1deb036`; laptop `main` and both pinned VM checkouts match. Reviewed source passed 3,878 R assertions and 18 JavaScript suites; both VM readiness checks exited 0. No new publication occurred. Confirm the next scheduled production run separately. |
-| P1 — earlier-year staging testing | Historic Years from monthly PRISM | The user accepted all 86 WY1896-WY1981 pages locally after numeric/rendered PASS: 1,806 monthly maps, explicit availability notes and no unverified ENSO labels. Separate portable export and cached combined navigation/publication checks are prepared for staging; the full site will cover 130 years and 2,730 monthly maps, preserving existing daily/Snow detail. Staging review remains pending. See [staging commands](historic-monthly-backfill-staging.md). |
-| P2 — recommended, pending selection | Operational and viewer performance | Profile consecutive new-date runs and outstanding phone/throttled-network targets before changing cadence, payloads or architecture. |
+| Status reconciliation — no new build selected | Historic Years release records | Older entries still describe archive staging as pending after the later promotion work. Reconcile the VM release bundles, rendered year coverage and release notes against the WY1896-WY2025 target before assigning new archive development; do not repeat accepted map builds solely to fix stale roadmap wording. See [release guide](historic-monthly-backfill-staging.md). |
+| Development — staging trial ready | Daily Explorer local storm reports | November 22: local review accepted; guarded staging build/publication and source/rendered validation are prepared. Includes PRISM/UTC timing, daily timeline counts/types, rain amount markers and pinned report selection. VM results pending; automatic daily refresh, production and warning polygons remain follow-ups. See [staging guide](storm-reports-staging.md). |
+| Deferred until after more development | Operational and viewer performance | Deferred by the user November 22. Retain the plan to compare ordinary consecutive new-date runs, isolate staging/render/S3 costs and measure phone/slower-network behavior. The 16.153 s history-preparation timer is not end-to-end overhead. Routine failure/freshness monitoring continues. |
+| Complete — monitor | Historical Station Conditions and automatic updates | Production confirmed November 22 after the November 21 full daily run: two tabs, full-record custom dates, linked chart tables and daily CSVs for 62 stations/5,948 annual chunks. Twelve chunks rebuilt and 5,936 reused in 16.153 s preparation, with no extra observation requests. Source/rendered data and page-date checks passed. See [release guide](station-history-daily.md). |
 | Complete — monitor | Interactive Snow viewer and automatic updates | User confirmed corrected staging and production November 17, including ordering fix `bf159b6`. Four Snow metrics follow the verified Current Snow release, preserve native cells/masks and transparent zero SWE, and refresh automatically in daily/site-only publication. Source/rendered checks passed for November 17 with seven-day change available; 54 current and 352 historic maps passed. Confirm the next scheduled run separately. See [release evidence and workflow](interactive-map-snow-daily.md). |
 | Complete — monitor | Raster plotting geometry fixes | User confirmed staging and production November 17 at `d00e5b9794a22cbf4c69222a913f31bccf00a2fe`. Native-size tiles protect sparse/singleton axes; dense maps retain the fast path. The two freeze-free products were rebuilt from cached grids. Local 63-field audit, seven-pair comparison and geometry/current/freeze/snow regression checks passed. No statistical-cache migration. See [findings and rebuild guide](raster-plot-geometry.md). |
 | Complete — monitor | PRISM comparison code-review fixes | User confirmed production November 15 after staging and cache rebuilds. Matched-date maximum ranks, freeze support/season guards, overdue lower bounds, category boundaries and configured labels are live. Monitor cache reuse and freeze-season behavior; a higher wet-day-intensity minimum remains optional. See [assessment](prism-code-review-fixes.md). |
@@ -382,7 +422,7 @@ that work ahead of discretionary features.
 | Complete — monitor | Climate of the Region page and 39 maps | User confirmed production November 15 after local and VM staging review. Precipitation, Temperature and Seasonal comparison tabs; shared periods, selected/all-metric views and seasonal total/share choice. Fixed 1991–2020 references, portable cached publication, rendered validation and 39 stable catalog links are live. No new daily downloads or recalculation; historical extremes remain separate. |
 | Deferred until spring 2027 | Station heat metrics | Scope station-appropriate temperature thresholds, counts and departures; reuse existing hot-day/warm-night screening. No implementation before spring 2027. |
 | Alongside increments | Operational maintenance | Track freshness and source revisions, station audit age, raster warnings and measured cache/runtime behavior. Address specific failures promptly; schedule broader profiling as its own bounded task. |
-| Later — scope before building | New sources and statistical extensions | Local storm reports/hazard polygons, gauge conditions, historical odds, completed-year Explorer/historic-season integration, custom station dates, ENSO composites and further SPI products. Each needs its own source/method/performance assessment. |
+| Later — scope before building | New sources and statistical extensions | Local storm reports/hazard polygons, gauge conditions, historical odds, completed-year Explorer/historic-season integration, custom-period historical comparisons, ENSO composites and further SPI products. Custom station dates themselves are now complete. Each new extension needs its own source/method/performance assessment. |
 | Complete — monitor | Interactive Maps and automatic refresh | Initial production release confirmed November 17 at `1c23270adfe1f17e47ff7f0cb9a4519f20a87f56`; the completed Snow extension brings the current choices to 43, alongside seven daily views, 28 monthly choices, linked point tables and automatic cached publication. Scheduled-run confirmation, monthly rollover and phone/throttled-network performance verification remain follow-ups. See [initial workflow](interactive-map-staging.md) and [Snow extension](interactive-map-snow-daily.md). |
 | Later — polish | Consistency and optional interactions | Shared city-label styling, historic RONI labels at the next archive refresh, custom Analytics events and remaining documentation reconciliation. |
 
@@ -410,24 +450,20 @@ Numerical grids, masks, references and comparison caches are unchanged. No
 release step remains. Observe the next scheduled run separately. See
 [findings and rebuild guide](raster-plot-geometry.md).
 
-The Snow viewer and automatic workflow are complete in production as recorded
-above. The user approved the bounded monthly archive pilot November 18; its
-scope is recorded below. Archive replacement/backfill and the performance
-proposal remain separate decisions:
+The historical station viewer and daily workflow are now also complete in
+production. On November 22 the user deferred performance improvements until
+after more development items. Select and scope one useful site addition next;
+regional precipitation evolution, regional snowpack evolution and custom-period
+station context are candidates for discussion, not authorized implementations.
+Preserve the later profiling plan and distinguish physical-phone/slower-network
+checks from the completed phone-width laptop review.
 
-1. **Historic Years from monthly PRISM:** a larger separate increment. Pilot
-   comparable existing years, choose/label historical ranking samples and review
-   differences before replacing archive maps or extending the record. Start
-   with three contrasting existing water years and precipitation totals plus
-   day-weighted mean temperature from complete monthly inputs, using the fixed
-   1991-2020 normal for departures. Compare against the current archive and
-   document differences in inputs, coverage and methods; exact agreement is
-   not assumed. Select the ranking sample explicitly before adding ranks.
-   Keep pilot outputs isolated; archive replacement, long-record backfill
-   and daily-runner integration require separate review.
-2. **Operational performance:** profile consecutive daily runs and outstanding
-   viewer mobile/network targets, using measured cache/runtime/payload evidence
-   before changing product cadence or delivery architecture.
+Product-specific freshness/coverage visibility remains a possible usability
+increment: show the data-through date, lag and missing coverage clearly and link
+users to the relevant product. GA4 Realtime collection verification is a separate
+small closeout. These are recommendations, not newly authorized implementation
+work. Preserve the archive planning history below;
+reconcile its release status before assigning more archive builds.
 
 **November 18 approved local Historic Years pilot:** use WY2002, WY2005 and
 WY2020 as contrasting review examples. Each year has precipitation total,
@@ -649,11 +685,11 @@ those pages are next refreshed.
 | Google Analytics (requested November 1, 2026) | Tag G-XS7RFBPW01 is included in the confirmed production release, gated to the production hostname/path and top-level views. Local/staging exclusions and embedded deduplication tested; GA4 Realtime collection still needs confirmation. See site-analytics.md. Custom interaction events remain deferred. | Collection verification pending |
 | Historical snow anomaly companions | Complete in production November 14: WY2005-WY2025, 42 companion maps, 84 total snow images with rendered integrity checks. Preserve source/method guards, masks, cached staging and stable dated links; future source revisions/new years remain separate work. | Complete; monitor |
 | Raster plotting warnings | Confirmed in production November 17: sparse/singleton cell geometry corrected; freeze-free length and departure PNGs rebuilt from cached grids. Dense controls remain pixel-identical and numerical caches unchanged. Monitor subsequent daily rendering. | Complete; monitor |
-| Daily-update speed | Profile several consecutive new-date runs, cache-hit/miss behavior, costly PRISM reference work, and station processing. Benchmark before removing products or changing cadence. | Moderate |
+| Daily-update speed | Deferred November 22 until after more development items. Later profile consecutive new-date runs, cache-hit/miss behavior, PRISM references and station/staging/render/upload costs before changing products or cadence. | Deferred; moderate |
 | SNODAS source revisions | Define a bounded recheck policy for already processed archives, provenance changes, and affected reference/map invalidation. | Moderate |
 | Completed-year Daily Explorer | Decide what remains public at water-year rollover, then test dated manifests, navigation, retention, storage and rebuild costs before historical backfill. | Moderate-large |
 | Station metadata and additional extremes | Scope station/component history and historical extremes comparisons. Calendar-date plot records and the station climatology section are now bounded increments in the [November 6 scope](#station-and-regional-climatology-agreed-november-6-2026); heat metrics are deferred until spring 2027. Any additional formal indices need explicit periods, thresholds, completeness, ties and baseline definitions. | Variable |
-| Station custom date periods | November 21: manual staging and both saved browser CSV checks passed; 62 records/5,948 annual chunks validated in staged/rendered output. Daily integration is now implemented locally behind SWC_STATION_HISTORY, with affected-year reuse, stable code-text signatures, timestamp preservation and atomic station-page retention on failure. Local daily/loader/publication tests and update/revision simulations passed. Next: full staging daily run and timings before production promotion. Physical-phone/network measurements remain separate. See station-history-daily.md. | Daily integration ready for staging run; production pending |
+| Station custom date periods | Complete in production, confirmed November 22 after the November 21 full workflow: 62 records/5,948 annual chunks, two tabs, linked historical tables and daily CSVs. Twelve chunks rebuilt and 5,936 reused; history preparation 16.153 s, zero extra observation requests. Automatic updates persist in the existing cron; source/rendered payload and page-date checks passed. Monitor subsequent scheduled reuse; physical-phone/network measurements remain separate. See station-history-daily.md. | Complete in production; monitor |
 | Interactive raster map page (requested November 8, 2026) | Confirmed live November 17, including the Snow extension: 43 current choices, seven daily views, 28 monthly choices, native-cell queries, linked controls and automatic cached publication. Monitor scheduled production refresh/monthly rollover; measure outstanding mobile/network performance. Freeze-date extensions remain separate pilots. | Core and Snow complete; monitor |
 | Shared city-label styling | Consider the smaller Daily Explorer labels for other maps; review representative precipitation, temperature and snow backgrounds before a site-wide rebuild. | Small-moderate |
 | Station audit maintenance | Establish a repeatable full-record audit refresh cadence, visible audit age and automatic cautions; avoid a manual station-by-station approval requirement. | Moderate |
@@ -664,7 +700,7 @@ those pages are next refreshed.
 | Daily weather and circulation diagnostics | Daily and 7-/30-day three-map CORe integration, retained backfill, automatic gap/mean retries and publication checks are live. Monitor source availability, queues and cache/runtime behavior. Anomaly baselines/additional fields remain separate; IVT remains deferred. | Live; monitor |
 | Archived forecast discussions in Daily Explorer | Date-bound AFD/WPC links and the fixed-size embedded reader are live and user-tested. Metadata indexing and optional SPC/report sources remain future work. | Indexing effort pending |
 | Long-term monthly PRISM maps | Monthly Climate rankings and SPI plus automatic revision-aware updates are live. January 1895–October 2026 inputs are verified. Stable monthly image exports and the 39-map Climate of the Region page are complete; external dashboard embedding remains unconfirmed. All 44 monthly-based Historic Years pages passed local review; staging testing is selected. | Core/reference pages live; archive replacement in staging preparation |
-| Local storm reports and watch/warning polygons | Scope archived reports and NWS hazard polygons alongside Daily Explorer and/or seasonal summaries, including event-time matching, deduplication, data availability and efficient caching. | Longer-term; scope first |
+| Local storm reports and watch/warning polygons | November 22: local report review accepted; staging trial prepared with PRISM/UTC timing, daily count/type strip, distinct rain/flood markers, pinned selection and coupled table. Guarded staging publication validates reports and versioned assets while preserving existing weather maps. See [staging guide](storm-reports-staging.md). Daily refresh, production and warning polygons remain separate follow-ups. | Ready for staging trial; awaiting VM results |
 | Historic-season station and Daily Explorer content | Decide which station summaries, extreme-event views and daily-map navigation belong in historic seasons; define retention, completeness and storage limits. | Longer-term; scope first |
 | Hydrological observations and gauge-condition maps | Assess gauge data access, station coverage and useful streamflow/stage condition metrics, with historical context and bounded update costs. | Longer-term; scope first |
 | Hydroclimate home dashboard | Dashboard layout, map-matched summaries, linked condition cards and RONI/CPC context are live. Separately scope regional cumulative precipitation versus normal with cached calculations and a runtime benchmark. | Live layout; regional evolution chart moderate |
@@ -1021,12 +1057,13 @@ optional SPC/report products remain separate follow-ups.
 
 ## New exploration: Station Conditions custom date periods
 
-Requested October 25, 2026; scoping only, not active implementation. See
-[station period-selector scope](station-explorer-prototype.md#future-scope-custom-date-periods).
-A bounded recent-date selector is feasible in principle without new climate
-downloads, but arbitrary-period ranks/anomalies are not available from the
-currently published preset results. Preserve the fast default preset view;
-do not publish full station histories or precompute every possible date range.
+Requested October 25; implemented and confirmed in production November 22
+after the November 21 workflow. Explore station history loads only the selected
+station and requested annual files, with bounded plots, linked tables, CSVs and
+coverage guards. Current conditions remains the default; custom dates are
+independent. Automatic annual-cache updates add no observation requests.
+Arbitrary custom-period ranks/anomalies remain outside the release; do not
+precompute every possible date range. See [release evidence](station-history-daily.md).
 
 ## Longer-term scope additions: October 27, 2026
 
@@ -1194,6 +1231,13 @@ new image on the first day before inputs are ready. These are scoped
 deliverables; no dashboard links or operational products are changed yet.
 
 ### Local storm reports and NWS watch/warning polygons
+
+November 22 agreed next development item: begin with local storm reports in an
+isolated Daily Explorer pilot, inspired by the WPC report viewer. The pilot
+links event-date/region selection, hover/tap report text and a coupled table;
+see [implementation and local review commands](storm-reports-pilot.md). Review
+the pilot before staging or enabling daily updates. Warning polygons remain
+outside this first increment. Performance profiling remains deferred as agreed.
 
 Scope querying and displaying archived **local storm reports** and **NWS watch
 and warning polygons** in Daily Explorer, seasonal summaries, or both. Identify
@@ -1532,10 +1576,13 @@ Interactive Maps and automatic refresh are confirmed live November 17; no
 promotion remains. The raster plotting fixes are also confirmed live November 17; no promotion
 remains. Interactive Snow and automatic refresh are also confirmed complete;
 PR #1 merged November 18 and both VM readiness checks passed at the main baseline.
-The selected next release is the monthly-PRISM Historic Years archive for
-WY1982-WY2025: local numeric/rendered validation and user review are complete;
-staging testing is next. Profile operational/mobile performance
-as a separate increment, and confirm the next scheduled production run.
+The historical station viewer and automatic updates are confirmed complete in
+production November 22; no promotion remains. The recommended next increment
+is another development item, pending user selection; performance improvements
+were deferred November 22 until after more development. Keep the eventual
+initial-release versus steady-daily comparison separate. Reconcile older
+Historic Years release-status wording against actual VM bundles and published
+coverage rather than treating old pilot/staging instructions as a fresh task.
 Station seasonal histories, daily chart/CSV/layout enhancements, monthly
 climatology and 7-/30-day weather means/retries are confirmed in production.
 The November 13 full run closes the station/monthly/cache repair checks.

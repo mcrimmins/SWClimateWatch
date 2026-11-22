@@ -1,0 +1,37 @@
+<details id="storm-panel" class="card storm-panel" open>
+  <summary>Local storm reports <span id="storm-date-label"></span></summary>
+  <p>NWS-issued reports of observed weather and impacts. Hover for a quick preview; click or tap a marker or table row to select a report.</p>
+  <div class="storm-controls">
+    <div><button type="button" id="storm-previous" aria-label="Previous report date">←</button>
+      <label for="storm-date">Date</label> <input type="date" id="storm-date">
+      <button type="button" id="storm-next" aria-label="Next report date">→</button></div>
+    <label>Report window <select id="storm-window"><option value="1">Selected day</option><option value="7">Past 7 days</option><option value="30">Past 30 days</option></select></label>
+    <label>Report timing <select id="storm-timing"><option value="prism" selected>Match precipitation map</option><option value="utc">UTC calendar day</option></select></label>
+    <label>Report type <select id="storm-type"><option value="all">All report types</option></select></label>
+    <label>Search reports <input type="search" id="storm-search" placeholder="Place, report text or source"></label>
+    <button type="button" id="storm-reset">Reset map</button>
+  </div>
+  <p id="storm-window-caption"></p>
+  <p id="storm-status" role="status" aria-live="polite">Loading report catalog…</p>
+  <div id="storm-map" role="region" aria-label="Local storm report map"></div>
+  <div id="storm-legend" class="storm-legend" aria-label="Report categories"></div>
+  <section class="storm-selection" aria-labelledby="storm-selected-title">
+    <div class="storm-selection-heading"><h3 id="storm-selected-title">Selected report</h3><button id="storm-clear" type="button" disabled>Clear selection</button></div>
+    <div id="storm-location-choice" hidden></div>
+    <div id="storm-detail" class="storm-detail" aria-live="polite">Click or tap a marker or table row to select a report.</div>
+  </section>
+  <div class="storm-table-scroll" tabindex="0" role="region" aria-label="Report table">
+    <table class="storm-table"><caption>Reports matching the selected dates, region and filters</caption>
+      <thead><tr><th scope="col">Event time (UTC)</th><th scope="col">Report</th><th scope="col">Magnitude</th><th scope="col">Location</th><th scope="col">Report text</th></tr></thead>
+      <tbody id="storm-rows"></tbody>
+    </table>
+  </div>
+  <div class="storm-pagination"><button id="storm-page-previous" type="button">Previous reports</button><span id="storm-page-status"></span><button id="storm-page-next" type="button">Next reports</button></div>
+  <details><summary>About these reports and dates</summary>
+    <p>Match precipitation map uses the PRISM day: the 24 hours ending at 12:00 UTC on the selected map date (5 a.m. MST / 6 a.m. MDT). Past 7 / 30 days end at that same time. UTC calendar day instead runs from 00:00 UTC on the selected date to 00:00 UTC the following date, with trailing windows ending at that time. These report windows are independent of the PNG Map view and CORe weather-map windows.</p>
+    <p>Reports are included by event time, not bulletin issuance time. The window includes its starting instant and excludes its ending instant, so a report exactly at 12:00 UTC belongs to the next PRISM window. Original event timestamps remain unchanged in the table and details. Rain reports may cover longer accumulations, and flooding can follow rainfall; matching dates does not make report amounts equivalent to the PRISM grid total.</p>
+    <p>Source: <a href="https://mesonet.agron.iastate.edu/request/gis/lsrs.phtml" target="_blank" rel="noopener">NWS reports archived by Iowa Environmental Mesonet</a>. The archive is incomplete and unofficial. No reports does not imply no significant weather. Counts refer to reports, not unique storms. Delayed, corrected and overlapping reports may describe the same event; only exact duplicates are removed. Magnitude and units are retained from the source; estimates and measurements are identified in report details. A marker is a report location, not an impact footprint.</p>
+    <p>This is a cached historical view, not a live warning service. Missing data are labeled unavailable. Reports without usable coordinates remain in the table. The street basemap needs an internet connection; the report table works without map tiles.</p>
+    <p id="storm-provenance"></p>
+  </details>
+</details>

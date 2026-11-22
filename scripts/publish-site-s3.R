@@ -10,6 +10,10 @@ source(file.path("scripts", "load-daily-publish.R"))
 
 swc_site_publish_started <- Sys.time()
 swc_site_destination <- swc_daily_publish_destination()
+if(tolower(Sys.getenv("SWC_STORM_REPORTS_STAGING"))=="true") {
+  source("R/storm-reports-staging.R")
+  storm_reports_staging_guard()
+}
 swc_site_weather_expected <- swc_daily_publish_weather_expected()
 swc_site_weather_report <- NULL
 swc_site_weather_valid <- TRUE
@@ -24,6 +28,12 @@ swc_publish_result <- tryCatch({
     delete = FALSE,
     render = TRUE,
     extra_validation = function(output_dir) {
+      if(tolower(Sys.getenv("SWC_STORM_REPORTS_STAGING"))=="true") {
+        source("R/storm-reports-staging.R",local=TRUE)
+        storm_reports_staging_guard()
+        validate_storm_reports_publication("site/daily-explorer")
+        validate_storm_reports_publication(file.path(output_dir,"daily-explorer"))
+      }
       swc_daily_publish_validate_snow(output_dir)
       swc_daily_publish_validate_stations(output_dir)
       assessment <- swc_daily_publish_validate_weather(output_dir,
