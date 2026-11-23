@@ -134,6 +134,15 @@ const change=async(id,value)=>{controls[id].value=value;await controls[id].liste
   await change('storm-window','1');await select('2027-01-01');
   assert.match(controls['storm-window-caption'].textContent,/Dec 31, 2026, 12:00 UTC.*Jan 1, 2027, 12:00 UTC/);
   await select('2024-03-01');assert.match(controls['storm-window-caption'].textContent,/Feb 29, 2024, 12:00 UTC.*Mar 1, 2024, 12:00 UTC/);
+  manifest.timeline.utc[0].stale=true;manifest.stale_dates=['2026-09-01'];
+  await change('storm-timing','utc');await select('2026-09-01','AZ');
+  assert.equal(timelineButtons[0].querySelector('.storm-day-summary').children[0].textContent,'1*');
+  assert.match(controls['storm-status'].textContent,/refresh pending/);
+  assert.match(controls['storm-view-context'].textContent,/retained pending refresh/);
+  manifest.timeline.utc[1].available=false;manifest.timeline.utc[1].complete=false;days[1].status='UNAVAILABLE';
+  await select('2026-09-02');
+  assert.equal(timelineButtons[1].querySelector('.storm-day-summary').children[0].textContent,'?');
+  assert.equal(controls['storm-view-count'].textContent,'Report data unavailable');
   assert.ok(!requests.some(x=>/^https?:/.test(x)));
   console.log('PASS: PRISM/UTC windows (1/7/30 days), noon boundaries, leap/year rollover, linked filters, missing data/retries and report selection.');
 })().catch(e=>{console.error(e);process.exitCode=1;});

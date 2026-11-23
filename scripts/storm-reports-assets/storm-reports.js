@@ -47,7 +47,7 @@
   let catalog, selection={date:"",region:"AZNM"}, map, layer, hoverCard, selected="", epoch=0, all=[], filtered=[], page=0;
   const markers=new Map(), cache=new Map(), pageSize=40;
   let catalogError="";
-  let reportDataState="loading";
+  let reportDataState="loading",staleInWindow=false;
   let timelineEpoch=0;
   async function renderReportTimeline() {
     const timeline=$("timeline");if(!timeline?.querySelectorAll)return;
@@ -60,9 +60,9 @@
     $("storm-timeline-detail").textContent="Hover or focus a day for report counts by type. Select a bar to explore that day.";
     for(const button of timeline.querySelectorAll(".day[data-report-date]")) {
       button.querySelector(".storm-day-summary")?.remove();
-      const date=button.dataset.reportDate,day=summaries.get(date),summary=day?.regions?.[region];
+      const date=button.dataset.reportDate,day=summaries.get(date),summary=day?.available===false?null:day?.regions?.[region];
       const strip=node("span");strip.className="storm-day-summary";strip.setAttribute("aria-hidden","true");
-      strip.append(node("strong",summary?`${summary.total}${day.complete?"":"+"}`:"?"));
+      strip.append(node("strong",summary?`${summary.total}${day.complete?"":"+"}${day.stale?"*":""}`:"?"));
       const dots=node("span");dots.className="storm-day-types";
       const types=Object.entries(summary?.types||{});
       const dayGroups=new Set(types.filter(([,count])=>count>0).map(([type])=>category(type)));
@@ -71,7 +71,7 @@
       }
       strip.append(dots);button.append(strip);
       const range=reportWindow(date,1,timing);
-      const text=`${dateLabel(date)} · ${timeLabel(range.start)} – ${timeLabel(range.end)}: ${summary?`${day.complete?"":"at least "}${summary.total} storm reports${day.complete?"":" (partial coverage)"}${types.length?`; ${types.map(([type,count])=>`${type}: ${count}`).join("; ")}`:""}`:"storm reports unavailable"}. Counts are reports, not unique storms.`;
+      const text=`${dateLabel(date)} · ${timeLabel(range.start)} – ${timeLabel(range.end)}: ${summary?`${day.complete?"":"at least "}${summary.total} storm reports${day.complete?"":" (partial coverage)"}${day.stale?" (cached; refresh pending)":""}${types.length?`; ${types.map(([type,count])=>`${type}: ${count}`).join("; ")}`:""}`:"storm reports unavailable"}. Counts are reports, not unique storms.`;
       button.dataset.reportBaseTitle??=button.title;
       button.title=`${button.dataset.reportBaseTitle}\n${text}`;
       button.setAttribute("aria-label",button.title);
@@ -79,6 +79,7 @@
       button.onmouseenter=button.onfocus=()=>{$("storm-timeline-detail").textContent=text;};
     }
     $("storm-timeline-legend").replaceChildren();
+    if([...summaries.values()].some(day=>day.stale))$("storm-timeline-note").textContent+=" * cached; refresh pending.";
     for(const key of Object.keys(groups).filter(key=>used.has(key))) {
       const span=node("span",`${groups[key].symbol} ${key==="rain"?"Rainfall":groups[key].label}`);
       span.style.setProperty("--report-color",groups[key].color);$("storm-timeline-legend").append(span);
@@ -142,7 +143,7 @@
     const bounds=map?.getBounds();
     const result=StormReportStats.summarize(filtered,r=>!bounds||bounds.contains([r.lat,r.lon]));
     count.textContent=`${result.inView} report${result.inView===1?"":"s"} in view`;
-    context.textContent=`${result.total} matching reports · ${result.outside} outside map${result.unmapped?` · ${result.unmapped} without usable coordinates`:""}${reportDataState==="partial"?". Partial time coverage: counts and maxima use available reports only.":""}${!map?". Map unavailable; showing all located reports.":""}`;
+    context.textContent=`${result.total} matching reports · ${result.outside} outside map${result.unmapped?` · ${result.unmapped} without usable coordinates`:""}${reportDataState==="partial"?". Partial time coverage: counts and maxima use available reports only.":""}${staleInWindow?". Some reports are retained pending refresh.":""}${!map?". Map unavailable; showing all located reports.":""}`;
     $("storm-view-all").disabled=result.total===result.unmapped;
     for(const [type,n]of result.types) {
       const button=node("button",`${type} · ${n}`);button.type="button";
@@ -306,6 +307,7 @@
     const results=await Promise.allSettled(dates.map(d=>loadDay(entries.get(d))));
     if(token!==epoch)return;
     const missing=dates.filter((_,i)=>results[i].status==="rejected");
+    staleInWindow=dates.some(d=>(manifest.stale_dates||[]).includes(d));
     reportDataState=missing.length===dates.length?"unavailable":missing.length?"partial":"ready";
     all=results.filter(x=>x.status==="fulfilled").flatMap(x=>x.value).filter(r=>{
       const time=Date.parse(r.valid);
@@ -326,7 +328,7 @@
     }
     const gaps=missingRanges.map(g=>`${timeLabel(g.start)} – ${timeLabel(g.end)}`);
     const coverage=missing.length ? `PARTIAL / UNAVAILABLE: report data missing for ${gaps.join("; ")}.` : "Complete report coverage for this window.";
-    $("storm-status").textContent=`${all.length} reports before type/search filters. ${coverage}${all.length===0&&!missing.length?" No reports were returned; this does not imply no significant weather.":""}${all.some(r=>!r.mapped)?" Some reports have no coordinates; see the table.":""}`;
+    $("storm-status").textContent=`${all.length} reports before type/search filters. ${coverage}${staleInWindow?" Cached reports retained for dates with refresh pending; subsequent daily runs will retry.":""}${all.length===0&&!missing.length?" No reports were returned; this does not imply no significant weather.":""}${all.some(r=>!r.mapped)?" Some reports have no coordinates; see the table.":""}`;
     renderReports();map?.invalidateSize();
   }
   document.addEventListener("swc:daily-selection",e=>{

@@ -169,7 +169,14 @@ usable coordinates remain in the table with an explicit position notice.
 Remote text is rendered with `textContent`; bulletin URLs are constructed from a
 validated source product ID and the documented NWS text retrieval endpoint.
 
-## Remaining before staging
+## Daily integration
+
+The local pilot and staging viewer review are complete. The incremental daily
+cache, recent-date refresh, retry queue and pre-upload validation are implemented;
+see [daily integration and acceptance](storm-reports-daily.md). A full staging
+daily run and production promotion remain pending. Warning polygons are separate.
+
+## Original pilot boundaries
 
 Review the local layout and desired event-day convention with the user, including
 whether to offer a future local-day view. Then assess incremental recent-date

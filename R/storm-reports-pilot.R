@@ -1,4 +1,4 @@
-# Local-only NWS Local Storm Report adapter. No production workflow hooks.
+# NWS Local Storm Report normalization, local review builder and viewer assets.
 storm_reports_endpoint <- "https://mesonet.agron.iastate.edu/geojson/lsr.geojson"
 
 storm_reports_output_path <- function(output_dir,source_dir) {
@@ -24,7 +24,7 @@ storm_reports_output_path <- function(output_dir,source_dir) {
   output
 }
 
-storm_reports_timeline <- function(reports, dates, cached_dates) {
+storm_reports_timeline <- function(reports, dates, cached_dates,stale_dates=character()) {
   times<-as.POSIXct(vapply(reports,`[[`,character(1),"valid"),format="%Y-%m-%dT%H:%M:%SZ",tz="UTC")
   setNames(lapply(c("prism","utc"),function(timing) lapply(dates,function(date) {
     end<-as.POSIXct(paste(date,if(timing=="prism")"12:00:00"else"00:00:00"),tz="UTC")
@@ -37,7 +37,8 @@ storm_reports_timeline <- function(reports, dates, cached_dates) {
       counts<-table(vapply(subset,`[[`,character(1),"type"))
       list(total=length(subset),types=as.list(setNames(as.integer(counts),names(counts))))
     }),c("AZNM","AZ","NM"))
-    list(date=date,complete=all(needed%in%cached_dates),regions=regions)
+    list(date=date,complete=all(needed%in%cached_dates),available=any(needed%in%cached_dates),
+      stale=any(needed%in%stale_dates),regions=regions)
   })),c("prism","utc"))
 }
 
@@ -113,7 +114,7 @@ read_storm_reports_cache <- function(start, end, refresh=FALSE,
 
 build_storm_reports_pilot <- function(source_dir="site/daily-explorer",
     output_dir="data/diagnostics/daily-explorer-storm-reports",refresh=FALSE,
-    copy_maps=TRUE,full_window=FALSE) {
+    copy_maps=TRUE,full_window=FALSE,snapshot=NULL) {
   output_dir<-storm_reports_output_path(output_dir,source_dir)
   payload<-jsonlite::read_json(file.path(source_dir,"daily-data.json"))
   dates<-vapply(payload$days,`[[`,character(1),"date")
@@ -121,14 +122,20 @@ build_storm_reports_pilot <- function(source_dir="site/daily-explorer",
   # Bound the first source trial; older Explorer dates explicitly say unavailable.
   if(!full_window)start<-max(start,end-62)
   if(end-start>400)stop("Storm report trial is bounded to 400 Explorer dates.")
-  starts<-seq(start,end-1,by=62)
-  caches<-lapply(starts,function(first)read_storm_reports_cache(first,min(first+62,end),refresh))
-  cache<-caches[[1]]
-  reports<-unlist(lapply(caches,function(x)normalize_storm_reports(x$raw,x$start,x$end)),recursive=FALSE)
-  # The first PRISM reporting day begins at noon on the preceding UTC date.
-  # Fetch just that extra day; keep the existing larger cache reusable.
-  padding<-read_storm_reports_cache(start-1,start,refresh)
-  reports<-c(normalize_storm_reports(padding$raw,start-1,start),reports)
+  if(is.null(snapshot)) {
+    starts<-seq(start,end-1,by=62)
+    caches<-lapply(starts,function(first)read_storm_reports_cache(first,min(first+62,end),refresh))
+    cache<-caches[[1]]
+    reports<-unlist(lapply(caches,function(x)normalize_storm_reports(x$raw,x$start,x$end)),recursive=FALSE)
+    padding<-read_storm_reports_cache(start-1,start,refresh)
+    reports<-c(normalize_storm_reports(padding$raw,start-1,start),reports)
+    snapshots<-lapply(c(list(padding),caches),function(x)x[c("start","end","fetched_utc","url")])
+    available_dates<-as.character(seq(start-1,end-1,by="day"));stale_dates<-character()
+  } else {
+    reports<-snapshot$reports;snapshots<-snapshot$snapshots
+    available_dates<-snapshot$available_dates;stale_dates<-snapshot$stale_dates
+  }
+  if(is.null(reports))reports<-list()
   dir.create(file.path(output_dir,"reports"),recursive=TRUE,showWarnings=FALSE)
   copy<-function(from,to) {
     dir.create(dirname(to),recursive=TRUE,showWarnings=FALSE)
@@ -176,17 +183,19 @@ build_storm_reports_pilot <- function(source_dir="site/daily-explorer",
   report_dates<-as.character(seq(start-1,end-1,by="day"))
   entries<-lapply(report_dates,function(date) {
     rows<-Filter(function(r)r$date==date,reports)
+    if(is.null(rows))rows<-list()
     file<-paste0("reports/",date,".json")
+    if(!date%in%available_dates)return(list(date=date,status="UNAVAILABLE",reports=0L,path=file,md5=NULL))
     jsonlite::write_json(list(schema_version=1L,date=date,reports=rows),file.path(output_dir,file),auto_unbox=TRUE,digits=NA,null="null")
     list(date=date,status=if(length(rows))"READY"else"EMPTY",reports=length(rows),path=file,
       md5=unname(tools::md5sum(file.path(output_dir,file))))
   })
   manifest<-list(schema_version=1L,source="NWS Local Storm Reports via Iowa Environmental Mesonet",
-    fetched_utc=min(vapply(c(list(padding),caches),`[[`,character(1),"fetched_utc")),query_url=cache$url,
-    snapshots=lapply(c(list(padding),caches),function(x)x[c("start","end","fetched_utc","url")]),
+    fetched_utc=if(length(snapshots))min(vapply(snapshots,`[[`,character(1),"fetched_utc"))else "Unavailable",
+    query_url=storm_reports_endpoint,snapshots=snapshots,stale_dates=as.list(stale_dates),
     start=as.character(start-1),end_exclusive=as.character(end),days=entries,
-    timeline=storm_reports_timeline(reports,dates,report_dates))
-  jsonlite::write_json(manifest,file.path(output_dir,"storm-reports-manifest.json"),auto_unbox=TRUE,pretty=TRUE)
+    timeline=storm_reports_timeline(reports,dates,available_dates,stale_dates))
+  jsonlite::write_json(manifest,file.path(output_dir,"storm-reports-manifest.json"),auto_unbox=TRUE,pretty=TRUE,null="null")
   summary<-data.frame(dates=length(entries),reports=length(reports),mapped=sum(vapply(reports,`[[`,logical(1),"mapped")),
     first=start-1,last=end-1,explorer_first=start,publication=FALSE)
   write.csv(summary,file.path(output_dir,"storm-reports-summary.csv"),row.names=FALSE)

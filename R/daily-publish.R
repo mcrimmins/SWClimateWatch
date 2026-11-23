@@ -108,7 +108,7 @@ swc_daily_publish_summary_lines <- function(record, prism = NULL, snow = NULL,
                                             stations = NULL, validation = NULL,
                                             failed_stage = NULL,
                                             destination = swc_daily_publish_live_destination(),
-                                            explorer = NULL, weather = NULL, monthly = NULL, interactive = NULL) {
+                                            explorer = NULL, weather = NULL, monthly = NULL, interactive = NULL, storm_reports = NULL) {
   status <- switch(record$status[[1L]],
                    PUBLISHED = "Published", PREVIEW = "Preview complete",
                    SKIPPED_UNCHANGED = "Update complete; upload skipped",
@@ -198,6 +198,10 @@ swc_daily_publish_summary_lines <- function(record, prism = NULL, snow = NULL,
           means$periods,means$maps,means$built,means$reused,means$deferred,means$unavailable,swc_publish_elapsed(means$seconds)))
   }
   lines <- c(lines,swc_monthly_summary_line(monthly))
+  if(is.list(storm_reports)&&!identical(storm_reports$status,"DISABLED"))lines<-c(lines,
+    sprintf("Storm reports: %s; %d/%d dates available, %d reports; %d refreshed, %d reused; %d requests; %d stale, %d missing (%ss).",
+      storm_reports$status,storm_reports$available,storm_reports$dates,storm_reports$reports,
+      storm_reports$refreshed,storm_reports$reused,storm_reports$requests,storm_reports$stale,storm_reports$missing,storm_reports$seconds))
   if(is.list(interactive)&&length(interactive$status)==1L&&interactive$status %in% c("READY","REUSED")) lines <- c(lines,
     sprintf("Interactive Maps: %s; %d daily bundles through %s; %d current products (%d unavailable); monthly through %s.",
       tolower(interactive$status),interactive$daily_bundles,interactive$daily_through,interactive$current_products,
@@ -610,6 +614,10 @@ swc_daily_publish_sync <- function(
     destination = swc_daily_publish_destination(destination),
     region = "us-west-2", dry_run = dry_run, delete = FALSE,
     render = TRUE, extra_validation = function(output_dir) {
+      if(tolower(Sys.getenv("SWC_STORM_REPORTS"))=="true") {
+        source("R/storm-reports-daily.R",local=TRUE)
+        validate_storm_reports_daily(output_dir)
+      }
       swc_daily_publish_validate_snow(output_dir)
       swc_daily_publish_validate_stations(output_dir)
       swc_daily_publish_validate_explorer(output_dir)
@@ -638,6 +646,12 @@ swc_daily_publish_update_interactive <- function(today=Sys.Date(),enabled=file.e
   result
 }
 
+swc_daily_publish_update_storm_reports <- function(today=Sys.Date()) {
+  if(tolower(Sys.getenv("SWC_STORM_REPORTS"))!="true")return(list(status="DISABLED"))
+  source("R/storm-reports-daily.R",local=TRUE)
+  prepare_storm_reports_daily(download=TRUE)
+}
+
 run_swc_daily_publish <- function(
     today = Sys.Date(), dry_run = TRUE, force_publish = FALSE,
     destination = swc_daily_publish_destination(),
@@ -653,7 +667,8 @@ run_swc_daily_publish <- function(
     explorer_update = swc_daily_publish_update_explorer,
     weather_update = swc_daily_publish_update_weather,
     monthly_update = swc_daily_publish_update_monthly,
-    interactive_update = swc_daily_publish_update_interactive) {
+    interactive_update = swc_daily_publish_update_interactive,
+    storm_reports_update = swc_daily_publish_update_storm_reports) {
   if (!is.logical(dry_run) || length(dry_run) != 1L || is.na(dry_run) ||
       !is.logical(force_publish) || length(force_publish) != 1L ||
       is.na(force_publish)) {
@@ -685,14 +700,14 @@ run_swc_daily_publish <- function(
     if (!dry_run) swc_ntfy_send_safe(event, message, notify = notify)
     invisible(NULL)
   }
-  prism <- snow <- stations <- explorer <- weather <- monthly <- interactive <- publication <- NULL
+  prism <- snow <- stations <- explorer <- weather <- monthly <- interactive <- publication <- storm_reports <- NULL
   finish <- function(event, failed_stage = NULL) {
     record$elapsed_seconds <<- round(as.numeric(difftime(
       Sys.time(), started, units = "secs")), 3)
     lines <- swc_daily_publish_summary_lines(
       record, prism, snow, stations,
       if (is.list(publication)) publication$validation else NULL,
-      failed_stage = failed_stage, destination = destination, explorer = explorer, weather = weather, monthly = monthly, interactive = interactive)
+      failed_stage = failed_stage, destination = destination, explorer = explorer, weather = weather, monthly = monthly, interactive = interactive,storm_reports=storm_reports)
     message(paste(lines, collapse = "\n"))
     if (!is.null(event)) send(event, paste(lines, collapse = "\n"))
     lines
@@ -746,6 +761,11 @@ run_swc_daily_publish <- function(
         length(weather$lag_days)==1L && !is.na(weather$lag_days) && weather$lag_days>3L)
       send("warning",paste0("Latest retained weather maps are ",weather$lag_days,
         " days old. Core publishing will continue; check source freshness and backfill status."))
+    stage <- "storm report update"
+    storm_reports <- storm_reports_update(today)
+    if(!is.list(storm_reports)||length(storm_reports$status)!=1L||
+      !storm_reports$status%in%c("DISABLED","READY","PARTIAL","UNAVAILABLE"))stop("Invalid storm report update result.")
+    if(storm_reports$status%in%c("PARTIAL","UNAVAILABLE"))send("warning","Storm reports have stale or missing dates; verified cached data and explicit unavailable notices will be published. Retries resume next run.")
     stage <- "SNODAS update"
     snow <- tryCatch(snow_update(today), error = function(error) {
       list(maps = list(status = "ERROR"), error = conditionMessage(error))
@@ -809,7 +829,7 @@ run_swc_daily_publish <- function(
       message("Site source is unchanged since the last successful sync; upload skipped.")
       lines <- finish("success")
       return(invisible(list(status = record$status, prism = prism,
-                            snow = snow, stations = stations, explorer = explorer, weather = weather, monthly = monthly, interactive = interactive,
+                            snow = snow, stations = stations, explorer = explorer, weather = weather, monthly = monthly, interactive = interactive,storm_reports=storm_reports,
                             destination = destination,
                             published = FALSE,
                             elapsed_seconds = record$elapsed_seconds,
@@ -834,7 +854,7 @@ run_swc_daily_publish <- function(
     }
     lines <- finish(if (dry_run) NULL else "success")
     invisible(list(status = record$status, prism = prism, snow = snow,
-                   stations = stations, explorer = explorer, weather = weather, monthly = monthly, interactive = interactive,
+                   stations = stations, explorer = explorer, weather = weather, monthly = monthly, interactive = interactive,storm_reports=storm_reports,
                    destination = destination,
                    published = record$published,
                    validation = if (is.list(publication)) publication$validation

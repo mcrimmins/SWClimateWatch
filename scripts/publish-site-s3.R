@@ -28,6 +28,10 @@ swc_publish_result <- tryCatch({
     delete = FALSE,
     render = TRUE,
     extra_validation = function(output_dir) {
+      if(tolower(Sys.getenv("SWC_STORM_REPORTS"))=="true") {
+        source("R/storm-reports-daily.R",local=TRUE)
+        validate_storm_reports_daily(output_dir)
+      }
       if(tolower(Sys.getenv("SWC_STORM_REPORTS_STAGING"))=="true") {
         source("R/storm-reports-staging.R",local=TRUE)
         storm_reports_staging_guard()

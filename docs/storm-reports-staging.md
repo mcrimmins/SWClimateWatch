@@ -1,5 +1,9 @@
 # Storm report staging trial
 
+November 22: this manual trial passed staging review. For the new daily workflow
+and its persistent `SWC_STORM_REPORTS` flag, use [daily integration](storm-reports-daily.md).
+The instructions below describe the earlier snapshot-only trial.
+
 Manual, staging-only trial after the local report/timeline review. Automatic
 daily report refresh and production publication are not enabled. The only opt-in
 is `SWC_STORM_REPORTS_STAGING=true`, set inside the supplied trial process, with
