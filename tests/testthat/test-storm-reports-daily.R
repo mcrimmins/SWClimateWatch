@@ -29,6 +29,7 @@ testthat::test_that("recent revisions/deletions refresh and source failures retr
   update<-function(end="2024-03-02",fetcher=storm_daily_fetch,download=TRUE)
     refresh_storm_reports_cache("2024-02-27",end,download=download,refresh_days=2,cache_dir=cache,raw_dir=raw,fetcher=fetcher)
   first<-update();testthat::expect_equal(first$summary$requests,2)
+  testthat::expect_null(names(first$snapshot$reports))
   testthat::expect_equal(first$summary$status,"READY");testthat::expect_length(first$snapshot$reports,4)
   revised<-update(fetcher=function(a,b)storm_daily_fetch(a,b,TRUE))
   testthat::expect_equal(revised$summary$requests,1);testthat::expect_equal(revised$summary$changed,2)
@@ -72,6 +73,28 @@ testthat::test_that("publication can stage an honest missing-data snapshot witho
   catalog<-jsonlite::read_json(file.path(fixture,"storm-reports-manifest.json"))
   testthat::expect_true(all(vapply(catalog$days,function(d)d$status=="UNAVAILABLE",logical(1))))
   testthat::expect_true(all(vapply(catalog$timeline$prism,function(d)!d$available&&!d$complete,logical(1))))
+  # Daily-cache flattening used to name records, causing JSON objects instead
+  # of arrays. Exercise the publication boundary with those named records.
+  first<-as.Date(original$days[[1]]$date)-1
+  last<-as.Date(tail(original$days,1)[[1]]$date)+1
+  fetched<-storm_daily_fetch(first,last)
+  records<-normalize_storm_reports(fetched$raw,first,last)
+  names(records)<-paste0("cached-day-",seq_along(records))
+  available<-as.character(seq(first,last-1,by="day"))
+  stage_storm_reports_snapshot(fixture,file.path(root,"candidate"),snapshot=list(
+    reports=records,available_dates=available,stale_dates=character(),snapshots=list()))
+  catalog<-jsonlite::read_json(file.path(fixture,"storm-reports-manifest.json"))
+  entry<-catalog$days[[1]];path<-file.path(fixture,entry$path)
+  payload<-jsonlite::read_json(path)
+  testthat::expect_null(names(payload$reports))
+  testthat::expect_length(payload$reports,1L)
+  testthat::expect_match(readLines(path,warn=FALSE),'"reports":\\[')
+  # Even a matching checksum must not allow an object-shaped report list.
+  names(payload$reports)<-"wrong-shape"
+  jsonlite::write_json(payload,path,auto_unbox=TRUE)
+  catalog$days[[1]]$md5<-unname(tools::md5sum(path))
+  jsonlite::write_json(catalog,file.path(fixture,"storm-reports-manifest.json"),auto_unbox=TRUE,null="null")
+  testthat::expect_error(validate_storm_reports_publication(fixture),"JSON array")
 })
 
 testthat::test_that("daily runner refreshes reports before publication and reports degraded coverage",{

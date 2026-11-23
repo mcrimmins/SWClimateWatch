@@ -186,7 +186,7 @@ build_storm_reports_pilot <- function(source_dir="site/daily-explorer",
     if(is.null(rows))rows<-list()
     file<-paste0("reports/",date,".json")
     if(!date%in%available_dates)return(list(date=date,status="UNAVAILABLE",reports=0L,path=file,md5=NULL))
-    jsonlite::write_json(list(schema_version=1L,date=date,reports=rows),file.path(output_dir,file),auto_unbox=TRUE,digits=NA,null="null")
+    jsonlite::write_json(list(schema_version=1L,date=date,reports=unname(rows)),file.path(output_dir,file),auto_unbox=TRUE,digits=NA,null="null")
     list(date=date,status=if(length(rows))"READY"else"EMPTY",reports=length(rows),path=file,
       md5=unname(tools::md5sum(file.path(output_dir,file))))
   })

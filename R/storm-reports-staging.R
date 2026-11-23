@@ -25,6 +25,7 @@ validate_storm_reports_publication <- function(directory,require_enabled=TRUE) {
     path<-file.path(directory,day$path)
     if(!file.exists(path)||!identical(unname(tools::md5sum(path)),day$md5))stop("Missing or modified report payload: ",day$date)
     p<-jsonlite::read_json(path)
+    if(!is.list(p$reports)||!is.null(names(p$reports)))stop("Report payload must contain a JSON array: ",day$date)
     if(!identical(p$schema_version,1L)||!identical(p$date,day$date)||length(p$reports)!=day$reports||
       !identical(day$status,if(length(p$reports))"READY"else"EMPTY"))stop("Report count/status mismatch.")
     for(r in p$reports)if(!identical(substr(r$valid,1,10),day$date)||!identical(r$date,day$date)||

@@ -4,6 +4,12 @@ November 22: the report viewer, timeline and Reports in view panel passed
 staging review. Daily integration is implemented and locally tested; a full
 staging daily run is the next acceptance step. Production promotion is pending.
 
+The first staging daily run refreshed 14 dates and reused 69 in 5.4 seconds.
+Browser review then exposed named R lists serialized as JSON objects in report
+files. The export now explicitly writes arrays, and publication validation rejects
+object-shaped report collections even when counts and checksums match. Rebuild
+the cached source/rendered report files and repeat staging review before promotion.
+
 ## Refresh and reuse
 
 Set `SWC_STORM_REPORTS=true` in the appropriate VM environment file. The daily

@@ -88,7 +88,7 @@ refresh_storm_reports_cache <- function(start,end,download=TRUE,refresh_days=14L
   if(!download) {
     stale<-union(stale,available[vapply(days[available],function(x){t<-as.POSIXct(x$fetched_utc,format="%Y-%m-%dT%H:%M:%SZ",tz="UTC");is.na(t)||difftime(Sys.time(),t,units="hours")>36},logical(1)) & available>=as.character(recent_start)])
   }
-  snapshot<-list(reports=unlist(lapply(days[available],`[[`,"reports"),recursive=FALSE),available_dates=available,
+  snapshot<-list(reports=unname(unlist(lapply(days[available],`[[`,"reports"),recursive=FALSE)),available_dates=available,
     stale_dates=stale,snapshots=lapply(days[available],function(x)x[c("date","fetched_utc")]))
   summary<-data.frame(status=if(!length(available))"UNAVAILABLE"else if(length(missing)||length(stale))"PARTIAL"else"READY",
     cutoff=as.character(end-1),dates=length(dates),available=length(available),reports=length(snapshot$reports),
