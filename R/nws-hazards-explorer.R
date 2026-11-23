@@ -23,7 +23,7 @@ nws_hazards_timeline <- function(events,dates,start,end) {
 
 build_nws_hazards_explorer <- function(source_dir="site/daily-explorer",
     output_dir="data/diagnostics/daily-explorer-nws-hazards",refresh=FALSE,
-    report_snapshot=NULL,copy_maps=TRUE,full_window=FALSE) {
+    report_snapshot=NULL,copy_maps=TRUE,full_window=FALSE,request_fun=nws_hazards_request) {
   source("R/storm-reports-pilot.R",local=TRUE)
   output_dir<-storm_reports_output_path(output_dir,source_dir)
   payload<-jsonlite::read_json(file.path(source_dir,"daily-data.json"))
@@ -38,7 +38,7 @@ build_nws_hazards_explorer <- function(source_dir="site/daily-explorer",
   build_storm_reports_pilot(source_dir=source_dir,output_dir=output_dir,refresh=refresh,
     snapshot=report_snapshot,copy_maps=copy_maps,full_window=full_window)
   widget<-file.path(output_dir,"hazards")
-  assessment<-build_nws_hazards_pilot(cases=cases,refresh=refresh,output_dir=widget)
+  assessment<-build_nws_hazards_pilot(cases=cases,refresh=refresh,output_dir=widget,request_fun=request_fun)
   events<-list();geometries<-list()
   for(case in cases$id) {
     x<-jsonlite::read_json(file.path(widget,"cases",paste0(case,".json")))

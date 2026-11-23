@@ -8,7 +8,7 @@ nws_hazards_cases <- function() {
 }
 
 nws_hazards_request <- function(start,end=NULL,at=NULL,simple=FALSE,refresh=FALSE,
-    cache_dir="data/raw/nws-hazards/az-nm") {
+    cache_dir="data/raw/nws-hazards/az-nm",download=TRUE) {
   params<-list(accept="shapefile",location_group="states",states="AZ,NM",
     addsvs="true",simple=tolower(as.character(simple)),limit0="false",limit1="false",limitps="false")
   if(is.null(at)) {
@@ -20,6 +20,7 @@ nws_hazards_request <- function(start,end=NULL,at=NULL,simple=FALSE,refresh=FALS
   reused<-!refresh&&file.exists(zip)&&is.list(meta)&&identical(meta$md5,unname(tools::md5sum(zip)))
   started<-Sys.time()
   if(!reused) {
+    if(!download)stop("Verified NWS hazard source cache is unavailable for this window.")
     message("NWS hazards: ",if(is.null(at))paste(start,"to",end)else paste("active at",at),"; all AZ/NM VTEC types.")
     request<-httr2::request("https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py")
     request<-do.call(httr2::req_url_query,c(list(request),params))
@@ -139,7 +140,7 @@ nws_hazards_normalize <- function(x,start,end) {
 }
 
 build_nws_hazards_pilot <- function(cases=nws_hazards_cases(),refresh=FALSE,
-    output_dir="data/diagnostics/nws-hazards-pilot",simple=FALSE) {
+    output_dir="data/diagnostics/nws-hazards-pilot",simple=FALSE,request_fun=nws_hazards_request) {
   source("R/storm-reports-pilot.R",local=TRUE)
   output_dir<-storm_reports_output_path(output_dir,"site/daily-explorer")
   if(anyDuplicated(cases$id)||any(!grepl("^[a-z0-9-]+$",cases$id))||
@@ -156,8 +157,8 @@ build_nws_hazards_pilot <- function(cases=nws_hazards_cases(),refresh=FALSE,
   inventory<-workload<-windows<-list()
   for(i in seq_len(nrow(cases))) {
     case<-cases[i,];started<-Sys.time();message("Hazard pilot: ",case$label)
-    issued<-nws_hazards_request(case$start,case$end,simple=simple,refresh=refresh)
-    carry<-nws_hazards_request(case$start,at=case$start,simple=simple,refresh=refresh)
+    issued<-request_fun(case$start,case$end,simple=simple,refresh=refresh)
+    carry<-request_fun(case$start,at=case$start,simple=simple,refresh=refresh)
     x<-rbind(issued$data,carry$data)
     process_start<-Sys.time()
     cache_key<-digest::digest(list(issued$meta$md5,carry$meta$md5,case$start,case$end,

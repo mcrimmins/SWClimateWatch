@@ -71,9 +71,15 @@ validate_nws_hazards_publication <- function(directory) {
 stage_nws_hazards_staging <- function(directory="site/daily-explorer",
     work="data/diagnostics/nws-hazards-staging") {
   nws_hazards_staging_guard()
+  stage_nws_hazards_snapshot(directory,work)
+}
+
+stage_nws_hazards_snapshot <- function(directory="site/daily-explorer",
+    work="data/diagnostics/nws-hazards-staging",request_fun=NULL,coverage_note=NULL) {
   source("R/nws-hazards-explorer.R",local=TRUE)
   source("R/storm-reports-staging.R",local=TRUE)
   source("R/site-cache.R",local=TRUE)
+  if(is.null(request_fun))request_fun<-nws_hazards_request
   validate_storm_reports_publication(directory)
   original<-jsonlite::read_json(file.path(directory,"daily-data.json"))
   reports<-jsonlite::read_json(file.path(directory,"storm-reports-manifest.json"))
@@ -83,13 +89,23 @@ stage_nws_hazards_staging <- function(directory="site/daily-explorer",
   snapshot<-list(reports=rows,available_dates=vapply(available,`[[`,character(1),"date"),
     stale_dates=unlist(reports$stale_dates),snapshots=reports$snapshots)
   build_nws_hazards_explorer(source_dir=directory,output_dir=work,report_snapshot=snapshot,
-    copy_maps=FALSE,full_window=TRUE)
+    copy_maps=FALSE,full_window=TRUE,request_fun=request_fun)
   original$nws_hazards_preview<-NULL;original$nws_hazards_enabled<-TRUE
   jsonlite::write_json(original,file.path(work,"daily-data.json"),auto_unbox=TRUE,digits=NA,null="null")
   widget<-file.path(work,"hazards")
   html<-paste(readLines(file.path(widget,"index.html"),warn=FALSE),collapse="\n")
   html<-sub("NWS hazards · Southwest Climate Watch local review","Archived NWS hazards · Southwest Climate Watch",html,fixed=TRUE)
   html<-sub("Local review only.","Archive via IEM.",html,fixed=TRUE)
+  if(!is.null(coverage_note)) {
+    note<-coverage_note()
+    if(nzchar(note)) {
+      # The note is generated locally from counters, never from source text.
+      html<-sub('<div class="controls">',paste0('<p id="hazard-data-status" role="status">',note,'</p><div class="controls">'),html,fixed=TRUE)
+      root<-paste(readLines(file.path(work,"index.html"),warn=FALSE),collapse="\n")
+      root<-sub('<iframe id="hazard-frame"',paste0('<p id="hazard-data-status" role="status">',note,'</p><iframe id="hazard-frame"'),root,fixed=TRUE)
+      writeLines(root,file.path(work,"index.html"),useBytes=TRUE)
+    }
+  }
   writeLines(html,file.path(widget,"index.html"),useBytes=TRUE)
   swc_cache_version_app(work);swc_cache_version_app(widget)
   assets<-function(path){x<-jsonlite::read_json(file.path(path,"cache-assets.json"));unique(c("index.html","cache-assets.json",

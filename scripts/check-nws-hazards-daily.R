@@ -1,0 +1,5 @@
+source("R/nws-hazards-daily.R")
+if(!nws_hazards_enabled())stop("Set SWC_NWS_HAZARDS=true for daily validation.")
+nws_hazards_daily_guard()
+validate_nws_hazards_daily()
+print(read.csv("data/diagnostics/nws-hazards-daily/workflow-status.csv"),row.names=FALSE)

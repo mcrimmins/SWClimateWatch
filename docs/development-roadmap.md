@@ -1268,6 +1268,12 @@ controls and the linked hazard map/table. The guarded
 [staging trial](nws-hazards-staging.md) is prepared for VM testing, with full
 retained-date coverage and source/rendered validation. VM acceptance and
 automatic daily hazard updates remain pending; production is unchanged.
+The manual staging trial was accepted November 23: 82 Explorer dates, 2,070
+hazard events and 891 reports passed source/rendered checks. The
+[daily refresh integration](nws-hazards-daily.md) is now prepared for a full
+staging daily run, with bounded requests, recent revisions, retries and
+explicit stale/unavailable states. Daily VM acceptance and production
+promotion remain pending. Explorer backfill is a separate later step.
 Four regional comparison periods include all returned VTEC hazard types, storm
 polygons and county/zone areas. The isolated viewer has linked selection/table,
 date/window/region/type filters, lazy bundled geometry and workload CSVs. Source
