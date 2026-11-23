@@ -1232,6 +1232,82 @@ deliverables; no dashboard links or operational products are changed yet.
 
 ### Local storm reports and NWS watch/warning polygons
 
+November 22 latest status: the storm-report daily staging trial and JSON-array
+repair passed browser review. Production promotion and its first daily run are
+in progress; await the production log/browser checks before marking complete.
+
+#### Complementary impact data: agreed priorities
+
+1. **NWS watches, warnings and advisories:** next source-assessment/pilot item.
+   Aim to support all applicable AZ/NM hazard types available from the chosen
+   archive, including heat, winter weather, wind/dust, fire weather and flooding,
+   as well as convective hazards. Do not restrict the data model to storm-based
+   warning polygons: many products apply to counties or forecast/fire zones.
+2. **Streamflow and flood observations:** selected USGS gauges, historical daily
+   percentiles and linked hydrographs; assess NOAA NWPS flood categories, crest
+   histories and impact descriptions. Separate measured flows from forecasts.
+3. **Wildfire and air quality:** incident locations/perimeters, followed by air
+   quality observations and potentially smoke context. Preserve the geometry
+   known on the selected date; do not attribute pollution to smoke without evidence.
+4. **Drought impacts:** assess CMOR and related reporting access/coverage for
+   monthly/seasonal narratives about water supplies, agriculture and ecosystems.
+5. **Historical storm impacts:** assess NOAA Storm Events narratives and damage
+   records for Historic Years/event context, separate from the recent report feed.
+
+Use optional layers, brief hover previews, one pinned selection, linked tables
+and summaries of features in view. Preserve source-specific timestamps and
+coverage limitations. An alert area represents an issued hazard, not observed
+damage, and a once-daily retrospective view is not a live warning service.
+
+#### Broad NWS coverage and workload assessment
+
+November 22 local pilot: [build, preview and assessment guide](nws-hazards-pilot.md).
+November 23 local integration: [Daily Explorer review](nws-hazards-explorer.md)
+adds both report and hazard timeline rows by default, shared date/region/window
+controls and the linked hazard map/table. The guarded
+[staging trial](nws-hazards-staging.md) is prepared for VM testing, with full
+retained-date coverage and source/rendered validation. VM acceptance and
+automatic daily hazard updates remain pending; production is unchanged.
+Four regional comparison periods include all returned VTEC hazard types, storm
+polygons and county/zone areas. The isolated viewer has linked selection/table,
+date/window/region/type filters, lazy bundled geometry and workload CSVs. Source
+coverage limits (including carry-in older than 30 days and non-VTEC products)
+are explicit. Local review precedes staging or daily integration.
+
+The desired scope includes all applicable watch/warning/advisory types, with
+group/type filters for readability. This does not imply every NWS text product
+is an alert or has geometry. Separately inventory statements, outlooks and text
+products such as discussions or routine forecasts before claiming full coverage.
+List unsupported product families and archive gaps explicitly.
+
+Assess IEM's VTEC/WWA archive for history, including county/zone geometry, event
+identifiers and updates/cancellations. The official NWS alerts API retains only
+seven days of issued alerts, so it cannot alone support the Explorer archive.
+References: [IEM archive interface](https://mesonet.agron.iastate.edu/request/gis/watchwarn.phtml),
+[IEM VTEC dataset](https://mesonet3.agron.iastate.edu/info/datasets/vtec.html),
+[NWS API](https://www.weather.gov/documentation/services-web-api).
+
+Keep processing bounded: initial AZ/NM backfill as a separate task, incremental
+recent refresh with retry/last-good handling, and carry-forward of long-lived
+events issued before a selected window. Cache reusable county/zone boundaries
+once, reference stable event IDs, preserve revision history, and avoid counting
+one multi-zone or updated event as multiple hazards. Correctly clip effective
+intervals at cancellations, expirations and selected-window boundaries.
+
+Browser payloads should load only selected dates/types, with lightweight event
+metadata and lazily fetched full text/geometry. Use validated display geometry
+simplification while preserving authoritative geometry/zone references; assess
+rendering choices on busy 7/30-day windows. Show events overlapping the chosen
+window, with an optional issued-in-window view, rather than silently forcing
+hazards into a rainfall accumulation timestamp.
+
+Before daily integration, benchmark a quiet week, monsoon outbreak and broad
+winter/fire-weather episode. Record download/compressed payload bytes, request
+counts, cold versus reused processing time, rendered feature/vertex counts and
+narrow-screen interaction. Actual timings and sizes remain unmeasured; no
+performance promise is made yet. Broad coverage can remain available through
+filters without drawing every overlapping polygon and revision simultaneously.
+
 November 22 agreed next development item: begin with local storm reports in an
 isolated Daily Explorer pilot, inspired by the WPC report viewer. The pilot
 links event-date/region selection, hover/tap report text and a coupled table;

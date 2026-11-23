@@ -10,6 +10,10 @@ source(file.path("scripts", "load-daily-publish.R"))
 
 swc_site_publish_started <- Sys.time()
 swc_site_destination <- swc_daily_publish_destination()
+if(tolower(Sys.getenv("SWC_NWS_HAZARDS_STAGING"))=="true") {
+  source("R/nws-hazards-staging.R")
+  nws_hazards_staging_guard()
+}
 if(tolower(Sys.getenv("SWC_STORM_REPORTS_STAGING"))=="true") {
   source("R/storm-reports-staging.R")
   storm_reports_staging_guard()
@@ -45,6 +49,12 @@ swc_publish_result <- tryCatch({
         report_dir=file.path("data","diagnostics","weather-publication-status"))
       swc_site_weather_valid <<- isTRUE(assessment)
       swc_site_weather_report <<- attr(assessment,"weather_report")
+      if(tolower(Sys.getenv("SWC_NWS_HAZARDS_STAGING"))=="true") {
+        source("R/nws-hazards-staging.R",local=TRUE)
+        nws_hazards_staging_guard()
+        validate_nws_hazards_publication("site/daily-explorer")
+        validate_nws_hazards_publication(file.path(output_dir,"daily-explorer"))
+      }
     }
   )
   result$elapsed_seconds <- round(as.numeric(difftime(

@@ -1,0 +1,33 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NWS hazards · Southwest Climate Watch local review</title>
+<link rel="stylesheet" href="leaflet.css"><link rel="stylesheet" href="hazards.css">
+<script src="leaflet.js" defer></script><script src="hazard-model.js" defer></script><script src="hazards.js" defer></script></head>
+<body><main><h1>NWS watches, warnings and advisories</h1>
+<p>Explore archived AZ/NM hazards. Hover for a short preview; select an area or table row for details. Local review only.</p>
+<div class="controls">
+<label>Review period<select id="case"></select></label>
+<label>Date<span class="date-controls"><button id="previous" aria-label="Previous day">←</button><input id="date" type="date"><button id="next" aria-label="Next day">→</button></span></label>
+<label>Window<select id="window"><option value="1">Selected day</option><option value="7" selected>Past 7 days</option><option value="30">Past 30 days</option></select></label>
+<label>Timing<select id="timing"><option value="utc">UTC calendar days</option><option value="prism">Match precipitation map</option></select></label>
+<label>Region<select id="region"><option value="AZNM">Arizona + New Mexico</option><option value="AZ">Arizona</option><option value="NM">New Mexico</option></select></label>
+<label>Level<select id="kind"><option value="all">All levels</option><option value="W">Warnings</option><option value="A">Watches</option><option value="Y">Advisories</option><option value="S">Statements</option><option value="O">Outlooks</option><option value="N">Synopses</option><option value="F">Forecasts</option></select></label>
+<label>Hazard type<select id="type"><option value="all">All types</option></select></label>
+<label>Event timing<select id="mode"><option value="overlap">Active during window</option><option value="starts">Starts during window</option></select></label>
+<label>Search<input id="search" type="search" placeholder="Hazard, office or zone"></label>
+<button id="reset-types">All types / levels</button><button id="reset-map">Reset map</button>
+</div><p id="status" role="status" aria-live="polite">Loading review catalog…</p>
+<div class="map-layout"><div class="map-wrap"><div id="map" aria-label="Archived NWS hazard map"></div><div id="hover" hidden></div></div>
+<aside><div class="view-heading"><h2>Hazards in view</h2><button id="view-reset-types" type="button" disabled>All types</button></div><p id="counts"></p><div id="types"></div><p id="render-status" role="status"></p>
+<p>Counts represent unique events, not polygon pieces, messages, observed impacts or land area. Pan and zoom to update this panel.</p>
+<p>Colors match the hazard-type buttons. Boundaries: solid warnings · dashed watches · dotted advisories. Type and level are also written in each label.</p></aside></div>
+<section id="detail" aria-live="polite"><h2>Selected hazard</h2><p>Select a mapped area or table row. Overlapping hazards can be selected individually from the table.</p></section>
+<section><h2>Matching hazards</h2><p id="table-status"></p><div class="table-wrap"><table><thead><tr><th>Hazard</th><th>Office / event</th><th>Effective interval (UTC)</th><th>Area representation</th></tr></thead><tbody id="rows"></tbody></table></div><div class="pager"><button id="page-previous">Previous page</button><span id="page"></span><button id="page-next">Next page</button></div></section>
+<details><summary>How to read these maps and coverage</summary>
+<p>This retrospective view uses IEM's archive of NWS VTEC-enabled hazards, with no hazard-type whitelist. Statements and outlooks appear only if present in this archive. Special Weather Statements, non-VTEC products, routine forecasts and discussions are not comprehensively included.</p>
+<p>Intervals are half-open: start included, end excluded. Active-during-window includes hazards already underway. Starts-during-window uses the archived effective start, not necessarily the bulletin issuance time. Precipitation-map timing ends at 12 UTC on the selected date. A truncated review window is labeled.</p>
+<p>Storm polygons use archived polygon revision intervals. County/forecast-zone areas use the archive's resolved issue/expiration intervals, including resolved early endings; these are not a complete reconstruction of every message or historical boundary change. Source statuses may reflect later updates. No live warning status is implied. Map geometry is simplified by 150 meters for display; original archive files are retained locally.</p>
+<p>Storm-polygon events are shown using those polygons instead of also drawing their county representations. Multiple zones/revisions of one event count once. Areas without geometry remain in the table. The source's carry-in query is limited to events starting within the preceding 30 days; older ongoing hazards are a coverage limitation. This view is for historical interpretation, not current warning decisions.</p>
+<p>Sources: <a href="https://mesonet.agron.iastate.edu/request/gis/watchwarn.phtml" target="_blank" rel="noopener">IEM NWS WWA archive</a>. Original NWS text and source history are linked from each selected event.</p></details>
+<details><summary>Workload assessment</summary><p id="workload"></p><p id="performance"></p>
+<p>Build outputs include <a href="workload.csv">case workload CSV</a> and <a href="view-workload.csv">every daily/weekly/monthly view CSV</a>. Rebuild once to compare cached reuse with first-download cost. Browser timings below measure this device and selection only, excluding basemap tiles.</p></details>
+</main></body></html>
