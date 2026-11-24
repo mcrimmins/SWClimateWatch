@@ -1,8 +1,15 @@
 # Daily NWS hazard refresh
 
 November 23, 2026: manual staging accepted (82 Explorer dates, 2,070 events,
-891 reports; source and rendered validation passed). Automatic refresh is
-implemented for a full staging daily test; production promotion is pending.
+891 reports; source and rendered validation passed). The full staging daily
+run was subsequently accepted at `9d3a19126a95aa88af2459e0de7307d823b717eb`.
+Production promotion with permanent daily opt-in is also complete. The
+November 23 workflow published to `s3://cales-climate-reports/climate/watch/`
+in 29m 46s and exited 0. Hazards were READY: 2,073 events through November 22,
+two requests, two refreshed and four reused; zero stale/deferred windows or
+pending retries, in 85.264 s. Source/rendered checks passed for 83 Explorer
+dates; all 84 report dates/897 reports were available. Weather coverage was
+83/83 and 30/30 recent dates. Monitor the next scheduled cron run separately.
 
 Opt in with `SWC_NWS_HAZARDS=true` and `SWC_STORM_REPORTS=true`. Matching release
 destination/state guards apply. The old `SWC_NWS_HAZARDS_STAGING` manual-trial

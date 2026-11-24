@@ -1,0 +1,5 @@
+source("scripts/load-daily-explorer.R")
+source("R/daily-explorer-archive-pilot.R")
+daily_archive_pilot_build<-build_daily_explorer_archive_pilot()
+validate_daily_explorer_archive_pilot()
+message("Next: source('scripts/test-daily-explorer-archive-pilot.R'), then source('scripts/preview-daily-explorer-archive-pilot.R').")

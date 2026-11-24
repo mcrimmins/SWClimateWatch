@@ -1,6 +1,6 @@
 # Development roadmap
 
-Planning review: November 22, 2026. This is the consolidated backlog, not a
+Planning review: November 23, 2026. This is the consolidated backlog, not a
 commitment to enable every candidate product. No production settings change
 when this document is edited.
 
@@ -13,6 +13,16 @@ Monthly PRISM development is underway in a separate conversation; do not modify
 its implementation files as part of roadmap planning.
 
 ## Operational baseline
+
+November 23 NWS hazards: development, full staging daily acceptance and
+production publication are complete at `9d3a19126a95aa88af2459e0de7307d823b717eb`.
+The production run published in 29m 46s and exited 0. Hazard refresh was READY:
+2,073 events through November 22, two requests/two refreshed/four reused,
+no stale/deferred windows or pending retries (85.264 s). Source/rendered checks
+passed for 83 Explorer dates and 897 reports across 84 report dates. Weather
+coverage was complete; 54 current and 352 historic maps passed validation.
+Permanent daily opt-in was part of the promotion procedure; monitor the next
+scheduled cron run separately. Daily Explorer backfill is the next increment.
 
 Historical November 18 repository baseline: [PR #1](https://github.com/mcrimmins/SWClimateWatch/pull/1)
 merged `codex/daily-explorer` into `main` with merge commit
@@ -403,6 +413,8 @@ that work ahead of discretionary features.
 | Priority | Work | Next bounded step and completion evidence |
 | --- | --- | --- |
 | P0 — ongoing operations | Monitor the confirmed production release | Historical Station Conditions and automatic refresh are confirmed complete in production November 22, following the successful November 21 workflow and full payload checks. Check the next scheduled history/Snow refresh and reuse; monitor plotting warnings, weather freshness/retries and the December monthly cycle. GA4 Realtime collection still needs confirmation. |
+| Complete — monitor | NWS hazards and automatic daily updates | Production confirmed November 23 at `9d3a191`: 2,073 events, no stale/deferred/pending windows, source/rendered checks passed. Daily refresh used two requests in 85.264 s; full publication took 29m 46s and exited 0. Monitor the next scheduled cron run. See [daily guide](nws-hazards-daily.md). |
+| Next — scope and inventory | Daily Explorer backfill | Target WY2025 and WY2026 plus the current WY2027. Audit existing source caches, design water-year/month partitions and archive retention, then benchmark a single month before authorizing bulk downloads/builds. See [scope below](#daily-explorer-backfill-scope). |
 | Complete — monitor | Merge into main and align laptop/VM checkouts | PR #1 merged November 18 at `e1deb036`; laptop `main` and both pinned VM checkouts match. Reviewed source passed 3,878 R assertions and 18 JavaScript suites; both VM readiness checks exited 0. No new publication occurred. Confirm the next scheduled production run separately. |
 | Status reconciliation — no new build selected | Historic Years release records | Older entries still describe archive staging as pending after the later promotion work. Reconcile the VM release bundles, rendered year coverage and release notes against the WY1896-WY2025 target before assigning new archive development; do not repeat accepted map builds solely to fix stale roadmap wording. See [release guide](historic-monthly-backfill-staging.md). |
 | Development — daily integration ready for staging | Daily Explorer local storm reports | November 22: viewer, timeline and Reports in view passed staging review. Incremental daily refresh, last-good cache, retry queue and pre-upload validation are implemented and locally tested. Full staging daily run and production promotion remain pending; warning polygons are separate. See [daily guide](storm-reports-daily.md). |
@@ -422,7 +434,7 @@ that work ahead of discretionary features.
 | Complete — monitor | Climate of the Region page and 39 maps | User confirmed production November 15 after local and VM staging review. Precipitation, Temperature and Seasonal comparison tabs; shared periods, selected/all-metric views and seasonal total/share choice. Fixed 1991–2020 references, portable cached publication, rendered validation and 39 stable catalog links are live. No new daily downloads or recalculation; historical extremes remain separate. |
 | Deferred until spring 2027 | Station heat metrics | Scope station-appropriate temperature thresholds, counts and departures; reuse existing hot-day/warm-night screening. No implementation before spring 2027. |
 | Alongside increments | Operational maintenance | Track freshness and source revisions, station audit age, raster warnings and measured cache/runtime behavior. Address specific failures promptly; schedule broader profiling as its own bounded task. |
-| Later — scope before building | New sources and statistical extensions | Local storm reports/hazard polygons, gauge conditions, historical odds, completed-year Explorer/historic-season integration, custom-period historical comparisons, ENSO composites and further SPI products. Custom station dates themselves are now complete. Each new extension needs its own source/method/performance assessment. |
+| Later — scope before building | New sources and statistical extensions | Gauge conditions, historical odds, historic-season integration, custom-period historical comparisons, ENSO composites and further SPI products. Custom station dates are complete; storm reports/hazards and Explorer backfill have their own release/scope entries above. Each new extension needs its own source/method/performance assessment. |
 | Complete — monitor | Interactive Maps and automatic refresh | Initial production release confirmed November 17 at `1c23270adfe1f17e47ff7f0cb9a4519f20a87f56`; the completed Snow extension brings the current choices to 43, alongside seven daily views, 28 monthly choices, linked point tables and automatic cached publication. Scheduled-run confirmation, monthly rollover and phone/throttled-network performance verification remain follow-ups. See [initial workflow](interactive-map-staging.md) and [Snow extension](interactive-map-snow-daily.md). |
 | Later — polish | Consistency and optional interactions | Shared city-label styling, historic RONI labels at the next archive refresh, custom Analytics events and remaining documentation reconciliation. |
 
@@ -687,7 +699,7 @@ those pages are next refreshed.
 | Raster plotting warnings | Confirmed in production November 17: sparse/singleton cell geometry corrected; freeze-free length and departure PNGs rebuilt from cached grids. Dense controls remain pixel-identical and numerical caches unchanged. Monitor subsequent daily rendering. | Complete; monitor |
 | Daily-update speed | Deferred November 22 until after more development items. Later profile consecutive new-date runs, cache-hit/miss behavior, PRISM references and station/staging/render/upload costs before changing products or cadence. | Deferred; moderate |
 | SNODAS source revisions | Define a bounded recheck policy for already processed archives, provenance changes, and affected reference/map invalidation. | Moderate |
-| Completed-year Daily Explorer | Decide what remains public at water-year rollover, then test dated manifests, navigation, retention, storage and rebuild costs before historical backfill. | Moderate-large |
+| Completed-year Daily Explorer | Next scoped increment: WY2025/WY2026 plus current WY2027; inventory caches and benchmark one month, with partitioned navigation and archive retention before expansion. See [backfill scope](#daily-explorer-backfill-scope). | Moderate-large; scope underway |
 | Station metadata and additional extremes | Scope station/component history and historical extremes comparisons. Calendar-date plot records and the station climatology section are now bounded increments in the [November 6 scope](#station-and-regional-climatology-agreed-november-6-2026); heat metrics are deferred until spring 2027. Any additional formal indices need explicit periods, thresholds, completeness, ties and baseline definitions. | Variable |
 | Station custom date periods | Complete in production, confirmed November 22 after the November 21 full workflow: 62 records/5,948 annual chunks, two tabs, linked historical tables and daily CSVs. Twelve chunks rebuilt and 5,936 reused; history preparation 16.153 s, zero extra observation requests. Automatic updates persist in the existing cron; source/rendered payload and page-date checks passed. Monitor subsequent scheduled reuse; physical-phone/network measurements remain separate. See station-history-daily.md. | Complete in production; monitor |
 | Interactive raster map page (requested November 8, 2026) | Confirmed live November 17, including the Snow extension: 43 current choices, seven daily views, 28 monthly choices, native-cell queries, linked controls and automatic cached publication. Monitor scheduled production refresh/monthly rollover; measure outstanding mobile/network performance. Freeze-date extensions remain separate pilots. | Core and Snow complete; monitor |
@@ -1265,15 +1277,15 @@ November 22 local pilot: [build, preview and assessment guide](nws-hazards-pilot
 November 23 local integration: [Daily Explorer review](nws-hazards-explorer.md)
 adds both report and hazard timeline rows by default, shared date/region/window
 controls and the linked hazard map/table. The guarded
-[staging trial](nws-hazards-staging.md) is prepared for VM testing, with full
-retained-date coverage and source/rendered validation. VM acceptance and
-automatic daily hazard updates remain pending; production is unchanged.
+[staging trial](nws-hazards-staging.md) passed VM review, with full
+retained-date coverage and source/rendered validation.
 The manual staging trial was accepted November 23: 82 Explorer dates, 2,070
 hazard events and 891 reports passed source/rendered checks. The
-[daily refresh integration](nws-hazards-daily.md) is now prepared for a full
-staging daily run, with bounded requests, recent revisions, retries and
-explicit stale/unavailable states. Daily VM acceptance and production
-promotion remain pending. Explorer backfill is a separate later step.
+[daily refresh integration](nws-hazards-daily.md), full staging daily run and
+production promotion are complete and accepted at `9d3a191`. The November 23
+production workflow exited 0 and source/rendered hazard checks passed. Bounded
+requests, recent revisions, retries and explicit stale/unavailable states are
+implemented. Explorer backfill is the next separately scoped increment.
 Four regional comparison periods include all returned VTEC hazard types, storm
 polygons and county/zone areas. The isolated viewer has linked selection/table,
 date/window/region/type filters, lazy bundled geometry and workload CSVs. Source
@@ -1651,6 +1663,168 @@ References for the optional API route: official OpenAI
 [Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs)
 and [production guidance](https://developers.openai.com/api/docs/guides/production-best-practices).
 
+## Daily Explorer backfill scope
+
+Agreed November 23: scope backfill after completing daily hazard integration.
+Do not start historical downloads/builds as part of this planning update.
+
+### Coverage and products
+
+Target two completed water years, WY2025 and WY2026, plus current WY2027:
+October 1, 2024 onward through the latest verified date for each source. Retain
+September 2024 as an input buffer for boundary-crossing report windows and
+rolling weather means. Source-specific latest dates may differ; do not imply
+all layers share the PRISM cutoff. Older years remain a later decision.
+
+| Source | Initial backfill content | Coverage and reuse rules |
+| --- | --- | --- |
+| PRISM daily | Seven existing daily views: precipitation total; maximum, minimum and mean temperature values/departures; existing regional timeline metrics | Inventory existing daily grids and reference caches first. Verify matching complete inputs; preserve current reference methods and missing-data guards. No new ranking/anomaly definitions. |
+| CORe weather | Existing daily 500-mb heights, 250-mb jet/flow and PWAT maps; their trailing 7-/30-day means and current overlays | Verify archive availability/field coverage and required preceding dates. Build means only from complete windows; retain exact endpoints and overlay screening. Existing recent-only endpoint/batch limits need a separate bounded historical path. |
+| Local storm reports | Existing interactive map/table, counts, type filters and Reports in view | AZ/NM archive; UTC and noon-UTC timing with preceding-day support. Preserve successful empty responses, unavailable/stale distinctions, source links and report-versus-storm caveats. |
+| NWS hazards | Existing VTEC map/table, structured details, source links and unique-event timeline | Preserve polygon/zone handling, lifecycle and carry-in caveats; partition and deduplicate by event ID across boundaries. Do not label issued hazards as observed impacts or claim complete non-VTEC coverage. |
+
+This increment does not create historical daily Snow viewer snapshots, extend
+station observations, rebuild Monthly Climate or add forecast/reanalysis
+products. Historic Years seasonal maps remain available independently; add
+context links after the daily archive is accepted rather than replacing them.
+
+### Navigation and retention design
+
+Keep one Daily Explorer with a water-year selector, then month/date navigation;
+default to the latest current-year date. Retain shared date, region, map-view
+and event-timing controls. Fetch only the selected year's/month's metadata and
+needed maps/geometry. Keep a small archive index instead of loading every
+year's events and geometry on entry. Direct dated links should reopen the
+same selection. Boundary windows must resolve the preceding partition, with
+explicit partial/unavailable status when supporting data are missing.
+
+The existing site adapter defaults to current water year plus September and
+prunes PNGs outside its selected manifest. Reports/hazards enforce roughly
+400-day bounds; weather means also use bounded recent endpoints. Therefore
+archive-aware staging and validation must precede bulk backfill. Preserve
+those safety bounds for individual jobs/partitions; do not simply increase
+them and build one multi-year browser payload. Define which paths are owned
+by the current-year updater and which completed-year releases it must retain.
+
+### Work sequence and acceptance
+
+1. **Read-only inventory and plan.** List source coverage, cache reuse, missing
+   inputs, reference availability and expected requests by month/source on the
+   laptop and VM. Record free disk and existing map sizes; no downloads yet.
+   The first [inventory script](../scripts/inventory-daily-explorer-backfill.R)
+   writes `dates.csv`, `months.csv` and `references.csv` under
+   `data/diagnostics/daily-explorer-backfill-inventory/`. It checks PRISM layer
+   headers, four core CORe field checksums/indexes, normalized report digests
+   and raw hazard ZIP digests. Overlay/surface-screening inputs, rendered
+   assets and request/storage budgets remain separate audits.
+   The November 23 laptop run covers cached inputs through November 3:
+   July 2025 has all 31 days of the three PRISM inputs; all six temperature
+   reference files are present.
+   The VM inventory is now complete through November 22: all 813 input dates
+   (September 2024 buffer plus 783 target dates) have all three PRISM input
+   layer headers, with zero missing day-inputs. This is not a pixel-value or
+   complete publication-readiness audit. Four core CORe fields are verified
+   for 82 dates (September/October 2026 plus 21 November dates); four November
+   day-fields remain uncached. Normalized reports and issued-hazard source
+   ZIPs cover 84 dates from August 31, 2026 onward. Earlier weather/report/
+   hazard inputs are not in these audited caches; this does not establish
+   remote archive unavailability. VM /home has 165 GB available of 300 GB
+   (46% used), sufficient to begin the bounded pilot; full archive storage
+   still needs measurement. July 2025 needs no additional PRISM day-inputs,
+   but all 124 core CORe day-fields and that month's reports/hazard archives
+   need sourcing, plus preceding-window and overlay/screening support.
+2. **Archive manifest/retention pilot.** Prepare isolated water-year/month
+   manifests and navigation. Prove a normal daily/site-only publication cannot
+   remove completed-year assets. Keep the live Explorer unchanged.
+   The [local PRISM-only pilot](daily-explorer-archive-pilot.md) is implemented
+   for review with bounded July, water-year-boundary and recent sample dates.
+   It separates `archive/WY<year>/` from updater-owned `current/`, loads month
+   partitions on demand and rehearses the real current-map pruning adapter
+   in an isolated sandbox. Full production retention integration, event/
+   weather partitions and the full-month benchmark remain subsequent steps.
+   Local checks passed November 23: four partitions/12 sample dates/84 maps;
+   all dates reused on a second build. The real pruning adapter removed seven
+   obsolete current maps while preserving the completed-year files/catalog.
+   Browser checks passed month/year selection, boundary-grid selection,
+   temperature views, date-link reload and Latest navigation. User review is
+   next; no staging or production integration has occurred for this pilot.
+3. **Representative-month benchmark.** Proposed first month: July 2025, with
+   June input support. Measure missing downloads, raw/processed cache sizes,
+   map/geometry payload sizes, build/render/upload time, browser loading and
+   memory. This tests a monsoon-season window without assuming specific event
+   counts. Also check selected winter, quiet and water-year-boundary dates
+   before approving a bulk run.
+   The [full July benchmark](daily-explorer-july-2025-pilot.md) passed local
+   validation, reported November 24: 31 target dates, 60 supporting weather
+   dates, 496 maps, 360 reports and 856 hazards. Recorded successful preparation
+   batches totaled 437.286 s (1,560 requests; 126,359,015 transferred bytes);
+   build batches totaled 1,155.080 s, with six event requests. Combined recorded
+   work was 26m 32s, excluding user pauses and separate validation/preview.
+   Seven PRISM sample dates were already reusable; this is not a fully cold
+   rebuild timing. The final-call 133.987 s is not the full build duration,
+   and its 9 built/84 reused counts describe the last weather batch.
+   The viewer is about 191.6 MB; recorded storage categories sum to 610.5 MB,
+   including duplicate work/render copies and selected shared weather inputs
+   but excluding other raw event archives/metadata. Viewer bytes include
+   all local files, not an initial browser page download. At July's rate,
+   two complete years would be roughly 4.5 GB of viewer files, only an initial
+   sizing guide before winter/source/payload comparisons. Next integrate the
+   full July content with archive navigation, measure browser payload/loading
+   and verify cross-month windows/retention before staging or bulk expansion.
+   The [integrated local archive](daily-explorer-archive-integration.md) now
+   routes July to its complete bundle and other sample months to PRISM-only
+   viewers. It reuses verified assets without downloads/rendering, isolates
+   month-specific controllers and retains supported shared selections/date
+   links. Source bundles remain unchanged. Local validation/browser review
+   precede staging; no new archive years are enabled in production.
+   November 24 integrated checks passed for four months/36 dates. Browser
+   review verified July's complete suite and June-supported thirty-day mean,
+   saved date/settings restoration, clean switching to PRISM-only samples,
+   year rollover and explicit unavailable handling for unbuilt dates. User
+   local review is next; no downloads, new maps, cleanup or publication were
+   performed by this integration build.
+   The [staging trial](daily-explorer-archive-staging.md) is now prepared:
+   publication-only bundle transfer, separate staging archive URL, guarded
+   source/rendered validation before upload, and a subsequent full daily-run
+   retention check. Local rehearsal preserves all archive bytes while the
+   actual current-map adapter prunes obsolete current maps. VM staging
+   acceptance remains pending; production and permanent settings are unchanged.
+4. **Resumable month batches.** After reviewing the measured plan, build one
+   water year at a time, with per-source request/byte/time caps, checkpoints,
+   retries, digests and a dry-run plan. Reuse verified artifacts; keep failed
+   windows explicit. Publish nothing until a release bundle passes checks.
+5. **Staging, then production.** Validate every dated asset reference, report
+   and unique-event counts, noon/UTC alignment, means/overlay coverage, year
+   transitions, direct links and subsequent daily-run retention. Review actual
+   storage/browser costs before approving WY2025/WY2026 expansion/promotion.
+
+Two complete non-leap water years contain 730 dates: seven PRISM maps, three
+daily weather maps and six weather-mean maps per fully supported date would
+produce up to 11,680 PNGs, before current-year/buffer content. This is an image
+count, not a storage estimate. Measure pilot bytes separately for published
+maps/JSON/geometry, raw caches and processed caches; scale those observed
+figures to produce a reviewable budget. Broad performance optimization remains
+deferred, but this workload assessment is required to scope the backfill.
+
+Daily cron should extend and revise recent data only, with bounded retries.
+It must not rescan/rebuild all completed years. Revisions outside the normal
+refresh window require an explicit targeted rebuild. Completed years remain
+available across water-year rollover without silently dropping earlier dates.
+
+### Cleanup after archive acceptance
+
+Agreed November 24: after the archive is validated in production, inventory
+unused files on the laptop and both VM checkouts, with a concrete keep/remove
+list and estimated savings. Candidates include superseded pilots/previews,
+duplicate temporary map renders, reproducible decoded/intermediate weather
+files, obsolete diagnostics and completed transfer bundles. Keep source grids,
+reference data, verified published releases, useful daily caches and a recent
+production rollback set. Validate cleanup on the laptop and staging before
+production; hold the relevant daily lock, verify resolved targets and rerun
+publication checks. No cleanup/deletion is part of the current development
+work. Consider sharing immutable completed-year assets between checkouts only
+as a separately reviewed storage improvement.
+
 ## Suggested sequence
 
 Follow the [priority order above](#priority-order-and-working-sequence).
@@ -1660,7 +1834,9 @@ remains. Interactive Snow and automatic refresh are also confirmed complete;
 PR #1 merged November 18 and both VM readiness checks passed at the main baseline.
 The historical station viewer and automatic updates are confirmed complete in
 production November 22; no promotion remains. The recommended next increment
-is another development item, pending user selection; performance improvements
+is Daily Explorer backfill inventory and archive design. NWS hazard development,
+staging acceptance and November 23 production publication/checks are complete.
+The next scheduled cron run remains a monitoring check. Performance improvements
 were deferred November 22 until after more development. Keep the eventual
 initial-release versus steady-daily comparison separate. Reconcile older
 Historic Years release-status wording against actual VM bundles and published

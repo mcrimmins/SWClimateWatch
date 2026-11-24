@@ -158,6 +158,10 @@ deploy_swc_site <- function(
     render = TRUE,
     extra_validation = NULL) {
   destination <- swc_deploy_destination(destination)
+  if(tolower(Sys.getenv("SWC_DAILY_ARCHIVE_STAGING"))=="true") {
+    source("R/daily-explorer-archive-staging.R",local=TRUE)
+    daily_archive_staging_guard(destination)
+  }
   if (length(region) != 1L || is.na(region) ||
       !grepl("^[a-z]{2}(-gov)?-[a-z]+-[0-9]+$", region)) {
     stop("Specify a valid AWS region, such as us-west-2.", call. = FALSE)
@@ -218,6 +222,8 @@ deploy_swc_site <- function(
   validate_conditions_synopsis_publication(output_dir, destination)
   output_dir <- normalizePath(output_dir, winslash = "/", mustWork = TRUE)
   if (!is.null(extra_validation)) extra_validation(output_dir)
+  if(tolower(Sys.getenv("SWC_DAILY_ARCHIVE_STAGING"))=="true")
+    validate_daily_archive_trial(output_dir)
   # Derive hotlinks from the fully validated rendered output, including any
   # optional weather quarantine applied above. No climate processing occurs.
   for(file in c("config.R","acis-prism.R","process-prism.R","map-product-site.R","map-hotlinks.R"))

@@ -10,6 +10,10 @@ source(file.path("scripts", "load-daily-publish.R"))
 
 swc_site_publish_started <- Sys.time()
 swc_site_destination <- swc_daily_publish_destination()
+if(tolower(Sys.getenv("SWC_DAILY_ARCHIVE_STAGING"))=="true") {
+  source("R/daily-explorer-archive-staging.R")
+  daily_archive_staging_guard()
+}
 if(tolower(Sys.getenv("SWC_NWS_HAZARDS"))=="true") {
   source("R/nws-hazards-daily.R")
   nws_hazards_daily_guard()

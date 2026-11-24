@@ -1,0 +1,14 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily Explorer archive · local review</title>
+<link rel="stylesheet" href="archive-shell.css"><script src="archive-model.js" defer></script><script src="archive-shell.js" defer></script></head>
+<body><main><header><p>Southwest Climate Watch · Local archive review</p><h1>Daily Explorer archive</h1>
+<p>July 2025 includes weather, storm reports and NWS hazards. Other available months contain PRISM sample dates.</p></header>
+<section class="archive-controls" aria-label="Archive navigation">
+<label>Water year<select id="archive-year" disabled></select></label>
+<label>Month<select id="archive-month" disabled></select></label>
+<div class="date-control"><button id="archive-previous" aria-label="Previous archived calendar day" disabled>←</button>
+<label>Date<input id="archive-date" type="date" disabled></label>
+<button id="archive-next" aria-label="Next archived calendar day" disabled>→</button><button id="archive-latest" disabled>Latest</button></div>
+</section><p id="archive-state" role="status">Loading archive catalog…</p><p id="archive-error" role="alert" hidden></p>
+<iframe id="archive-viewer" title="Selected archive month maps and observations" src="about:blank" hidden></iframe>
+<noscript>This local archive requires JavaScript.</noscript></main></body></html>

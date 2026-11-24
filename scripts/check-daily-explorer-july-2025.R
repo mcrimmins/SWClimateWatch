@@ -1,0 +1,6 @@
+source("R/daily-explorer-july-pilot.R")
+july_pilot_load()
+validate_daily_explorer_july()
+print(read.csv(file.path(july_pilot_root(),"build-summary.csv")),row.names=FALSE)
+print(read.csv(file.path(july_pilot_root(),"storage.csv")),row.names=FALSE)
+message("PASS: full July PRISM/weather means/report/hazard release. Nothing published.")
