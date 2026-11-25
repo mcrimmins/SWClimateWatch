@@ -14,7 +14,7 @@
     const dates=catalog.months.flatMap(x=>x.dates).sort();$("archive-date").min=dates[0];$("archive-date").max=dates.at(-1);
     $("archive-previous").disabled=!SWCArchive.partition(catalog,shift(date,-1));$("archive-next").disabled=!SWCArchive.partition(catalog,shift(date,1));
     $("archive-latest").disabled=date===catalog.latest;
-    $("archive-state").textContent=`${label(date)} · ${m.full?"Full July suite: PRISM, daily/7-/30-day weather, storm reports and archived NWS hazards.":"PRISM sample dates only. Weather, reports and hazards have not been built for this month."}`;
+    $("archive-state").textContent=`${label(date)} · ${m.full?"Full suite: PRISM, daily/7-/30-day weather, storm reports and archived NWS hazards.":"PRISM sample dates only. Weather, reports and hazards have not been built for this month."}`;
     return m;
   }
   function urlState(date) {
@@ -38,7 +38,7 @@
     if(event.origin!==location.origin||event.source!==frame.contentWindow||m?.type!=="swc:archive-month"||!current||m.token!==current.token)return;
     if(!m.date||!SWCArchive.partition(catalog,m.date))return;
     const entry=SWCArchive.partition(catalog,m.date);
-    if(current.full&&(!m.capabilities?.weather||!m.capabilities?.reports||!m.capabilities?.hazards)){fail(Error("The full July modules did not initialize. Reload this month; no sample data were substituted."));return;}
+    if(current.full&&(!m.capabilities?.weather||!m.capabilities?.reports||!m.capabilities?.hazards)){fail(Error("The full archive modules did not initialize. Reload this month; no sample data were substituted."));return;}
     for(const [key,value]of Object.entries(m.selection||{}))if(typeof value==="string"&&value)state[key]=value;
     if(entry.viewer!==current.viewer){navigate(m.date);return;}
     current.date=m.date;show(m.date);urlState(m.date);$("archive-error").hidden=true;frame.hidden=false;frame.style.visibility="visible";

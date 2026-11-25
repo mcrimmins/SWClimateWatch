@@ -158,6 +158,10 @@ deploy_swc_site <- function(
     render = TRUE,
     extra_validation = NULL) {
   destination <- swc_deploy_destination(destination)
+  if(tolower(Sys.getenv("SWC_DAILY_WY2025_STAGING"))=="true") {
+    source("R/daily-explorer-wy2025-staging.R",local=TRUE)
+    wy2025_staging_guard(destination)
+  }
   if(tolower(Sys.getenv("SWC_DAILY_ARCHIVE_STAGING"))=="true") {
     source("R/daily-explorer-archive-staging.R",local=TRUE)
     daily_archive_staging_guard(destination)
@@ -222,6 +226,8 @@ deploy_swc_site <- function(
   validate_conditions_synopsis_publication(output_dir, destination)
   output_dir <- normalizePath(output_dir, winslash = "/", mustWork = TRUE)
   if (!is.null(extra_validation)) extra_validation(output_dir)
+  if(tolower(Sys.getenv("SWC_DAILY_WY2025_STAGING"))=="true")
+    validate_wy2025_trial(output_dir)
   if(tolower(Sys.getenv("SWC_DAILY_ARCHIVE_STAGING"))=="true")
     validate_daily_archive_trial(output_dir)
   # Derive hotlinks from the fully validated rendered output, including any

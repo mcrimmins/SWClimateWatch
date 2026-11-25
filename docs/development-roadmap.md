@@ -414,7 +414,7 @@ that work ahead of discretionary features.
 | --- | --- | --- |
 | P0 — ongoing operations | Monitor the confirmed production release | Historical Station Conditions and automatic refresh are confirmed complete in production November 22, following the successful November 21 workflow and full payload checks. Check the next scheduled history/Snow refresh and reuse; monitor plotting warnings, weather freshness/retries and the December monthly cycle. GA4 Realtime collection still needs confirmation. |
 | Complete — monitor | NWS hazards and automatic daily updates | Production confirmed November 23 at `9d3a191`: 2,073 events, no stale/deferred/pending windows, source/rendered checks passed. Daily refresh used two requests in 85.264 s; full publication took 29m 46s and exited 0. Monitor the next scheduled cron run. See [daily guide](nws-hazards-daily.md). |
-| Next — scope and inventory | Daily Explorer backfill | Target WY2025 and WY2026 plus the current WY2027. Audit existing source caches, design water-year/month partitions and archive retention, then benchmark a single month before authorizing bulk downloads/builds. See [scope below](#daily-explorer-backfill-scope). |
+| Next — seasonal checks, then bounded expansion | Daily Explorer backfill | July benchmark/navigation and full staging daily-run retention passed November 24. Review winter and quiet-weather windows, then plan resumable WY2025 batches before WY2026. Multi-year production rollout and cleanup remain separate acceptance steps. See [scope below](#daily-explorer-backfill-scope). |
 | Complete — monitor | Merge into main and align laptop/VM checkouts | PR #1 merged November 18 at `e1deb036`; laptop `main` and both pinned VM checkouts match. Reviewed source passed 3,878 R assertions and 18 JavaScript suites; both VM readiness checks exited 0. No new publication occurred. Confirm the next scheduled production run separately. |
 | Status reconciliation — no new build selected | Historic Years release records | Older entries still describe archive staging as pending after the later promotion work. Reconcile the VM release bundles, rendered year coverage and release notes against the WY1896-WY2025 target before assigning new archive development; do not repeat accepted map builds solely to fix stale roadmap wording. See [release guide](historic-monthly-backfill-staging.md). |
 | Development — daily integration ready for staging | Daily Explorer local storm reports | November 22: viewer, timeline and Reports in view passed staging review. Incremental daily refresh, last-good cache, retry queue and pre-upload validation are implemented and locally tested. Full staging daily run and production promotion remain pending; warning polygons are separate. See [daily guide](storm-reports-daily.md). |
@@ -1783,16 +1783,33 @@ by the current-year updater and which completed-year releases it must retain.
    year rollover and explicit unavailable handling for unbuilt dates. User
    local review is next; no downloads, new maps, cleanup or publication were
    performed by this integration build.
-   The [staging trial](daily-explorer-archive-staging.md) is now prepared:
-   publication-only bundle transfer, separate staging archive URL, guarded
-   source/rendered validation before upload, and a subsequent full daily-run
-   retention check. Local rehearsal preserves all archive bytes while the
-   actual current-map adapter prunes obsolete current maps. VM staging
-   acceptance remains pending; production and permanent settings are unchanged.
+   The [staging trial](daily-explorer-archive-staging.md) passed November 24.
+   The full staging daily run exited 0 in 2,781 seconds (46m 21s), ending
+   12:02:37 America/Phoenix. Its archive digest was unchanged; all referenced
+   source/rendered files passed, including July's 31 dates/496 maps/360 reports/
+   856 hazards and the four-route/36-date integrated catalog. This is the
+   whole daily-run time, not measured archive overhead. Production/permanent
+   settings were unchanged. Next: seasonal checks before full-year expansion;
+   keep the accepted staging bundle for those comparisons and later retention
+   checks. No bulk backfill or cleanup is authorized by this acceptance alone.
+   The [local seasonal checks](daily-explorer-seasonal-pilots.md) now target
+   February 1–7 and June 24–30, 2025, with complete trailing weather support,
+   reports, hazards and separate diagnostic releases (112 maps per window).
+   June reuses 29 verified supporting dates from July; winter needs 36 dates.
+   The user accepted both local seasonal windows. Their reusable caches remain
+   available for the next increment; late June is a seasonal comparison, not
+   a claim that every hazard type is absent.
 4. **Resumable month batches.** After reviewing the measured plan, build one
    water year at a time, with per-source request/byte/time caps, checkpoints,
    retries, digests and a dry-run plan. Reuse verified artifacts; keep failed
    windows explicit. Publish nothing until a release bundle passes checks.
+   The [WY2025 local runner](daily-explorer-wy2025.md) now scopes all twelve
+   months/365 dates/5,840 maps, with capped resumable batches, pilot-cache reuse,
+   30-day event lookback, adjacent-month metadata and a month-isolated preview.
+   The user accepted the complete local year November 24. A manifest-only
+   [staging transfer/publication trial](daily-explorer-wy2025-staging.md) is
+   prepared with explicit staging guards and full daily-run retention checks.
+   Staging acceptance, production promotion and cleanup remain separate steps.
 5. **Staging, then production.** Validate every dated asset reference, report
    and unique-event counts, noon/UTC alignment, means/overlay coverage, year
    transitions, direct links and subsequent daily-run retention. Review actual

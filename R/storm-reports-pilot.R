@@ -114,7 +114,8 @@ read_storm_reports_cache <- function(start, end, refresh=FALSE,
 
 build_storm_reports_pilot <- function(source_dir="site/daily-explorer",
     output_dir="data/diagnostics/daily-explorer-storm-reports",refresh=FALSE,
-    copy_maps=TRUE,full_window=FALSE,snapshot=NULL) {
+    copy_maps=TRUE,full_window=FALSE,snapshot=NULL,lookback_days=1L) {
+  if(length(lookback_days)!=1L||is.na(lookback_days)||!lookback_days%in%1:30)stop("Bound report lookback to 1-30 days.")
   output_dir<-storm_reports_output_path(output_dir,source_dir)
   payload<-jsonlite::read_json(file.path(source_dir,"daily-data.json"))
   dates<-vapply(payload$days,`[[`,character(1),"date")
@@ -127,10 +128,10 @@ build_storm_reports_pilot <- function(source_dir="site/daily-explorer",
     caches<-lapply(starts,function(first)read_storm_reports_cache(first,min(first+62,end),refresh))
     cache<-caches[[1]]
     reports<-unlist(lapply(caches,function(x)normalize_storm_reports(x$raw,x$start,x$end)),recursive=FALSE)
-    padding<-read_storm_reports_cache(start-1,start,refresh)
-    reports<-c(normalize_storm_reports(padding$raw,start-1,start),reports)
+    padding<-read_storm_reports_cache(start-lookback_days,start,refresh)
+    reports<-c(normalize_storm_reports(padding$raw,start-lookback_days,start),reports)
     snapshots<-lapply(c(list(padding),caches),function(x)x[c("start","end","fetched_utc","url")])
-    available_dates<-as.character(seq(start-1,end-1,by="day"));stale_dates<-character()
+    available_dates<-as.character(seq(start-lookback_days,end-1,by="day"));stale_dates<-character()
   } else {
     reports<-snapshot$reports;snapshots<-snapshot$snapshots
     available_dates<-snapshot$available_dates;stale_dates<-snapshot$stale_dates
@@ -180,7 +181,7 @@ build_storm_reports_pilot <- function(source_dir="site/daily-explorer",
   js<-paste(js,'document.addEventListener("swc:request-date", e => { if (typeof e.detail?.date === "string" && inCachedDateRange(e.detail.date)) selectDate(e.detail.date); else document.dispatchEvent(new CustomEvent("swc:daily-selection", {detail:{date:selectedDate,region:$("region").value}})); });',sep="\n")
   js<-paste(js,'document.addEventListener("swc:request-selection", () => { if (selectedDate) document.dispatchEvent(new CustomEvent("swc:daily-selection", {detail:{date:selectedDate,region:$("region").value}})); });',sep="\n")
   writeLines(js,file.path(output_dir,"explorer.js"),useBytes=TRUE)
-  report_dates<-as.character(seq(start-1,end-1,by="day"))
+  report_dates<-as.character(seq(start-lookback_days,end-1,by="day"))
   entries<-lapply(report_dates,function(date) {
     rows<-Filter(function(r)r$date==date,reports)
     if(is.null(rows))rows<-list()
@@ -193,11 +194,11 @@ build_storm_reports_pilot <- function(source_dir="site/daily-explorer",
   manifest<-list(schema_version=1L,source="NWS Local Storm Reports via Iowa Environmental Mesonet",
     fetched_utc=if(length(snapshots))min(vapply(snapshots,`[[`,character(1),"fetched_utc"))else "Unavailable",
     query_url=storm_reports_endpoint,snapshots=snapshots,stale_dates=as.list(stale_dates),
-    start=as.character(start-1),end_exclusive=as.character(end),days=entries,
+    start=as.character(start-lookback_days),end_exclusive=as.character(end),days=entries,
     timeline=storm_reports_timeline(reports,dates,available_dates,stale_dates))
   jsonlite::write_json(manifest,file.path(output_dir,"storm-reports-manifest.json"),auto_unbox=TRUE,pretty=TRUE,null="null")
   summary<-data.frame(dates=length(entries),reports=length(reports),mapped=sum(vapply(reports,`[[`,logical(1),"mapped")),
-    first=start-1,last=end-1,explorer_first=start,publication=FALSE)
+    first=start-lookback_days,last=end-1,explorer_first=start,publication=FALSE)
   write.csv(summary,file.path(output_dir,"storm-reports-summary.csv"),row.names=FALSE)
   print(summary,row.names=FALSE)
   invisible(summary)

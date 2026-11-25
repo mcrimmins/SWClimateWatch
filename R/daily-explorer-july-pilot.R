@@ -10,6 +10,22 @@ july_pilot_load <- function() {
   source("R/site-cache.R",local=FALSE)
 }
 july_pilot_root <- function()daily_archive_pilot_root("data/diagnostics/daily-explorer-july-2025")
+july_pilot_context <- function(window=NULL) {
+  if(is.null(window))return(list(root=july_pilot_root(),dates=july_pilot_dates(),support=july_pilot_support(),
+    id="july-2025",title="July 2025 pilot",release="july-release.json",july=TRUE,lookback=1L))
+  if(!is.list(window)||!all(c("id","title","start","end","root")%in%names(window))||
+    any(lengths(window[c("id","title","start","end","root")])!=1L)||
+    anyNA(unlist(window[c("id","title","start","end","root")]))||
+    !grepl("^[a-z0-9-]+$",window$id)||!grepl("^[A-Za-z0-9 -]+$",window$title))stop("Invalid pilot window.")
+  first<-as.Date(window$start);last<-as.Date(window$end)
+  if(is.na(first)||is.na(last)||last<first||as.integer(last-first)>30L||
+    format(first,"%Y-%m")!=format(last,"%Y-%m"))stop("Pilot window must contain 1-31 dates in one month.")
+  lookback<-if(is.null(window$event_lookback_days))1L else window$event_lookback_days
+  if(length(lookback)!=1L||is.na(lookback)||!lookback%in%1:30)stop("Bound event lookback to 1-30 days.")
+  list(root=daily_archive_pilot_root(window$root),dates=as.character(seq(first,last,by="day")),
+    support=as.character(seq(first-29L,last,by="day")),id=window$id,title=window$title,
+    release="window-release.json",july=FALSE,lookback=lookback)
+}
 july_pilot_copy <- function(from,to) {
   if(!file.exists(from))stop("Missing pilot input: ",from)
   dir.create(dirname(to),recursive=TRUE,showWarnings=FALSE)
@@ -39,16 +55,17 @@ july_pilot_log <- function(root,phase,status,started,requests=0,bytes=0) {
   utils::write.table(row,path,append=file.exists(path),col.names=!file.exists(path),row.names=FALSE,sep=",")
 }
 
-prepare_daily_explorer_july <- function(download=FALSE,max_new_dates=10L) {
+prepare_daily_explorer_july <- function(download=FALSE,max_new_dates=10L,window=NULL) {
   if(length(download)!=1L||is.na(download)||!is.logical(download)||length(max_new_dates)!=1L||!max_new_dates%in%1:10)stop("Bound preparation to 1-10 new dates per call.")
-  root<-july_pilot_root();support<-july_pilot_support();ready<-vapply(support,function(d)!is.null(july_pilot_input(root,d)),logical(1))
+  context<-july_pilot_context(window);root<-context$root;support<-context$support
+  ready<-vapply(support,function(d)!is.null(july_pilot_input(root,d)),logical(1))
   write.csv(data.frame(date=support,ready=ready),file.path(root,"input-plan.csv"),row.names=FALSE)
   remaining<-support[!ready];requests<-bytes<-0;done<-0L;started<-Sys.time()
   for(date in head(remaining,max_new_dates)) {
-    message("July input preparation ",done+1L,"/",min(length(remaining),max_new_dates),": ",date)
+    message(context$title," input preparation ",done+1L,"/",min(length(remaining),max_new_dates),": ",date)
     base<-weather_period_plan(date,1L)
     if(!all(base$ready)) {
-      if(!download)stop("Weather inputs missing. Set options(swc.july.download=TRUE) to permit bounded downloads; no partial means will be built.")
+      if(!download)stop("Weather inputs missing. Set options(swc.july.download=TRUE) for July or options(swc.seasonal.download=TRUE) for seasonal pilots to permit bounded downloads; no partial means will be built.")
       transfer<-weather_period_download(base,max_dates=1L,max_fields=4L,max_requests=8L,max_bytes=4e6)
       requests<-requests+transfer$requests;bytes<-bytes+transfer$bytes;base<-weather_period_plan(date,1L)
     }
@@ -83,11 +100,12 @@ july_pilot_decode <- function(root,input) {
   list(base=base,overlay=over)
 }
 
-build_daily_explorer_july <- function(download_events=FALSE,max_end_dates=7L) {
+build_daily_explorer_july <- function(download_events=FALSE,max_end_dates=7L,window=NULL) {
+  if(length(download_events)!=1L||!is.logical(download_events)||is.na(download_events))stop("download_events must be TRUE or FALSE.")
   if(length(max_end_dates)!=1L||!max_end_dates%in%1:31)stop("Bound rendering to 1-31 weather endpoints per call.")
-  root<-july_pilot_root();dates<-july_pilot_dates();started<-Sys.time()
-  inputs<-setNames(lapply(july_pilot_support(),function(d)july_pilot_input(root,d)),july_pilot_support())
-  if(any(vapply(inputs,is.null,logical(1))))stop("Prepare all 60 supporting weather dates first. Inspect input-plan.csv.")
+  context<-july_pilot_context(window);root<-context$root;dates<-context$dates;started<-Sys.time()
+  inputs<-setNames(lapply(context$support,function(d)july_pilot_input(root,d)),context$support)
+  if(any(vapply(inputs,is.null,logical(1))))stop("Prepare all ",length(context$support)," supporting weather dates first. Inspect input-plan.csv.")
   prism<-file.path(root,"prism")
   # Seed the seven previously reviewed July dates; signatures are rechecked by
   # the regular builder before any reused record is accepted.
@@ -100,12 +118,13 @@ build_daily_explorer_july <- function(download_events=FALSE,max_end_dates=7L) {
     for(image in unlist(x$record$images))july_pilot_copy(file.path(seed,image),file.path(prism,image))
     july_pilot_copy(file,file.path(prism,"cache",basename(file)))
   }
-  build_daily_explorer(water_years=2025L,start_date=min(dates),end_date=max(dates),output_dir=prism)
+  wy<-as.integer(format(as.Date(dates[1]),"%Y"))+(as.integer(format(as.Date(dates[1]),"%m"))>=10L)
+  build_daily_explorer(water_years=wy,start_date=min(dates),end_date=max(dates),output_dir=prism)
   payload<-jsonlite::read_json(file.path(prism,"daily-data.json"));payload$latest_cached_date<-max(dates)
   jsonlite::write_json(payload,file.path(prism,"daily-data.json"),auto_unbox=TRUE,digits=NA,null="null")
   public<-file.path(root,"viewer");dir.create(public,recursive=TRUE,showWarnings=FALSE)
   # Incomplete builds are never exposed as a validated full-month release.
-  if(file.exists(file.path(public,"july-release.json")))file.remove(file.path(public,"july-release.json"))
+  if(file.exists(file.path(public,context$release)))file.remove(file.path(public,context$release))
   decoded<-new.env(parent=emptyenv());rendered<-list();new_ends<-character()
   functions<-lapply(list(weather_period_average,weather_overlay_average,weather_mean_plot,weather_overlay_layers,
     weather_pressure_centers,weather_period_daily,weather_overlay_decode,weather_core_grid,weather_moisture_grid,
@@ -117,7 +136,7 @@ build_daily_explorer_july <- function(download_events=FALSE,max_end_dates=7L) {
     directory<-file.path(root,"weather",end,paste0(n,"day"));status<-"REUSED"
     if(!weather_period_archive_current(directory,signature)) {
       if(!end%in%new_ends&&length(new_ends)>=max_end_dates) {status<-"DEFERRED"}else {
-        new_ends<-union(new_ends,end);message("July weather: ",end," / ",n," day(s), cached inputs only")
+        new_ends<-union(new_ends,end);message(context$title," weather: ",end," / ",n," day(s), cached inputs only")
         dir.create(directory,recursive=TRUE,showWarnings=FALSE)
         values<-lapply(window,function(d){if(!exists(d,decoded,inherits=FALSE))assign(d,july_pilot_decode(root,inputs[[d]]),decoded);get(d,decoded,inherits=FALSE)})
         cells<-weather_period_average(lapply(values,`[[`,"base"),n)
@@ -145,7 +164,8 @@ build_daily_explorer_july <- function(download_events=FALSE,max_end_dates=7L) {
   # Fetch/archive event metadata once; subsequent assembly can be cache-only.
   event_request<-function(...)nws_hazards_request(...,download=download_events)
   source("R/storm-reports-pilot.R",local=TRUE)
-  bounds<-list(c("2025-07-01","2025-08-01"),c("2025-06-30","2025-07-01"))
+  event_first<-as.character(as.Date(min(dates))-context$lookback);event_last<-as.character(as.Date(max(dates))+1L)
+  bounds<-list(c(min(dates),event_last),c(event_first,min(dates)))
   report_requests<-0L
   raw<-lapply(bounds,function(b) {
     path<-file.path("data/raw/storm-reports/az-nm",paste0(b[1],"_",b[2],".rds"))
@@ -154,14 +174,14 @@ build_daily_explorer_july <- function(download_events=FALSE,max_end_dates=7L) {
       if(is.null(x))report_requests<<-report_requests+1L
       return(read_storm_reports_cache(b[1],b[2]))
     }
-    if(!is.list(x)||!identical(x$start,b[1])||!identical(x$end,b[2])||is.null(x$fetched_utc))stop("Verified July report cache missing. Set options(swc.july.download=TRUE) for the bounded first event build.")
+    if(!is.list(x)||!identical(x$start,b[1])||!identical(x$end,b[2])||is.null(x$fetched_utc))stop("Verified report cache missing. Enable the pilot download option for the bounded first event build.")
     normalize_storm_reports(x$raw,b[1],b[2]);x
   })
   snapshot<-list(reports=unname(unlist(lapply(raw,function(x)normalize_storm_reports(x$raw,x$start,x$end)),recursive=FALSE)),
-    available_dates=as.character(seq(as.Date("2025-06-30"),as.Date("2025-07-31"),by="day")),stale_dates=character(),
+    available_dates=as.character(seq(as.Date(event_first),as.Date(max(dates)),by="day")),stale_dates=character(),
     snapshots=lapply(raw,function(x)x[c("start","end","fetched_utc","url")]))
   events<-file.path(root,"events")
-  event_result<-build_nws_hazards_explorer(source_dir=prism,output_dir=events,copy_maps=FALSE,full_window=TRUE,request_fun=event_request,report_snapshot=snapshot)
+  event_result<-build_nws_hazards_explorer(source_dir=prism,output_dir=events,copy_maps=FALSE,full_window=TRUE,request_fun=event_request,report_snapshot=snapshot,lookback_days=context$lookback)
   event_requests<-report_requests+event_result$summary$requests
   for(file in list.files(events,recursive=TRUE))if(!file%in%c("daily-data.json"))july_pilot_copy(file.path(events,file),file.path(public,file))
   for(d in payload$days)for(image in unlist(d$images))july_pilot_copy(file.path(prism,image),file.path(public,image))
@@ -177,19 +197,22 @@ build_daily_explorer_july <- function(download_events=FALSE,max_end_dates=7L) {
   }
   weather_write_json(list(schema_version=1L,source="NOAA CPC CORe",days=daily),file.path(public,"circulation-manifest.json"))
   weather_write_json(list(schema_version=1L,source="NOAA CPC CORe",periods=periods),file.path(public,"circulation-means-manifest.json"))
-  payload$publication_mode<-FALSE;payload$july_full_pilot<-TRUE
+  payload$publication_mode<-FALSE
+  if(context$july)payload$july_full_pilot<-TRUE else payload$seasonal_window_pilot<-context$id
   payload$circulation_enabled<-payload$circulation_period_means_enabled<-TRUE
   payload$storm_reports_preview<-payload$nws_hazards_preview<-TRUE
-  payload$local_review_note<-"Unpublished July 2025 full-month benchmark. PRISM, daily and 7-/30-day weather, reports and archived hazards. Weather uses June 2 onward for complete trailing windows; event coverage includes June 30 for precipitation-map timing."
+  payload$local_review_note<-paste("Unpublished",context$title,"with PRISM, daily and complete trailing 7-/30-day weather, reports and archived hazards.",
+    "Supporting weather begins",min(context$support),"and event coverage begins",event_first,"for precipitation-map timing.")
   weather_write_json(payload,file.path(public,"daily-data.json"))
   html<-paste(readLines(file.path(public,"index.html"),warn=FALSE),collapse="\n")
-  html<-sub('<h1>Daily Explorer</h1>','<h1>Daily Explorer · July 2025 pilot</h1>',html,fixed=TRUE)
-  html<-sub('<label>Season<select','<label>Month<select disabled><option>July 2025</option></select></label><label hidden>Season<select',html,fixed=TRUE)
+  html<-sub('<h1>Daily Explorer</h1>',paste0('<h1>Daily Explorer · ',context$title,'</h1>'),html,fixed=TRUE)
+  html<-sub('<label>Season<select',paste0('<label>Window<select disabled><option>',context$title,'</option></select></label><label hidden>Season<select'),html,fixed=TRUE)
   writeLines(html,file.path(public,"index.html"),useBytes=TRUE);swc_cache_version_app(public)
-  files<-list.files(public,recursive=TRUE);files<-setdiff(files,"july-release.json")
-  release<-list(schema_version=1L,month="2025-07",files=unname(lapply(files,function(f)list(path=f,md5=unname(tools::md5sum(file.path(public,f)))))))
-  jsonlite::write_json(release,file.path(public,"july-release.json"),auto_unbox=TRUE,pretty=TRUE)
-  summary<-data.frame(status="READY",dates=31L,prism_maps=217L,daily_weather_maps=93L,mean_maps=186L,
+  files<-list.files(public,recursive=TRUE);files<-setdiff(files,context$release)
+  release<-list(schema_version=1L,month=substr(min(dates),1,7),files=unname(lapply(files,function(f)list(path=f,md5=unname(tools::md5sum(file.path(public,f)))))))
+  if(!context$july)release$window<-list(id=context$id,start=min(dates),end=max(dates))
+  jsonlite::write_json(release,file.path(public,context$release),auto_unbox=TRUE,pretty=TRUE)
+  summary<-data.frame(status="READY",dates=length(dates),prism_maps=7L*length(dates),daily_weather_maps=3L*length(dates),mean_maps=6L*length(dates),
     weather_built=sum(progress$status=="BUILT"),weather_reused=sum(progress$status=="REUSED"),
     event_requests=event_requests,
     viewer_bytes=sum(file.info(file.path(public,files))$size),seconds=as.numeric(difftime(Sys.time(),started,units="secs")))
@@ -207,23 +230,27 @@ build_daily_explorer_july <- function(download_events=FALSE,max_end_dates=7L) {
   invisible(summary)
 }
 
-validate_daily_explorer_july <- function(directory=file.path(july_pilot_root(),"viewer")) {
-  if(!file.exists(file.path(directory,"july-release.json")))stop("No complete July release. Finish or resume the build first.")
-  release<-jsonlite::read_json(file.path(directory,"july-release.json"))
-  if(!identical(release$schema_version,1L)||!identical(release$month,"2025-07")||!length(release$files))stop("No complete July release. Resume the build first.")
+validate_daily_explorer_july <- function(directory=NULL,window=NULL) {
+  context<-july_pilot_context(window);expected_dates<-context$dates
+  if(is.null(directory))directory<-file.path(context$root,"viewer")
+  if(!file.exists(file.path(directory,context$release)))stop("No complete pilot release. Finish or resume the build first.")
+  release<-jsonlite::read_json(file.path(directory,context$release))
+  if(!identical(release$schema_version,1L)||!identical(release$month,substr(min(expected_dates),1,7))||!length(release$files))stop("No complete pilot release. Resume the build first.")
+  if(!context$july&&!identical(release$window,list(id=context$id,start=min(expected_dates),end=max(expected_dates))))stop("Pilot release window mismatch.")
   for(f in release$files) {
-    if(!is.character(f$path)||length(f$path)!=1L||grepl("[.][.]",f$path)||startsWith(f$path,"/")||!grepl("^[A-Za-z0-9_./-]+$",f$path))stop("Unsafe July release path.")
+    if(!is.character(f$path)||length(f$path)!=1L||grepl("[.][.]",f$path)||startsWith(f$path,"/")||!grepl("^[A-Za-z0-9_./-]+$",f$path))stop("Unsafe pilot release path.")
     path<-file.path(directory,f$path)
     if(!file.exists(path)||!identical(f$md5,unname(tools::md5sum(path))))stop("Changed or missing release file: ",f$path)
   }
   p<-jsonlite::read_json(file.path(directory,"daily-data.json"));dates<-vapply(p$days,`[[`,character(1),"date")
-  if(!isTRUE(p$july_full_pilot)||isTRUE(p$publication_mode)||!identical(dates,july_pilot_dates())||
-    !identical(p$latest_cached_date,"2025-07-31")||!isTRUE(p$circulation_enabled)||!isTRUE(p$circulation_period_means_enabled)||
-    !isTRUE(p$storm_reports_preview)||!isTRUE(p$nws_hazards_preview))stop("July dates or feature flags invalid.")
-  if(any(lengths(lapply(p$days,`[[`,"images"))!=7L))stop("Every July date requires seven PRISM maps.")
-  prism<-validate_daily_explorer_assets(directory);stopifnot(prism$maps==217L)
+  flag<-if(context$july)isTRUE(p$july_full_pilot)else identical(p$seasonal_window_pilot,context$id)
+  if(!flag||isTRUE(p$publication_mode)||!identical(dates,expected_dates)||
+    !identical(p$latest_cached_date,max(expected_dates))||!isTRUE(p$circulation_enabled)||!isTRUE(p$circulation_period_means_enabled)||
+    !isTRUE(p$storm_reports_preview)||!isTRUE(p$nws_hazards_preview))stop("Pilot dates or feature flags invalid.")
+  if(any(lengths(lapply(p$days,`[[`,"images"))!=7L))stop("Every pilot date requires seven PRISM maps.")
+  prism<-validate_daily_explorer_assets(directory);stopifnot(prism$maps==7L*length(dates))
   daily<-jsonlite::read_json(file.path(directory,"circulation-manifest.json"))$days
-  if(!identical(vapply(daily,`[[`,character(1),"date"),dates))stop("Daily weather dates do not cover July.")
+  if(!identical(vapply(daily,`[[`,character(1),"date"),dates))stop("Daily weather dates do not cover the pilot.")
   for(d in daily) {
     if(!identical(d$status,"available")||!identical(d$start,d$date)||d$days!=1L)stop("Invalid daily weather window.")
     for(field in c("height500","jet250","moisture")) {
@@ -232,13 +259,18 @@ validate_daily_explorer_july <- function(directory=file.path(july_pilot_root(),"
     }
   }
   means<-validate_weather_period_assets(directory)
-  if(means$periods!=62L||length(means$images)!=186L)stop("July requires all 62 complete weather means.")
+  if(means$periods!=2L*length(dates)||length(means$images)!=6L*length(dates))stop("Every target date requires complete 7- and 30-day weather means.")
+  periods<-jsonlite::read_json(file.path(directory,"circulation-means-manifest.json"))$periods
+  keys<-vapply(periods,function(x)paste(x$end,x$days),character(1))
+  expected_keys<-as.vector(outer(dates,c(7L,30L),paste))
+  if(!identical(sort(keys),sort(expected_keys)))stop("Weather means do not cover every pilot date and period.")
   validate_storm_reports_publication(directory,require_enabled=FALSE)
   reports<-jsonlite::read_json(file.path(directory,"storm-reports-manifest.json"))
-  if(!identical(vapply(reports$days,`[[`,character(1),"date"),c("2025-06-30",dates))||
-    any(vapply(reports$days,function(d)d$status=="UNAVAILABLE",logical(1))))stop("Reports lack required July/noon coverage.")
+  event_first<-as.character(as.Date(min(dates))-context$lookback);event_last<-as.character(as.Date(max(dates))+1L)
+  if(!identical(vapply(reports$days,`[[`,character(1),"date"),as.character(seq(as.Date(event_first),as.Date(max(dates)),by="day")))||
+    any(vapply(reports$days,function(d)d$status=="UNAVAILABLE",logical(1))))stop("Reports lack required pilot/noon coverage.")
   data<-jsonlite::read_json(file.path(directory,"hazards/cases/explorer.json"))
-  if(!identical(data$start,"2025-06-30")||!identical(data$end_exclusive,"2025-08-01")||!is.null(names(data$events)))stop("Invalid hazard window/array.")
+  if(!identical(data$start,event_first)||!identical(data$end_exclusive,event_last)||!is.null(names(data$events)))stop("Invalid hazard window/array.")
   ids<-vapply(data$events,`[[`,character(1),"id");if(anyDuplicated(ids))stop("Duplicate hazard event IDs.")
   pools<-lapply(data$geometry_bundles,function(path){if(!grepl("^bundles/[a-f0-9]{64}[.]json$",path))stop("Unsafe hazard geometry path.");jsonlite::read_json(file.path(directory,"hazards",path))})
   for(e in data$events)for(s in e$segments)if(!is.null(s$geometry)) {
@@ -249,7 +281,7 @@ validate_daily_explorer_july <- function(directory=file.path(july_pilot_root(),"
   canonical<-function(x)jsonlite::toJSON(x,auto_unbox=TRUE,null="null",digits=NA)
   if(!identical(canonical(timeline),canonical(expected)))stop("Hazard timing/region/type totals differ.")
   swc_cache_validate_app(directory);swc_cache_validate_app(file.path(directory,"hazards"))
-  result<-data.frame(status="PASS",dates=31L,prism_maps=217L,daily_weather_maps=93L,mean_maps=186L,
+  result<-data.frame(status="PASS",dates=length(dates),prism_maps=7L*length(dates),daily_weather_maps=3L*length(dates),mean_maps=6L*length(dates),
     reports=sum(vapply(reports$days,`[[`,numeric(1),"reports")),hazards=length(data$events))
   print(result,row.names=FALSE);invisible(result)
 }

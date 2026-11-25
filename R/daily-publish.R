@@ -690,6 +690,10 @@ run_swc_daily_publish <- function(
     stop("`dry_run` and `force_publish` must be TRUE or FALSE.", call. = FALSE)
   }
   destination <- swc_daily_publish_destination(destination)
+  if(tolower(Sys.getenv("SWC_DAILY_WY2025_STAGING"))=="true") {
+    source("R/daily-explorer-wy2025-staging.R",local=TRUE)
+    wy2025_staging_guard(destination)
+  }
   if(tolower(Sys.getenv("SWC_DAILY_ARCHIVE_STAGING"))=="true") {
     source("R/daily-explorer-archive-staging.R",local=TRUE)
     daily_archive_staging_guard(destination)

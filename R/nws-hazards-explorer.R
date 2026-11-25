@@ -23,20 +23,21 @@ nws_hazards_timeline <- function(events,dates,start,end) {
 
 build_nws_hazards_explorer <- function(source_dir="site/daily-explorer",
     output_dir="data/diagnostics/daily-explorer-nws-hazards",refresh=FALSE,
-    report_snapshot=NULL,copy_maps=TRUE,full_window=FALSE,request_fun=nws_hazards_request) {
+    report_snapshot=NULL,copy_maps=TRUE,full_window=FALSE,request_fun=nws_hazards_request,lookback_days=1L) {
+  if(length(lookback_days)!=1L||is.na(lookback_days)||!lookback_days%in%1:30)stop("Bound hazard lookback to 1-30 days.")
   source("R/storm-reports-pilot.R",local=TRUE)
   output_dir<-storm_reports_output_path(output_dir,source_dir)
   payload<-jsonlite::read_json(file.path(source_dir,"daily-data.json"))
   dates<-vapply(payload$days,`[[`,character(1),"date")
   if(length(dates)>400L)stop("Hazard Explorer build is bounded to 400 retained dates.")
-  start<-if(full_window)min(as.Date(dates))-1 else max(min(as.Date(dates)),max(as.Date(dates))-61)-1
+  start<-if(full_window)min(as.Date(dates))-lookback_days else max(min(as.Date(dates)),max(as.Date(dates))-61)-lookback_days
   end<-max(as.Date(dates))+1
   starts<-seq(start,end-1,by=31)
   cases<-data.frame(id=paste0("part-",seq_along(starts)),label=paste("Explorer archive",seq_along(starts)),
     start=as.character(starts),end=as.character(pmin(starts+31,end)))
   # Keep the report builder's normal bounded cache semantics and canonical assets.
   build_storm_reports_pilot(source_dir=source_dir,output_dir=output_dir,refresh=refresh,
-    snapshot=report_snapshot,copy_maps=copy_maps,full_window=full_window)
+    snapshot=report_snapshot,copy_maps=copy_maps,full_window=full_window,lookback_days=lookback_days)
   widget<-file.path(output_dir,"hazards")
   assessment<-build_nws_hazards_pilot(cases=cases,refresh=refresh,output_dir=widget,request_fun=request_fun)
   events<-list();geometries<-list()

@@ -6,6 +6,21 @@ normal current Daily Explorer and publishes the fixed reviewed archive at:
 
 `https://cales.arizona.edu/climate/watch-staging/daily-explorer/archive-pilot/`
 
+## Acceptance recorded November 24
+
+The full staging daily run exited 0 after 2,781 seconds (46m 21s), ending
+12:02:37 America/Phoenix. The pre-run archive release checksum matched after
+the run, and source/rendered archive checks passed: four month routes/36
+dates, with July's 31 dates, 217 PRISM maps, 93 daily weather maps, 186 mean
+maps, 360 reports and 856 hazards. All referenced archive files survived the
+daily workflow unchanged; current Explorer paths remained separate.
+
+This confirms July trial publication/retention. The 46m 21s duration covers
+the entire daily workflow and cannot be treated as archive overhead. Production
+and permanent environment files were not changed. Seasonal checks and a
+bounded full-year plan precede expanding/promoting the historical archive;
+cleanup remains deferred until production archive acceptance.
+
 ## Bundle
 
 Run `source("scripts/export-daily-explorer-archive-staging.R")` on the laptop.
