@@ -1809,7 +1809,17 @@ by the current-year updater and which completed-year releases it must retain.
    The user accepted the complete local year November 24. A manifest-only
    [staging transfer/publication trial](daily-explorer-wy2025-staging.md) is
    prepared with explicit staging guards and full daily-run retention checks.
-   Staging acceptance, production promotion and cleanup remain separate steps.
+   The user accepted the separate staging archive visually November 25;
+   full daily-run retention, production promotion and cleanup remain separate
+   steps. The [connected navigation pilot](daily-explorer-connected.md) now
+   joins cached current dates and WY2025 under one year/month/date selector,
+   with a current-return control, preserved compatible selections and settled
+   frame sizing. Local acceptance includes the month-cycling fix, one-pass
+   restoration and viewport-only thumbnail loading. The
+   [static connected staging trial](daily-explorer-connected-staging.md) is
+   prepared and reuses the accepted WY2025 release without map duplication.
+   Staging acceptance, standard site-entry integration and daily-run retention
+   remain pending. No maps or source bundles are rebuilt.
 5. **Staging, then production.** Validate every dated asset reference, report
    and unique-event counts, noon/UTC alignment, means/overlay coverage, year
    transitions, direct links and subsequent daily-run retention. Review actual

@@ -1,0 +1,13 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily Explorer · connected local review</title>
+<style>html{scrollbar-gutter:stable}</style>
+<link rel="stylesheet" href="connected-shell.css"><script src="connected-model.js" defer></script><script src="connected-shell.js" defer></script></head>
+<body><main><header><p>Southwest Climate Watch · Local review</p><h1>Daily Explorer</h1><p>Explore recent conditions or choose a completed historic water year. Only available dates are shown.</p></header>
+<section class="archive-controls" aria-label="Explore current and historic conditions">
+<label>Water year<select id="connected-year" disabled></select></label><label>Month<select id="connected-month" disabled></select></label>
+<div class="date-control"><button id="connected-previous" aria-label="Previous calendar day" disabled>←</button><label>Date<input id="connected-date" type="date" disabled></label><button id="connected-next" aria-label="Next calendar day" disabled>→</button></div>
+<button id="connected-current" disabled>Current conditions</button></section>
+<p id="connected-status" role="status" aria-live="polite">Loading available years…</p>
+<p id="connected-error" role="alert" hidden></p><button id="connected-retry" hidden>Retry selected month</button>
+<div id="connected-viewport" aria-busy="true"><p id="connected-loading" role="status">Loading the selected month…</p><iframe id="connected-viewer" title="Selected Daily Explorer conditions" src="about:blank" hidden></iframe></div>
+<noscript>The Daily Explorer requires JavaScript.</noscript></main></body></html>

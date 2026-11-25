@@ -158,6 +158,10 @@ deploy_swc_site <- function(
     render = TRUE,
     extra_validation = NULL) {
   destination <- swc_deploy_destination(destination)
+  if(tolower(Sys.getenv("SWC_DAILY_CONNECTED_STAGING"))=="true") {
+    source("R/daily-explorer-connected-staging.R",local=TRUE)
+    connected_staging_guard(destination)
+  }
   if(tolower(Sys.getenv("SWC_DAILY_WY2025_STAGING"))=="true") {
     source("R/daily-explorer-wy2025-staging.R",local=TRUE)
     wy2025_staging_guard(destination)
@@ -201,6 +205,7 @@ deploy_swc_site <- function(
     }
     swc_cache_version_app(file.path("site","daily-explorer"))
     swc_cache_version_app(file.path("site","stations"))
+    if(tolower(Sys.getenv("SWC_DAILY_CONNECTED_STAGING"))=="true") stage_connected_trial()
     swc_deploy_run(quarto, c("render", "site"), "Render Quarto site")
   }
   output_dir <- file.path(project_dir, "site", "_site")
@@ -226,6 +231,7 @@ deploy_swc_site <- function(
   validate_conditions_synopsis_publication(output_dir, destination)
   output_dir <- normalizePath(output_dir, winslash = "/", mustWork = TRUE)
   if (!is.null(extra_validation)) extra_validation(output_dir)
+  if(tolower(Sys.getenv("SWC_DAILY_CONNECTED_STAGING"))=="true") validate_connected_trial(output_dir)
   if(tolower(Sys.getenv("SWC_DAILY_WY2025_STAGING"))=="true")
     validate_wy2025_trial(output_dir)
   if(tolower(Sys.getenv("SWC_DAILY_ARCHIVE_STAGING"))=="true")
