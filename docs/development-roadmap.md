@@ -1836,6 +1836,10 @@ by the current-year updater and which completed-year releases it must retain.
    both years. Transfer, VM acceptance and production promotion are pending;
    no archive map rebuild or raw-cache transfer is required. See the
    [combined staging guide](daily-explorer-two-year-staging.md).
+   The user subsequently accepted the combined staging viewer and full daily
+   retention of both years. A [production adapter and promotion guide](daily-explorer-connected-production.md)
+   now prepare the standard entry point and persistent daily cron integration.
+   Its final site-only staging check and production promotion remain pending.
 5. **Staging, then production.** Validate every dated asset reference, report
    and unique-event counts, noon/UTC alignment, means/overlay coverage, year
    transitions, direct links and subsequent daily-run retention. Review actual

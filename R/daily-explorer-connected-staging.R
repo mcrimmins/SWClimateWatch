@@ -19,7 +19,7 @@ connected_static_catalog <- function(current,archive) {
     catalog$months[[i]]$viewer<-paste0("months/",catalog$months[[i]]$month,"/index.html")
   catalog
 }
-build_connected_static <- function(current,archive,output=file.path(current,"connected"),validate_archive=TRUE) {
+build_connected_static <- function(current,archive,output=file.path(current,"connected"),validate_archive=TRUE,publication=FALSE) {
   archives<-connected_explorer_archives(archive)
   if(validate_archive)for(a in archives) {
     if(a$year==2025L)validate_wy2025_explorer_navigation(a$directory)else validate_wy2026_explorer_navigation(a$directory)
@@ -41,7 +41,7 @@ build_connected_static <- function(current,archive,output=file.path(current,"con
   read<-function(path)paste(readLines(path,warn=FALSE),collapse="\n")
   assets<-"scripts/daily-explorer-archive-assets"
   shared<-setNames(vapply(c("connected-model.js","connected-shell.js","connected-shell.css","connected-frame.css","connected-bridge.js"),
-    function(f)asset(read(file.path(assets,f)),f),character(1)),c("model","shell","shell_css","frame_css","bridge"))
+    function(f){text<-read(file.path(assets,f));if(publication&&f=="connected-shell.js")text<-gsub("latest local date","latest available date",text,fixed=TRUE);asset(text,f)},character(1)),c("model","shell","shell_css","frame_css","bridge"))
   html<-read(file.path(assets,"connected-index.html"))
   for(f in names(shared)) {
     original<-c(model="connected-model.js",shell="connected-shell.js",shell_css="connected-shell.css",frame_css="connected-frame.css",bridge="connected-bridge.js")[[f]]
@@ -49,6 +49,10 @@ build_connected_static <- function(current,archive,output=file.path(current,"con
   }
   html<-sub("Daily Explorer · connected local review","Daily Explorer · connected staging review",html,fixed=TRUE)
   html<-sub("Southwest Climate Watch · Local review","Southwest Climate Watch · Staging review",html,fixed=TRUE)
+  if(publication) {
+    html<-sub("Daily Explorer · connected staging review","Daily Explorer · Southwest Climate Watch",html,fixed=TRUE)
+    html<-sub("Southwest Climate Watch · Staging review","Southwest Climate Watch",html,fixed=TRUE)
+  }
   put(html,"index.html")
   catalog<-connected_static_catalog(current,archive)
   put(jsonlite::toJSON(catalog,auto_unbox=TRUE,null="null",pretty=TRUE),"connected-catalog.json")
@@ -78,7 +82,7 @@ build_connected_static <- function(current,archive,output=file.path(current,"con
   dependencies<-c("daily-data.json","explorer.js",vapply(names(archives),function(id)paste0("archive/",id,"/",archives[[id]]$marker),character(1)))
   hashes<-unname(tools::md5sum(file.path(current,dependencies)))
   if(anyNA(hashes))stop("Connected trial requires the accepted archive beside the current viewer.")
-  manifest<-list(schema_version=1L,archive_years=unname(vapply(archives,`[[`,integer(1),"year")),files=unname(lapply(names(seals),function(p)list(path=p,md5=seals[[p]]))),
+  manifest<-list(schema_version=1L,operational=publication,code_commit=Sys.getenv("SWC_CONNECTED_RELEASE_COMMIT",""),archive_years=unname(vapply(archives,`[[`,integer(1),"year")),files=unname(lapply(names(seals),function(p)list(path=p,md5=seals[[p]]))),
     dependencies=unname(lapply(seq_along(dependencies),function(i)list(path=dependencies[i],md5=hashes[i]))))
   weather_write_json(manifest,file.path(output,"connected-release.json"))
   validate_connected_static(current)

@@ -85,6 +85,10 @@ swc_daily_publish_destination <- function(
 
 swc_daily_publish_marker_path <- function(destination) {
   destination <- swc_daily_publish_destination(destination)
+  if(tolower(Sys.getenv("SWC_DAILY_CONNECTED"))=="true") {
+    source("R/daily-explorer-connected-publication.R",local=TRUE)
+    connected_publication_guard(destination)
+  }
   directory <- file.path("data", "diagnostics", "daily-publish")
   if (identical(destination, swc_daily_publish_live_destination())) {
     return(file.path(directory, "last-success.csv"))
@@ -462,7 +466,8 @@ swc_daily_publish_validate_explorer <- function(output_dir,
   source(adapter, local = TRUE)
   checked <- validate_daily_explorer_assets(file.path(output_dir, "daily-explorer"))
   page <- file.path(output_dir, "pages", "daily-explorer.html")
-  if (!file.exists(page) || !grepl("../daily-explorer/index.html?embedded=1",
+  entry<-if(tolower(Sys.getenv("SWC_DAILY_CONNECTED"))=="true")"../daily-explorer/connected/index.html?embedded=1"else"../daily-explorer/index.html?embedded=1"
+  if (!file.exists(page) || !grepl(entry,
       paste(readLines(page, warn = FALSE), collapse = "\n"), fixed = TRUE))
     stop("Rendered Daily Explorer page is missing or unlinked; S3 sync stopped.")
   # Ensure Quarto copied the newly staged payload, rather than an older render.
@@ -690,6 +695,10 @@ run_swc_daily_publish <- function(
     stop("`dry_run` and `force_publish` must be TRUE or FALSE.", call. = FALSE)
   }
   destination <- swc_daily_publish_destination(destination)
+  if(tolower(Sys.getenv("SWC_DAILY_CONNECTED"))=="true") {
+    source("R/daily-explorer-connected-publication.R",local=TRUE)
+    connected_publication_guard(destination)
+  }
   if(tolower(Sys.getenv("SWC_DAILY_WY2025_STAGING"))=="true") {
     source("R/daily-explorer-wy2025-staging.R",local=TRUE)
     wy2025_staging_guard(destination)

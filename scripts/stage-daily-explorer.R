@@ -1,6 +1,15 @@
 # Cached PRISM: current water year plus preceding September. The explicit
 # staging-only storm report trial may fetch report metadata; this script never uploads.
 source("scripts/load-daily-explorer.R")
+if(tolower(Sys.getenv("SWC_DAILY_CONNECTED"))!="true"&&file.exists("R/daily-explorer-connected-publication.R")) {
+  source("R/daily-explorer-connected-publication.R")
+  page<-"site/pages/daily-explorer.qmd"
+  if(file.exists(page)) {
+    text<-paste(readLines(page,warn=FALSE),collapse="\n")
+    restored<-connected_publication_page(text,enabled=FALSE)
+    if(!identical(text,restored))writeLines(restored,page,useBytes=TRUE)
+  }
+}
 if(tolower(Sys.getenv("SWC_DAILY_WY2025_STAGING"))=="true") {
   source("R/daily-explorer-wy2025-staging.R")
   wy2025_staging_guard()

@@ -1,0 +1,41 @@
+connected_pub_root<-normalizePath(testthat::test_path("..",".."),winslash="/",mustWork=TRUE)
+source(file.path(connected_pub_root,"R/daily-explorer-connected-publication.R"))
+testthat::test_that("operational guard accepts only matching dedicated destination/state pairs",{
+  withr::local_envvar(c(SWC_DAILY_CONNECTED_STAGING="",SWC_DAILY_WY2025_STAGING="",SWC_DAILY_ARCHIVE_STAGING="",
+    SWC_S3_DESTINATION="s3://cales-climate-reports/climate/watch/",SWC_PRODUCTION_STATE_DIR="/home/crimmins/.local/state/swclimatewatch"))
+  testthat::expect_true(connected_publication_guard())
+  testthat::expect_error(connected_publication_guard("s3://cales-climate-reports/climate/watch-staging/"),"matching dedicated")
+  testthat::expect_error(connected_publication_guard("s3://elsewhere/"),"matching dedicated")
+  withr::local_envvar(c(SWC_S3_DESTINATION="s3://cales-climate-reports/climate/watch-staging/",SWC_PRODUCTION_STATE_DIR="/home/crimmins/.local/state/swclimatewatch-staging"))
+  testthat::expect_true(connected_publication_guard())
+  withr::local_envvar(c(SWC_DAILY_CONNECTED_STAGING="true"))
+  testthat::expect_error(stage_connected_publication(),"Clear archive trial")
+})
+testthat::test_that("standard page switches both links and settles the outer frame idempotently",{
+  text<-paste(readLines(file.path(connected_pub_root,"site/pages/daily-explorer.qmd")),collapse="\n")
+  changed<-connected_publication_page(text)
+  testthat::expect_match(changed,"../daily-explorer/connected/index.html?embedded=1",fixed=TRUE)
+  testthat::expect_false(grepl("../daily-explorer/index.html",changed,fixed=TRUE))
+  testthat::expect_match(changed,"clearTimeout(pending)",fixed=TRUE)
+  testthat::expect_identical(connected_publication_page(changed),changed)
+  restored<-connected_publication_page(changed,enabled=FALSE)
+  testthat::expect_match(restored,"../daily-explorer/index.html?embedded=1",fixed=TRUE)
+  testthat::expect_false(grepl("../daily-explorer/connected/index.html",restored,fixed=TRUE))
+})
+testthat::test_that("full-screen entry preserves existing assets and saved selections",{
+  html<-'<head><script src="explorer.swc-123.js"></script></head>'
+  result<-connected_publication_redirect(html)
+  testthat::expect_match(result,"window.top === window",fixed=TRUE)
+  testthat::expect_match(result,"target.search = location.search",fixed=TRUE)
+  testthat::expect_match(result,"explorer.swc-123.js",fixed=TRUE)
+  testthat::expect_identical(connected_publication_redirect(result),result)
+})
+testthat::test_that("daily and deploy guards reject wrong states before any work",{
+  withr::local_dir(connected_pub_root)
+  withr::local_envvar(c(SWC_DAILY_CONNECTED="true",SWC_DAILY_CONNECTED_STAGING="",SWC_DAILY_WY2025_STAGING="",SWC_DAILY_ARCHIVE_STAGING="",
+    SWC_PRODUCTION_STATE_DIR="/home/crimmins/.local/state/swclimatewatch-staging"))
+  e<-new.env(parent=globalenv());sys.source("scripts/deploy-site-s3.R",envir=e)
+  testthat::expect_error(e$deploy_swc_site("s3://cales-climate-reports/climate/watch/"),"matching dedicated")
+  source("R/daily-publish.R",local=e)
+  testthat::expect_error(e$run_swc_daily_publish(destination="s3://cales-climate-reports/climate/watch/",prism_update=function(...)stop("NO WORK")),"matching dedicated")
+})
