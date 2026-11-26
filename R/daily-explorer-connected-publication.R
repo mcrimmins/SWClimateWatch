@@ -46,8 +46,6 @@ stage_connected_publication <- function() {
     for(p in c(vapply(release$files,`[[`,character(1),"path"),marker))july_pilot_copy(file.path(imported,p),file.path(target,p))
   }
   build_connected_static("site/daily-explorer",file.path("site/daily-explorer/archive",paste0("wy",years)),validate_archive=FALSE,publication=TRUE)
-  entry<-"site/daily-explorer/index.html"
-  writeLines(connected_publication_redirect(paste(readLines(entry,warn=FALSE),collapse="\n")),entry,useBytes=TRUE)
   page<-"site/pages/daily-explorer.qmd"
   text<-paste(readLines(page,warn=FALSE),collapse="\n")
   writeLines(connected_publication_page(text),page,useBytes=TRUE)

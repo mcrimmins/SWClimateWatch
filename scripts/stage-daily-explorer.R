@@ -42,6 +42,14 @@ if(tolower(Sys.getenv("SWC_STORM_REPORTS"))=="true") {
   source("R/storm-reports-staging.R")
   stage_storm_reports_staging()
 }
+if(tolower(Sys.getenv("SWC_DAILY_CONNECTED"))=="true") {
+  source("R/daily-explorer-connected-publication.R")
+  connected_publication_guard()
+  # Hazards seal the outer Explorer index as well as the hazard widget.
+  # Prepare the redirect before that seal, never change the sealed index later.
+  entry<-"site/daily-explorer/index.html"
+  writeLines(connected_publication_redirect(paste(readLines(entry,warn=FALSE),collapse="\n")),entry,useBytes=TRUE)
+}
 if(tolower(Sys.getenv("SWC_NWS_HAZARDS"))=="true") {
   source("R/nws-hazards-daily.R")
   prepare_nws_hazards_daily(download=FALSE)

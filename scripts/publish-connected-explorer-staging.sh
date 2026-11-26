@@ -13,6 +13,7 @@ exec 9>"$SWC_PRODUCTION_STATE_DIR/daily.lock"
 flock -n 9 || { echo "STOP: another staging job is running."; exit 1; }
 unset SWC_DAILY_CONNECTED_STAGING SWC_DAILY_WY2025_STAGING SWC_DAILY_ARCHIVE_STAGING SWC_NWS_HAZARDS_STAGING SWC_STORM_REPORTS_STAGING
 export SWC_DAILY_CONNECTED=true
+export SWC_NWS_HAZARDS=true SWC_STORM_REPORTS=true
 mkdir -p "$SWC_PRODUCTION_STATE_DIR/logs"
 log="$SWC_PRODUCTION_STATE_DIR/logs/connected-entry-$(date +%Y%m%dT%H%M%S).log"
 exec > >(tee -a "$log") 2>&1

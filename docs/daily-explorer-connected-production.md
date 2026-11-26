@@ -83,3 +83,28 @@ It does not copy raw caches or schedule a historical rebuild.
 Review <https://cales.arizona.edu/climate/watch/pages/daily-explorer.html>,
 both archive years and Current. Verify the next normal cron log and standard
 publication checks. Promotion is pending until the user reports success.
+
+## Hazard index seal correction
+
+The first production attempt stopped before upload because the new full-screen
+redirect was inserted after hazards sealed the current Explorer index. The
+redirect now runs in cached staging after reports and before the hazard overlay
+is assembled/frozen. The late connected adapter does not modify the current
+index. Integrity checks are unchanged. Regression fixtures verify the ordering
+and that late staging preserves sealed bytes. The final site-only staging
+checkpoint now explicitly enables reports/hazards to match production.
+
+For the already-promoted checkout/config/imports, commit the paths listed in
+`scripts/daily-explorer-hazard-seal-fix-files.txt`, update the production code
+under its daily lock, and run:
+
+```bash
+bash -n scripts/retry-connected-explorer-production.sh &&
+bash scripts/retry-connected-explorer-production.sh
+```
+
+The retry uses the existing imported bundles and performs a site-only build
+with reports and hazards enabled, full archive validation and the unchanged
+hazard seal check. No historical weather/PRISM rebuild, transfer, or manual
+manifest edit is required. Its timestamped log is printed. The existing daily
+cron flag remains enabled after the successful retry.
