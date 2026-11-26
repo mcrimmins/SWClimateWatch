@@ -72,6 +72,48 @@ testthat::test_that("late connected publication never modifies the already seale
   e$stage_connected_publication()
   testthat::expect_identical(before,tools::md5sum("site/daily-explorer/index.html"))
 })
+testthat::test_that("hazard snapshot seals the redirect in its regenerated outer HTML",{
+  root<-tempfile();dir.create(root);withr::defer(unlink(root,recursive=TRUE));withr::local_dir(root)
+  withr::local_envvar(c(SWC_DAILY_CONNECTED="true",SWC_DAILY_CONNECTED_STAGING="",SWC_DAILY_WY2025_STAGING="",SWC_DAILY_ARCHIVE_STAGING="",
+    SWC_S3_DESTINATION="s3://cales-climate-reports/climate/watch/",SWC_PRODUCTION_STATE_DIR="/home/crimmins/.local/state/swclimatewatch"))
+  dir.create("current/reports",recursive=TRUE)
+  jsonlite::write_json(list(days=list(list(date="2026-11-25"))),"current/daily-data.json",auto_unbox=TRUE)
+  jsonlite::write_json(list(days=list(list(status="EMPTY",path="reports/2026-11-25.json",date="2026-11-25"))),"current/storm-reports-manifest.json",auto_unbox=TRUE)
+  jsonlite::write_json(list(reports=list()),"current/reports/2026-11-25.json",auto_unbox=TRUE)
+  e<-new.env(parent=globalenv())
+  for(f in c("R/daily-explorer-connected-publication.R","R/site-cache.R","R/nws-hazards-staging.R"))sys.source(file.path(connected_pub_root,f),envir=e)
+  e$source<-function(...)invisible(NULL)
+  e$validate_storm_reports_publication<-function(...)TRUE
+  e$build_nws_hazards_explorer<-function(source_dir,output_dir,...) {
+    dir.create(file.path(output_dir,"hazards/cases"),recursive=TRUE)
+    dir.create(file.path(output_dir,"reports"))
+    file.copy(file.path(source_dir,"storm-reports-manifest.json"),output_dir)
+    file.copy(file.path(source_dir,"reports/2026-11-25.json"),file.path(output_dir,"reports"))
+    for(d in c("images","hazards/images")) {
+      dir.create(file.path(output_dir,d),recursive=TRUE)
+      writeLines("fixture image",file.path(output_dir,d,"marker.png"))
+    }
+    # Reproduce the real assembler discarding the earlier source HTML.
+    writeLines('<head><script src="explorer.js"></script><link href="explorer.css"></head>',file.path(output_dir,"index.html"))
+    writeLines("// fixture",file.path(output_dir,"explorer.js"));writeLines("body{}",file.path(output_dir,"explorer.css"))
+    writeLines('<head><script src="hazards.js"></script></head>',file.path(output_dir,"hazards/index.html"))
+    writeLines("// widget",file.path(output_dir,"hazards/hazards.js"))
+    for(p in c("leaflet-package-LICENSE","hazards/leaflet-package-LICENSE","hazards/workload.csv","hazards/view-workload.csv","hazard-timeline.json"))writeLines("fixture",file.path(output_dir,p))
+    jsonlite::write_json(list(events=list(),geometry_bundles=list()),file.path(output_dir,"hazards/cases/explorer.json"),auto_unbox=TRUE)
+    jsonlite::write_json(list(cases=list()),file.path(output_dir,"hazards/catalog.json"),auto_unbox=TRUE)
+  }
+  e$validate_nws_hazards_publication<-function(directory) {
+    r<-jsonlite::read_json(file.path(directory,"hazard-publication.json"))
+    for(f in r$files) {
+      testthat::expect_identical(f$md5,unname(tools::md5sum(file.path(directory,f$path))))
+      testthat::expect_equal(f$bytes,file.info(file.path(directory,f$path))$size)
+    }
+    testthat::expect_match(paste(readLines(file.path(directory,"index.html")),collapse="\n"),"swc-connected-entry",fixed=TRUE)
+    TRUE
+  }
+  e$stage_nws_hazards_snapshot("current","work",request_fun=function(...)stop("NO HTTP"))
+  testthat::expect_identical(unname(tools::md5sum("work/index.html")),unname(tools::md5sum("current/index.html")))
+})
 testthat::test_that("daily and deploy guards reject wrong states before any work",{
   withr::local_dir(connected_pub_root)
   withr::local_envvar(c(SWC_DAILY_CONNECTED="true",SWC_DAILY_CONNECTED_STAGING="",SWC_DAILY_WY2025_STAGING="",SWC_DAILY_ARCHIVE_STAGING="",

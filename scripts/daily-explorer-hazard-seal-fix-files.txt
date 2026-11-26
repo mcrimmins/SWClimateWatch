@@ -1,4 +1,5 @@
 R/daily-explorer-connected-publication.R
+R/nws-hazards-staging.R
 scripts/stage-daily-explorer.R
 scripts/publish-connected-explorer-staging.sh
 scripts/retry-connected-explorer-production.sh

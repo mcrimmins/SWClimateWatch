@@ -108,3 +108,11 @@ with reports and hazards enabled, full archive validation and the unchanged
 hazard seal check. No historical weather/PRISM rebuild, transfer, or manual
 manifest edit is required. Its timestamped log is printed. The existing daily
 cron flag remains enabled after the successful retry.
+
+The subsequent attempt exposed that the hazard/report assembler regenerates
+the outer HTML, discarding a redirect applied to its input. The final hook
+now applies the redirect to the assembled hazard output immediately before
+cache versioning and manifest sealing. A regression runs the actual snapshot
+assembly function with a regenerating fixture builder, checks every sealed
+file hash/size in both work and copied output, and requires the redirect.
+The late connected adapter still leaves the sealed current index untouched.

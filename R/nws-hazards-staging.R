@@ -107,6 +107,14 @@ stage_nws_hazards_snapshot <- function(directory="site/daily-explorer",
     }
   }
   writeLines(html,file.path(widget,"index.html"),useBytes=TRUE)
+  if(tolower(Sys.getenv("SWC_DAILY_CONNECTED"))=="true") {
+    source("R/daily-explorer-connected-publication.R",local=TRUE)
+    connected_publication_guard()
+    # The hazard/report assembler regenerates the outer HTML from canonical
+    # assets. Apply the connected entry to that final output before sealing it.
+    entry<-file.path(work,"index.html")
+    writeLines(connected_publication_redirect(paste(readLines(entry,warn=FALSE),collapse="\n")),entry,useBytes=TRUE)
+  }
   swc_cache_version_app(work);swc_cache_version_app(widget)
   assets<-function(path){x<-jsonlite::read_json(file.path(path,"cache-assets.json"));unique(c("index.html","cache-assets.json",
     vapply(x$assets,`[[`,character(1),"canonical"),vapply(x$assets,`[[`,character(1),"file")))}
