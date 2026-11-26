@@ -232,7 +232,7 @@ deploy_swc_site <- function(
   output_dir <- normalizePath(output_dir, winslash = "/", mustWork = TRUE)
   if (!is.null(extra_validation)) extra_validation(output_dir)
   if(tolower(Sys.getenv("SWC_DAILY_CONNECTED_STAGING"))=="true") validate_connected_trial(output_dir)
-  if(tolower(Sys.getenv("SWC_DAILY_WY2025_STAGING"))=="true")
+  if(tolower(Sys.getenv("SWC_DAILY_WY2025_STAGING"))=="true"&&tolower(Sys.getenv("SWC_DAILY_CONNECTED_STAGING"))!="true")
     validate_wy2025_trial(output_dir)
   if(tolower(Sys.getenv("SWC_DAILY_ARCHIVE_STAGING"))=="true")
     validate_daily_archive_trial(output_dir)

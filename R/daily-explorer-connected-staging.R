@@ -13,8 +13,17 @@ connected_static_html <- function(html,base,script,bridge,style) {
     paste0('<link rel="stylesheet" href="',style,'">'),html,fixed=TRUE)
   sub("<head>",paste0('<head><base href="',base,'">'),html,fixed=TRUE)
 }
+connected_static_catalog <- function(current,archive) {
+  catalog<-connected_explorer_catalog(current,archive)
+  for(i in seq_along(catalog$months))if(catalog$months[[i]]$kind=="archive")
+    catalog$months[[i]]$viewer<-paste0("months/",catalog$months[[i]]$month,"/index.html")
+  catalog
+}
 build_connected_static <- function(current,archive,output=file.path(current,"connected"),validate_archive=TRUE) {
-  if(validate_archive)validate_wy2025_explorer_navigation(archive)
+  archives<-connected_explorer_archives(archive)
+  if(validate_archive)for(a in archives) {
+    if(a$year==2025L)validate_wy2025_explorer_navigation(a$directory)else validate_wy2026_explorer_navigation(a$directory)
+  }
   validate_daily_explorer_assets(current)
   if(!identical(normalizePath(dirname(output),winslash="/",mustWork=TRUE),normalizePath(current,winslash="/",mustWork=TRUE)) || basename(output)!="connected")
     stop("Connected output must be the current Explorer's connected subdirectory.")
@@ -41,33 +50,35 @@ build_connected_static <- function(current,archive,output=file.path(current,"con
   html<-sub("Daily Explorer · connected local review","Daily Explorer · connected staging review",html,fixed=TRUE)
   html<-sub("Southwest Climate Watch · Local review","Southwest Climate Watch · Staging review",html,fixed=TRUE)
   put(html,"index.html")
-  catalog<-connected_explorer_catalog(current,archive)
-  for(i in seq_along(catalog$months)) {
-    m<-catalog$months[[i]]
-    if(m$kind=="archive")m$viewer<-paste0("months/",m$month,"/index.html")
-    catalog$months[[i]]<-m
-  }
+  catalog<-connected_static_catalog(current,archive)
   put(jsonlite::toJSON(catalog,auto_unbox=TRUE,null="null",pretty=TRUE),"connected-catalog.json")
   js<-asset(connected_explorer_current_js(read(file.path(current,"explorer.js"))),"current/explorer.js")
   put(connected_static_html(read(file.path(current,"index.html")),"../../",paste0("connected/",js),
     paste0("connected/",shared[["bridge"]]),paste0("connected/",shared[["frame_css"]])),"current/index.html")
+  for(id in names(archives)) {
+  archive<-archives[[id]]$directory
+  put(jsonlite::toJSON(connected_explorer_context_catalog(archives,id),auto_unbox=TRUE,null="null",pretty=TRUE),paste0("context/",id,".json"))
   a<-jsonlite::read_json(file.path(archive,"archive-catalog.json"))
   for(m in a$months) {
     prefix<-paste0("months/",m$month,"/")
     js<-asset(connected_explorer_startup_js(read(file.path(archive,dirname(m$viewer),"explorer.js"))),paste0(prefix,"explorer.js"))
-    origin<-paste0("archive/wy2025/",dirname(m$viewer),"/")
+    origin<-paste0("archive/",id,"/",dirname(m$viewer),"/")
     context<-read(file.path(archive,dirname(m$viewer),"month-context.js"))
     if(!grepl("swcMonthContext(location.href)",context,fixed=TRUE))stop("Static month context hook needs review.")
+    needle<-"json(new URL('../../archive-catalog.json',base))"
+    if(!grepl(needle,context,fixed=TRUE))stop("Static context catalog hook needs review.")
+    context<-sub(needle,paste0("json(new URL('../../../../connected/context/",id,".json',base))"),context,fixed=TRUE)
     context<-asset(sub("swcMonthContext(location.href)","swcMonthContext(document.baseURI)",context,fixed=TRUE),paste0(prefix,"month-context.js"))
     html<-connected_static_html(read(file.path(archive,m$viewer)),paste0("../../../",origin),paste0("../../../../connected/",js),
       paste0("../../../../connected/",shared[["bridge"]]),paste0("../../../../connected/",shared[["frame_css"]]))
     html<-gsub('src="month-context([.]swc-[a-f0-9]{16})?[.]js"',paste0('src="../../../../connected/',context,'"'),html,perl=TRUE)
     put(html,paste0(prefix,"index.html"))
   }
-  dependencies<-c("daily-data.json","explorer.js","archive/wy2025/wy2025-release.json")
+  }
+  dependencies<-c("daily-data.json","explorer.js",vapply(names(archives),function(id)paste0("archive/",id,"/",archives[[id]]$marker),character(1)))
   hashes<-unname(tools::md5sum(file.path(current,dependencies)))
   if(anyNA(hashes))stop("Connected trial requires the accepted archive beside the current viewer.")
-  manifest<-list(schema_version=1L,files=unname(lapply(names(seals),function(p)list(path=p,md5=seals[[p]]))),
+  manifest<-list(schema_version=1L,archive_years=unname(vapply(archives,`[[`,integer(1),"year")),files=unname(lapply(names(seals),function(p)list(path=p,md5=seals[[p]]))),
     dependencies=unname(lapply(seq_along(dependencies),function(i)list(path=dependencies[i],md5=hashes[i]))))
   weather_write_json(manifest,file.path(output,"connected-release.json"))
   validate_connected_static(current)
@@ -79,6 +90,10 @@ validate_connected_static <- function(directory) {
     if(!identical(f$md5,unname(tools::md5sum(file.path(pair$root,f$path)))))stop("Connected publication differs: ",f$path)
   }
   c<-jsonlite::read_json(file.path(root,"connected-catalog.json"))
+  if(!is.null(m$archive_years)) {
+    archive_dirs<-file.path(directory,"archive",paste0("wy",unlist(m$archive_years)))
+    if(!identical(c,connected_static_catalog(directory,archive_dirs)))stop("Connected catalog differs from source date ownership/routes.")
+  }
   for(p in unique(vapply(c$months,`[[`,character(1),"viewer")))if(!file.exists(file.path(root,p)))stop("Missing connected viewer: ",p)
   data<-jsonlite::read_json(file.path(directory,"daily-data.json"))
   if(!identical(c$latest,data$latest_cached_date))stop("Connected current date differs from staged data.")
@@ -89,11 +104,24 @@ validate_connected_static <- function(directory) {
 stage_connected_trial <- function() {
   connected_staging_guard()
   source("scripts/load-daily-explorer-connected.R",local=FALSE)
-  build_connected_static("site/daily-explorer","site/daily-explorer/archive/wy2025")
+  source("R/daily-explorer-wy2026-staging.R",local=TRUE)
+  stage_wy2026_trial()
+  build_connected_static("site/daily-explorer",c("site/daily-explorer/archive/wy2025","site/daily-explorer/archive/wy2026"),validate_archive=FALSE)
+  report<-"data/diagnostics/daily-explorer-connected-staging"
+  dir.create(report,recursive=TRUE,showWarnings=FALSE)
+  write.csv(data.frame(status="READY",checked_utc=format(Sys.time(),"%Y-%m-%dT%H:%M:%SZ",tz="UTC")),file.path(report,"last-stage.csv"),row.names=FALSE)
 }
 validate_connected_trial <- function(output_dir="site/_site") {
   connected_staging_guard()
+  source("R/daily-explorer-wy2025-staging.R",local=TRUE)
+  source("R/daily-explorer-wy2026-staging.R",local=TRUE)
+  validate_wy2025_trial(output_dir)
+  validate_wy2026_trial(output_dir)
   for(d in c("site/daily-explorer",file.path(output_dir,"daily-explorer")))validate_connected_static(d)
+  for(d in c("site/daily-explorer",file.path(output_dir,"daily-explorer"))) {
+    m<-jsonlite::read_json(file.path(d,"connected/connected-release.json"))
+    if(!identical(as.integer(unlist(m$archive_years)),c(2025L,2026L)))stop("Combined staging requires both completed archive years.")
+  }
   files<-file.path(c("site/daily-explorer",file.path(output_dir,"daily-explorer")),"connected/connected-release.json")
   if(length(unique(unname(tools::md5sum(files))))!=1L)stop("Source/rendered connected releases differ.")
   message("PASS: connected navigation, loading adapters and source/rendered dependencies match.")

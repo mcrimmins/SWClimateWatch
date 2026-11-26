@@ -1,10 +1,10 @@
 "use strict";
 (() => {
   const $ = id => document.getElementById(id), frame = $("archive-viewer");
-  let catalog, current = null, state = {}, sequence = 0;
+  let catalog, current = null, state = {}, sequence = 0, resizeTimer = null, lastHeight = 1400, loading = false;
   const label = d => new Date(`${d}T12:00:00Z`).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"UTC"});
   const shift = (d,n) => {const x = new Date(`${d}T12:00:00Z`);x.setUTCDate(x.getUTCDate()+n);return x.toISOString().slice(0,10);};
-  function options(el,rows,value) {el.replaceChildren(...rows.map(([v,t]) => {const o=document.createElement("option");o.value=v;o.textContent=t;return o;}));el.value=value;el.disabled=false;}
+  function options(el,rows,value) {const signature=JSON.stringify(rows);if(el.dataset.options!==signature){el.replaceChildren(...rows.map(([v,t]) => {const o=document.createElement("option");o.value=v;o.textContent=t;return o;}));el.dataset.options=signature;}el.value=value;el.disabled=false;}
   function show(date) {
     const m=SWCArchive.partition(catalog,date);if(!m)throw Error("This date has not been built in the local archive. No other date was substituted.");
     const years=[...new Set(catalog.months.map(m=>m.water_year))].sort((a,b)=>b-a);
@@ -22,27 +22,37 @@
     for(const key of ["region","variable","view","compare","weatherPeriod","timing","eventWindow"])if(state[key])url.searchParams.set(key,state[key]);
     history.replaceState(null,"",url);
   }
-  function fail(e) {frame.hidden=true;$("archive-error").textContent=e.message;$("archive-error").hidden=false;$("archive-state").textContent="Archive selection unavailable. No previous month's data is being substituted.";}
+  function fail(e) {clearTimeout(resizeTimer);loading=false;frame.hidden=true;$("archive-error").textContent=e.message;$("archive-error").hidden=false;$("archive-state").textContent="Archive selection unavailable. No previous month's data is being substituted.";}
   function navigate(date) {
     try {
       const m=show(date);if(!SWCArchive.safe(m.viewer)||!m.viewer.endsWith("/index.html"))throw Error("Invalid month viewer path.");
-      sequence++;current={date,viewer:m.viewer,full:m.full===true,token:String(sequence)};
+      clearTimeout(resizeTimer);loading=true;sequence++;current={date,viewer:m.viewer,full:m.full===true,token:String(sequence)};
       const u=new URL(m.viewer,location.href);u.searchParams.set("date",date);u.searchParams.set("archiveToken",current.token);
       for(const key of ["region","variable","view","compare","weatherPeriod","timing","eventWindow"])if(state[key])u.searchParams.set(key,state[key]);
-      frame.hidden=false;frame.style.visibility="hidden";$("archive-error").hidden=true;$("archive-state").textContent="Loading the selected archive month…";
+      frame.hidden=false;frame.style.visibility="hidden";frame.style.height=`${lastHeight}px`;$("archive-error").hidden=true;$("archive-state").textContent="Loading the selected archive month…";
       frame.src=u.href;urlState(date);
     }catch(e){fail(e);}
   }
   window.addEventListener("message",event=>{
     const m=event.data;
     if(event.origin!==location.origin||event.source!==frame.contentWindow||m?.type!=="swc:archive-month"||!current||m.token!==current.token)return;
+    if(m.error){fail(Error(m.error));return;}
     if(!m.date||!SWCArchive.partition(catalog,m.date))return;
+    if(loading&&m.date!==current.date)return;
     const entry=SWCArchive.partition(catalog,m.date);
     if(current.full&&(!m.capabilities?.weather||!m.capabilities?.reports||!m.capabilities?.hazards)){fail(Error("The full archive modules did not initialize. Reload this month; no sample data were substituted."));return;}
+    const oldDate=current.date,oldState=JSON.stringify(state);
     for(const [key,value]of Object.entries(m.selection||{}))if(typeof value==="string"&&value)state[key]=value;
     if(entry.viewer!==current.viewer){navigate(m.date);return;}
-    current.date=m.date;show(m.date);urlState(m.date);$("archive-error").hidden=true;frame.hidden=false;frame.style.visibility="visible";
-    if(Number.isFinite(m.height))frame.style.height=`${Math.min(40000,Math.max(900,Math.ceil(m.height)+6))}px`;
+    current.date=m.date;if(oldDate!==m.date||loading)show(m.date);if(oldDate!==m.date||oldState!==JSON.stringify(state))urlState(m.date);
+    if(!Number.isFinite(m.height)||m.height<100||m.height>40000)return;
+    const height=Math.max(900,Math.ceil(m.height)+6),token=current.token;
+    clearTimeout(resizeTimer);
+    resizeTimer=setTimeout(()=>{
+      if(current?.token!==token)return;
+      if(Math.abs(height-lastHeight)>=4){lastHeight=height;frame.style.height=`${height}px`;}
+      loading=false;$("archive-error").hidden=true;frame.hidden=false;frame.style.visibility="visible";
+    },160);
   });
   frame.addEventListener("error",()=>fail(Error("The selected month viewer could not be loaded.")));
   $("archive-year").addEventListener("change",()=>{const m=catalog.months.filter(x=>x.water_year===Number($("archive-year").value)).sort((a,b)=>a.month.localeCompare(b.month)).at(-1);navigate(m.dates.at(-1));});

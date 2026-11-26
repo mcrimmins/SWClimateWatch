@@ -15,7 +15,7 @@ function swcMonthContext(base, get = globalThis.fetch.bind(globalThis)) {
   async function months() {
     if(!context)context=(async()=>{
       const [p,c]=await Promise.all([json(new URL('daily-data.json',base)),json(new URL('../../archive-catalog.json',base))]);
-      if(c.wy2025_pilot!==true||!Array.isArray(p.days)||!p.days.length)throw Error('Wrong month context catalog');
+      if((c.wy2025_pilot!==true&&!(c.schema_version===1&&c.wy2026_pilot===true))||!Array.isArray(p.days)||!p.days.length)throw Error('Wrong month context catalog');
       const first=shift(p.days[0].date,-29),last=shift(p.days.at(-1).date,3);
       const selected=c.months.filter(m=>m.dates.some(d=>d>=first&&d<=last));
       return {first,last,selected};

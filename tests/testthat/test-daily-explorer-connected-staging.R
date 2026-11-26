@@ -1,11 +1,13 @@
 connected_stage_root<-normalizePath(testthat::test_path("..",".."),winslash="/",mustWork=TRUE)
 source(file.path(connected_stage_root,"R/daily-explorer-connected.R"))
 source(file.path(connected_stage_root,"R/daily-explorer-connected-staging.R"))
+source(file.path(connected_stage_root,"R/daily-explorer-wy2026-staging.R"))
 testthat::test_that("connected staging rejects production before reading or writing",{
   withr::local_dir(connected_stage_root)
   withr::local_envvar(c(SWC_DAILY_CONNECTED_STAGING="true",SWC_S3_DESTINATION="s3://cales-climate-reports/climate/watch/",
     SWC_PRODUCTION_STATE_DIR="/home/crimmins/.local/state/swclimatewatch"))
   testthat::expect_error(stage_connected_trial(),"exact staging")
+  testthat::expect_error(stage_wy2026_trial(),"exact staging")
   e<-new.env(parent=globalenv());sys.source("scripts/deploy-site-s3.R",envir=e)
   testthat::expect_error(e$deploy_swc_site("s3://cales-climate-reports/climate/watch/"),"exact staging")
   withr::local_envvar(c(SWC_S3_DESTINATION="s3://cales-climate-reports/climate/watch-staging/",

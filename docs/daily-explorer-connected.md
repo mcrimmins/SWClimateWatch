@@ -1,5 +1,65 @@
 # Connected Daily Explorer navigation — local review
 
+The local builder now combines both completed WY2025 and WY2026 releases
+with the current cache. The earlier single-year staging trial remains separate;
+this addition does not change staging, production or the daily workflow.
+Both completed source releases remain read-only. The server routes each year
+from its own original directory and adds only small private UI/metadata
+overrides, without copying or rebuilding PNGs or geometry bundles.
+
+Restart the R preview server when upgrading from the single-year version:
+
+```r
+setwd("C:/Users/Crimmins/RProjects/SWClimateWatch")
+if (exists("connected_server")) {
+  try(httpuv::stopServer(connected_server), silent = TRUE)
+}
+options(
+  swc.connected.current_dir = NULL,
+  swc.connected.archive_dirs = c(
+    "data/diagnostics/daily-explorer-wy2025/preview",
+    "data/diagnostics/daily-explorer-wy2026/preview"
+  )
+)
+source("scripts/build-daily-explorer-connected.R")
+source("scripts/test-daily-explorer-connected.R")
+source("scripts/preview-daily-explorer-connected.R")
+```
+
+Wait for the commands to finish, then open <http://127.0.0.1:8805/>. Another
+R session's older server must be stopped in that session first. Server revision
+`multi-year-v3` prevents silently using the older one-year routing function.
+The first two-year build validates both complete archives; unchanged later
+builds reuse their verified snapshots and check release seals, file sizes and
+timestamps. The separate check script performs full hashes again if requested.
+
+Completed archives take precedence over overlapping dates retained in the
+recent cache. A private selection manifest verifies that ownership, while
+the current frame retains its original recent context dates for trailing
+comparisons. Its source files are unchanged. Cross-year archive context catalogs rebase
+neighboring-month metadata to the owning year's mount, allowing WY2025–WY2026
+boundary comparisons without loading a full year into the browser. At the
+WY2026–current boundary, date navigation works while each source's original
+context coverage remains explicit; no absent map is substituted.
+
+Expected local review: two completed years (730 dates), plus actual current
+cache dates. The November 25 laptop cache ends October 5, 2026 and retains
+five WY2027 dates after completed-year overlaps are removed. This is older
+than the VM's operational cache. Review both archive selectors, current return,
+September/October boundaries, 7-/30-day views and saved-link reloads. The
+connected controller keeps its one-pass restoration, deferred thumbnails and
+settled heights; the older standalone archive controller is not used here.
+
+Verification passed November 25: two complete archive years, 730 archive
+dates plus five current dates, 25 month routes, approximately 1.54 MB of
+navigation/metadata overrides, zero map rebuilds and zero requests. Browser
+review confirmed September 30, 2025 shows October 1–3 in its centered view,
+Next opens the WY2026 October map, both year selectors work, Current returns
+to October 5, 2026, and October 1 current comparisons retain September 28–30
+context. Source release seals are unchanged. User visual acceptance is pending.
+
+The sections below retain the earlier single-year pilot's review history.
+
 November 25, 2026. The user accepted WY2025's separate staging archive and
 requested a connected local navigation review while the VM's production run
 continued. This increment does not access the VM, publish, alter cron, modify

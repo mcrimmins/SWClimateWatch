@@ -83,6 +83,19 @@ normalize_storm_reports <- function(raw, start, end) {
   rows
 }
 
+storm_reports_archive_request <- function(start,end,
+    timeout=getOption("swc.storm_reports.timeout",45),
+    max_tries=getOption("swc.storm_reports.max_tries",1L)) {
+  if(!is.numeric(timeout)||length(timeout)!=1L||!is.finite(timeout)||timeout<1||timeout>180||
+     !is.numeric(max_tries)||length(max_tries)!=1L||is.na(max_tries)||!max_tries%in%1:3)
+    stop("Bound report requests to 1-180 seconds and 1-3 attempts.")
+  httr2::request(storm_reports_endpoint)|>
+    httr2::req_url_query(sts=paste0(start,"T00:00Z"),ets=paste0(end,"T00:00Z"),states="AZ,NM")|>
+    httr2::req_user_agent("SWClimateWatch local storm report pilot")|>
+    httr2::req_timeout(timeout)|>
+    httr2::req_retry(max_tries=max_tries,retry_on_failure=TRUE)
+}
+
 read_storm_reports_cache <- function(start, end, refresh=FALSE,
     cache_dir="data/raw/storm-reports/az-nm") {
   start<-as.Date(start);end<-as.Date(end)
@@ -96,10 +109,8 @@ read_storm_reports_cache <- function(start, end, refresh=FALSE,
     normalize_storm_reports(previous$raw,start,end)
     return(previous)
   }
-  request<-httr2::request(storm_reports_endpoint)|>
-    httr2::req_url_query(sts=paste0(start,"T00:00Z"),ets=paste0(end,"T00:00Z"),states="AZ,NM")|>
-    httr2::req_user_agent("SWClimateWatch local storm report pilot")|>
-    httr2::req_timeout(45)
+  request<-storm_reports_archive_request(start,end)
+  message("Storm reports: ",start," to ",end," (end excluded); fetching uncached range.")
   # A failed refresh does not overwrite the last good cache or become an empty day.
   response<-httr2::req_perform(request)
   raw<-httr2::resp_body_json(response,simplifyVector=FALSE)

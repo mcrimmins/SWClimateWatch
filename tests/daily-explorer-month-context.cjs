@@ -33,5 +33,20 @@ const get=async url=>{requests.push(String(url));const data=docs.get(String(url)
   assert.ok(!requests.some(u=>u.includes('2024-12')),'Months outside the context window are not fetched');
   assert.ok(!requests.some(u=>u.endsWith('.png')),'No images fetched by metadata loader');
   const before=requests.length;await client.fetch('daily-data.json');assert.equal(requests.length,before,'Repeated metadata uses cached promises');
+  // The same loader supports the next completed year; reject unknown catalogs.
+  docs.set(`${root}archive-catalog.json`,{...catalog,wy2025_pilot:false,wy2026_pilot:true,schema_version:1});
+  const next=await(await context(`${root}months/2024-11/index.html`,get).fetch('daily-data.json')).json();
+  assert.equal(next.days.length,2);
+  docs.set(`${root}archive-catalog.json`,{...catalog,wy2025_pilot:false});
+  await assert.rejects(()=>context(`${root}months/2024-11/index.html`,get).fetch('daily-data.json'),/Wrong month context catalog/);
+  const years='http://example.test/archive/';
+  const cross=[{dates:['2025-09-30'],path:'months/2025-09/daily-data.json'},
+    {dates:['2025-10-01'],path:'../wy2026/months/2025-10/daily-data.json'}];
+  docs.set(`${years}wy2025/archive-catalog.json`,{wy2025_pilot:true,months:cross});
+  for(const [owner,month,day]of [['wy2025','2025-09','30'],['wy2026','2025-10','01']])
+    docs.set(`${years}${owner}/months/${month}/daily-data.json`,{days:[{date:`${month}-${day}`,images:{pcpn_observed:'maps/observed.png'}}]});
+  const spanning=await(await context(`${years}wy2025/months/2025-09/index.html`,get).fetch('daily-data.json')).json();
+  assert.deepEqual(spanning.days.map(d=>d.date),['2025-09-30','2025-10-01']);
+  assert.equal(spanning.days[1].images.pcpn_observed,`${years}wy2026/months/2025-10/maps/observed.png`);
   console.log('PASS: adjacent month dates, rebased map/report paths, weather means, both event timelines, request reuse and lazy image loading.');
 })().catch(e=>{console.error(e);process.exitCode=1;});

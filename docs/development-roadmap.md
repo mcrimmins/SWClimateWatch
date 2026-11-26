@@ -1820,6 +1820,22 @@ by the current-year updater and which completed-year releases it must retain.
    prepared and reuses the accepted WY2025 release without map duplication.
    Staging acceptance, standard site-entry integration and daily-run retention
    remain pending. No maps or source bundles are rebuilt.
+   A separate [WY2026 local runner](daily-explorer-wy2026.md) is prepared for
+   October 2025–September 2026 with resumable monthly checkpoints and cached
+   input reuse. November 25 inventory found all daily PRISM headers but only
+   54/394 complete core-weather dates, so missing CORe/event downloads remain
+   opt-in. The complete local WY2026 release now passes 12-month/365-date/
+   5,840-map validation. Its standalone preview catalog and resize fixes are
+   locally verified. Connected navigation now supports both accepted local
+   archive years, read-only per-year mounts and archive ownership of overlapping
+   retained dates; two-year local review and staging acceptance remain pending.
+   The WY2025 staging trial continues independently.
+   November 26: local combined navigation was accepted. WY2026 manifest-only
+   export, checksum-verified staging import and combined static staging scripts
+   are prepared, including a temporary-config full daily retention trial for
+   both years. Transfer, VM acceptance and production promotion are pending;
+   no archive map rebuild or raw-cache transfer is required. See the
+   [combined staging guide](daily-explorer-two-year-staging.md).
 5. **Staging, then production.** Validate every dated asset reference, report
    and unique-event counts, noon/UTC alignment, means/overlay coverage, year
    transitions, direct links and subsequent daily-run retention. Review actual

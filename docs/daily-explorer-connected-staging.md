@@ -1,5 +1,9 @@
 # Connected Explorer staging trial
 
+For the combined WY2025/WY2026 release, use the
+[two-year staging guide](daily-explorer-two-year-staging.md). The instructions
+below describe the earlier one-year trial.
+
 November 25, 2026. Local navigation and loading fixes were accepted. This
 trial publishes a static adapter at
 <https://cales.arizona.edu/climate/watch-staging/daily-explorer/connected/>.
