@@ -79,6 +79,7 @@ audit_map_cleanup <- function(project = ".", report_dir = "data/diagnostics/map-
     full.names = TRUE, recursive = TRUE, ignore.case = TRUE)), use.names = FALSE))
   # The audit's own reports must never become references on a later run.
   metadata <- metadata[!startsWith(metadata, paste0(output, "/")) &
+    !startsWith(metadata,paste0(project,"/data/diagnostics/map-cleanup-recovery/")) &
     !grepl("/(node_modules|[.]git|[.]quarto)/", metadata)]
   message("Checking ", length(metadata), " text files for references...")
   scanned <- 0L
