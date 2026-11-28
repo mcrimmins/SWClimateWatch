@@ -36,7 +36,7 @@ stage_streamflow_trial <- function(source_dir="site/_site/daily-explorer",output
   },character(1))
   # Reuse the local section template without depending on the laptop's connected sources.
   panel<-paste0('<details id="streamflow-panel" class="card streamflow-panel"><summary>Streamflow</summary>',
-    '<div class="streamflow-shared-controls"><label>View window<select id="streamflow-view-window"><option value="1">Selected day</option><option value="7">7 days</option><option value="30">30 days</option><option value="90">90 days · streamflow only</option></select></label>',
+    '<div class="streamflow-shared-controls"><label>View window<select id="streamflow-view-window"><option value="1">Selected day</option><option value="7" selected>7 days</option><option value="30">30 days</option><option value="90">90 days · streamflow only</option></select></label>',
     '<label>Summary region<select id="streamflow-view-region"><option value="AZNM">Arizona + New Mexico</option><option value="AZ">Arizona</option><option value="NM">New Mexico</option></select></label></div>',
     '<p>Use the Explorer date controls above. Streamflow windows end on that date. The 7- and 30-day selections also update Map view; the 90-day window applies to Streamflow only.</p>',
     '<iframe id="streamflow-frame" title="Streamflow map, linked gauge table and hydrographs"></iframe></details>')

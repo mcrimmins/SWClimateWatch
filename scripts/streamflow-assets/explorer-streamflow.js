@@ -57,17 +57,19 @@ function activate(){
 function sync(detail){
   const date=detail?.date||$('date')?.value;if(!/^\d{4}-\d{2}-\d{2}$/.test(date||''))return;
   context={date};const compare=$('compare')?.value;
-  if(compare&&compare!==lastCompare){select.value=compare==='single'?'1':compare;lastCompare=compare;}
+  if(compare&&compare!==lastCompare){select.value=compare==='single'?'7':compare;lastCompare=compare;}
   const r=detail?.region||$('region')?.value;if(['AZNM','AZ','NM'].includes(r))region.value=r;
   send();if(restored)remember();
 }
-function applyToMaps(){
-  for(const [id,value]of [['region',region.value],['compare',select.value==='1'?'single':select.value]]){
-    const el=$(id);if(el&&[...el.options].some(o=>o.value===value)&&el.value!==value){el.value=value;el.dispatchEvent(new Event('change',{bubbles:true}));}
+function applyToMaps(changeWindow=false){
+  const changes=[['region',region.value]];if(changeWindow)changes.push(['compare',select.value==='1'?'single':select.value]);
+  for(const [id,value]of changes){
+    const el=$(id);if(el&&[...el.options].some(o=>o.value===value)&&el.value!==value){el.value=value;if(id==='compare')lastCompare=value;el.dispatchEvent(new Event('change',{bubbles:true}));}
   }
 }
 panel.addEventListener('toggle',()=>{activate();remember();});
-for(const el of [select,region])el.addEventListener('change',()=>{send();applyToMaps();remember();});
+select.addEventListener('change',()=>{send();applyToMaps(true);remember();});
+region.addEventListener('change',()=>{send();applyToMaps(false);remember();});
 document.addEventListener('swc:daily-selection',e=>sync(e.detail));
 for(const id of ['compare','region'])$(id)?.addEventListener('change',()=>sync());
 const shortcut=document.createElement('button');shortcut.type='button';shortcut.id='view-streamflow';shortcut.textContent='View streamflow';
@@ -85,7 +87,7 @@ window.addEventListener('message',e=>{
   if(e.source!==flow.contentWindow)return;
   if(m?.type==='swc:streamflow-ready'){ready=true;send(true);}
   if(m?.type==='swc:streamflow-gauge'&&/^USGS-\d+$/.test(m.gauge)){gauge=m.gauge;remember();}
-  if(m?.type==='swc:streamflow-control'&&[1,7,30,90].includes(m.days)&&['AZNM','AZ','NM'].includes(m.region)){select.value=String(m.days);region.value=m.region;applyToMaps();send();remember();}
+  if(m?.type==='swc:streamflow-control'&&[1,7,30,90].includes(m.days)&&['AZNM','AZ','NM'].includes(m.region)){const changed=Number(select.value)!==m.days;select.value=String(m.days);region.value=m.region;applyToMaps(changed);send();remember();}
   if(m?.type==='swc:streamflow-height'&&Number.isFinite(m.height)){const h=Math.max(220,Math.min(12000,m.height));if(Math.abs(parseFloat(flow.style.height||'0')-h)>=4)flow.style.height=h+'px';}
 });
 if(parent!==window)parent.postMessage({type:'swc:streamflow-host-ready',token},origin);else restored=true;

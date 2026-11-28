@@ -35,7 +35,10 @@ The available streamflow snapshot covers August 29–November 26, 2026.
   are recalculated for that date; later observations are never substituted.
   If a gauge has no observation that day, its latest earlier observation date
   and freshness remain explicit. The chart's selected day still shows a gap.
-- Shared single-day, 7-day and 30-day selections drive both the flow chart and
+- A single-day map defaults the flow chart to the trailing seven days without
+  changing Map view. Region changes preserve that distinction. An explicitly
+  selected one-day hydrograph is still available.
+- Shared 7-day and 30-day selections drive both the flow chart and
   Map view. Streamflow windows trail the selected date, whereas the existing
   multi-day map tiles retain their original centered browsing behavior.
   Ninety days is a Streamflow-only window. Regional filtering is shared.

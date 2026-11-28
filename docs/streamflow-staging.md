@@ -108,6 +108,13 @@ before publication and leave their diagnostics for review.
 
 ## Review and evidence
 
+For a UI-only update after the first successful trial, use
+`bash scripts/test-streamflow-staging.sh --cached`. It reuses the verified VM
+snapshot, reruns validation and rebuilds/uploads the review without importing
+the laptop seed again or making USGS requests. No new transfer is needed.
+Single-day maps now default to a seven-day flow hydrograph while preserving
+the map's single-day setting.
+
 Review https://cales.arizona.edu/climate/watch-staging/daily-explorer/streamflow-trial/
 
 Check the product jump buttons; the initially collapsed Streamflow section and
