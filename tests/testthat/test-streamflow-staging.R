@@ -1,0 +1,20 @@
+streamflow_stage_root<-normalizePath(testthat::test_path("../.."),winslash="/",mustWork=TRUE)
+source(file.path(streamflow_stage_root,"R/streamflow-transfer.R"))
+source(file.path(streamflow_stage_root,"R/streamflow-staging.R"))
+testthat::test_that("cache transfer allows only its three dedicated public-input roots",{
+  testthat::expect_true(streamflow_transfer_safe("data/raw/streamflow-pilot/abc.json"))
+  testthat::expect_true(streamflow_transfer_safe("data/diagnostics/streamflow-network-pilot/state/USGS-09506000.rds"))
+  for(p in c(".env","data/raw/prism/secret.json","/data/raw/streamflow-pilot/abc.json","data/raw/streamflow-pilot/../abc.json","data/raw/streamflow-pilot//abc.json","C:/cache/file"))
+    testthat::expect_false(streamflow_transfer_safe(p))
+})
+testthat::test_that("staging guard rejects production and arbitrary output directories",{
+  withr::local_envvar(c(SWC_S3_DESTINATION="s3://cales-climate-reports/climate/watch/",SWC_PRODUCTION_STATE_DIR="/home/crimmins/.local/state/swclimatewatch"))
+  testthat::expect_error(streamflow_staging_guard(),"dedicated staging")
+  testthat::expect_error(stage_streamflow_trial(output="data/diagnostics/../escape",require_staging=FALSE),"under data/diagnostics")
+})
+testthat::test_that("checksum errors stop import before extraction or cache writes",{
+  d<-tempfile();dir.create(d);withr::defer(unlink(d,recursive=TRUE))
+  p<-file.path(d,"seed.tar.gz");writeBin(charToRaw("not an archive"),p)
+  writeLines(paste(paste(rep("0",64),collapse=""),"seed.tar.gz"),paste0(p,".sha256"))
+  testthat::expect_error(verify_streamflow_transfer(p),"checksum mismatch")
+})

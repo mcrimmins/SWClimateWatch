@@ -1,0 +1,50 @@
+streamflow_test_root<-normalizePath(testthat::test_path("../.."),winslash="/",mustWork=TRUE)
+source(file.path(streamflow_test_root,"R/streamflow-pilot.R"))
+flow_feature<-function(value="1",date="2026-11-26",id="USGS-09506000",series="one",qualifier=NULL) {
+  list(type="Feature",properties=list(monitoring_location_id=id,time_series_id=series,parameter_code="00060",
+    statistic_id="00003",unit_of_measure="ft^3/s",time=date,value=value,approval_status="Provisional",qualifier=qualifier),
+    geometry=list(type="Point",coordinates=list(-111,34)))
+}
+testthat::test_that("daily values preserve zero, missing/censored values and qualifiers",{
+  rows<-streamflow_rows(list(flow_feature("0"),flow_feature("Ice"),flow_feature("<1"),flow_feature("-3"),flow_feature("2.5",qualifier="e")))
+  testthat::expect_equal(rows$cfs,c(0,NA,NA,NA,2.5))
+  testthat::expect_equal(rows$qualifier[5],"e")
+  testthat::expect_equal(rows$approval[1],"Provisional")
+  bad<-flow_feature();bad$properties$unit_of_measure<-"ft"
+  testthat::expect_error(streamflow_rows(list(bad)),"unexpected parameter")
+  testthat::expect_error(streamflow_rows(list(flow_feature()),expected_id="USGS-00000000"),"Gauge filter")
+  testthat::expect_error(streamflow_rows(list(flow_feature()),series="another"),"Time-series filter")
+})
+testthat::test_that("calendar gaps and conflicting rows never become zeros or interpolated flows",{
+  rows<-streamflow_rows(list(flow_feature("0","2026-11-20"),flow_feature("1","2026-11-22"),flow_feature("2","2026-11-22")))
+  d<-streamflow_calendar(rows,"2026-11-20","2026-11-26")
+  testthat::expect_equal(nrow(d),7)
+  testthat::expect_equal(d$cfs,c(0,NA,NA,NA,NA,NA,NA))
+  testthat::expect_match(d$quality[3],"Conflicting")
+  s<-streamflow_summary(d,"2026-11-26")
+  testthat::expect_equal(s$latest_date,"2026-11-22")
+  testthat::expect_true(is.na(s$latest_cfs))
+  testthat::expect_true(is.na(s$mean_7day_cfs))
+  testthat::expect_equal(s$freshness,"Delayed")
+})
+testthat::test_that("complete means and recency are based on the explicit cutoff",{
+  f<-lapply(as.character(seq(as.Date("2026-10-28"),as.Date("2026-11-26"),by="day")),function(d)flow_feature("3",d))
+  d<-streamflow_calendar(streamflow_rows(f),"2026-10-28","2026-11-26")
+  s<-streamflow_summary(d,"2026-11-26")
+  testthat::expect_equal(s$mean_7day_cfs,3);testthat::expect_equal(s$mean_30day_cfs,3)
+  testthat::expect_equal(s$numeric_days,30);testthat::expect_equal(s$freshness,"Recent")
+})
+testthat::test_that("verified source cache reuses pages and rejects modified data without HTTP",{
+  cache<-tempfile();dir.create(cache);withr::defer(unlink(cache,recursive=TRUE))
+  params<-list(monitoring_location_id="USGS-09506000",limit=1L)
+  req<-do.call(httr2::req_url_query,c(list(httr2::request("https://api.waterdata.usgs.gov/ogcapi/v1/collections/daily/items")),c(list(f="json"),params)))
+  file<-file.path(cache,paste0(digest::digest(req$url,algo="sha256",serialize=FALSE),".json"))
+  jsonlite::write_json(list(type="FeatureCollection",features=list(flow_feature()),links=list()),file,auto_unbox=TRUE)
+  saveRDS(list(sha256=digest::digest(file=file,algo="sha256",serialize=FALSE),fetched_utc="2026-11-27T12:00:00Z"),paste0(file,".rds"))
+  metrics<-new.env(parent=emptyenv())
+  x<-streamflow_request("daily",params,cache_dir=cache,download=FALSE,metrics=metrics)
+  testthat::expect_length(x,1);testthat::expect_equal(metrics$requests,0)
+  testthat::expect_true(metrics$rows[[1]]$reused)
+  writeLines("modified",file)
+  testthat::expect_error(streamflow_request("daily",params,cache_dir=cache,download=FALSE),"Verified USGS cache")
+})

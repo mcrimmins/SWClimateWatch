@@ -6,6 +6,7 @@ scripts/test-historic-monthly-staging.sh text eol=lf
 scripts/test-historic-monthly-backfill-staging.sh text eol=lf
 scripts/test-storm-reports-staging.sh text eol=lf
 scripts/test-nws-hazards-staging.sh text eol=lf
+scripts/test-streamflow-staging.sh text eol=lf
 scripts/test-nws-hazards-daily-staging.sh text eol=lf
 scripts/test-daily-explorer-archive-staging.sh text eol=lf
 scripts/test-daily-explorer-wy2025-staging.sh text eol=lf

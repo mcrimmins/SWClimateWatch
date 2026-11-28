@@ -1,0 +1,11 @@
+(function(root){'use strict';
+const valid=x=>typeof x==='number'&&Number.isFinite(x);
+function segments(rows){const out=[];let line=[];rows.forEach((r,i)=>{if(valid(r.cfs)){line.push({i,value:r.cfs});}else if(line.length){out.push(line);line=[];}});if(line.length)out.push(line);return out;}
+function format(x){return valid(x)?new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(x):'Unavailable';}
+function day(x){if(!/^\d{4}-\d{2}-\d{2}$/.test(x||''))return 'Unavailable';return new Date(x+'T12:00:00Z').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'});}
+function categoryFor(r){if(!valid(r.cfs))return 'Unavailable';if(!r.history_supported)return 'History unavailable';const q=[r.p10,r.p25,r.p50,r.p75,r.p90];if(!q.every(valid)||q.some((v,i)=>i&&v<q[i-1]))return 'History unavailable';if(q.filter(v=>v===r.cfs).length>1)return 'Tied thresholds';return r.cfs<q[0]?'Below 10th':r.cfs<q[1]?'10th–25th':r.cfs<=q[3]?'25th–75th':r.cfs<=q[4]?'75th–90th':'Above 90th';}
+function historySegments(rows,lower,upper=lower){const out=[];let line=[];rows.forEach((r,i)=>{if(r.history_supported&&valid(r[lower])&&valid(r[upper]))line.push({i,low:r[lower],high:r[upper]});else if(line.length){out.push(line);line=[];}});if(line.length)out.push(line);return out;}
+function filtered(gauges,state,query,sort){const q=query.trim().toLowerCase();const result=gauges.filter(g=>(state==='all'||g.state===state)&&[g.name,g.river,g.id].join(' ').toLowerCase().includes(q));return result.sort((a,b)=>sort==='flow'?((valid(b.latest_cfs)?b.latest_cfs:-Infinity)-(valid(a.latest_cfs)?a.latest_cfs:-Infinity)||a.name.localeCompare(b.name)):a.name.localeCompare(b.name));}
+const api={valid,segments,format,day,filtered,categoryFor,historySegments,colors:{Recent:'#197d88',Delayed:'#b47b12',Stale:'#8c5667',Unavailable:'#7b8790'},categoryColors:{'Below 10th':'#b23d34','10th–25th':'#d58b43','25th–75th':'#4d946a','75th–90th':'#4a9ac1','Above 90th':'#345c9a','Tied thresholds':'#85738f','History unavailable':'#89939a',Unavailable:'#89939a'}};
+root.StreamflowModel=api;if(typeof module==='object'&&module.exports)module.exports=api;
+})(typeof window==='object'?window:globalThis);

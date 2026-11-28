@@ -1,0 +1,6 @@
+testthat::test_file("tests/testthat/test-streamflow-staging.R",stop_on_failure=TRUE)
+source("scripts/find-streamflow-test-node.R")
+node<-find_streamflow_test_node()
+for(f in c("explorer-streamflow.js","streamflow.js","streamflow-model.js","streamflow-explorer-model.js"))
+  if(system2(node,c("--check",shQuote(file.path("scripts/streamflow-assets",f))))!=0L)stop("Invalid browser asset: ",f)
+if(system2(node,shQuote("tests/streamflow-explorer.cjs"))!=0L)stop("Explorer controller checks failed.")

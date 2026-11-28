@@ -1,0 +1,38 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AZ/NM streamflow · Local review</title><link rel="stylesheet" href="leaflet.css"><link rel="stylesheet" href="streamflow.css">
+<script src="leaflet.js" defer></script><script src="streamflow-model.js" defer></script><script src="streamflow-explorer-model.js" defer></script><script src="streamflow.js" defer></script></head>
+<body><main><header><p class="eyebrow">Southwest Climate Watch · Local pilot</p><h1>Arizona &amp; New Mexico streamflow</h1>
+<p>Explore daily mean river flow at selected USGS gauges. Select a marker or table row to inspect its hydrograph.</p>
+<p id="asof" class="muted"></p></header><p id="error" role="alert" hidden></p>
+<section class="card" aria-label="Gauge map and selection"><div class="controls">
+<label>State<select id="state"><option value="all">Arizona + New Mexico</option><option>AZ</option><option>NM</option></select></label>
+<label>Search gauges<input type="search" id="search" placeholder="River, gauge or place"></label>
+<label>Sort table<select id="sort"><option value="name">Gauge name</option><option value="flow">Daily flow: highest first</option></select></label>
+<button id="reset" type="button">Reset filters &amp; map</button></div>
+<div class="map-layout"><div id="map" aria-label="Selected AZ/NM stream gauges"></div>
+<aside><h2>Gauges shown</h2><p id="counts" aria-live="polite"></p><div id="legend"></div>
+<p class="muted">Fill colors compare the dated daily flow with historical daily percentiles. A dashed outline indicates delayed or stale data. These are not flood categories.</p>
+<p class="muted">This is a selected network, not every gauge in the region. River flow may be affected by reservoirs, diversions and withdrawals.</p>
+<button type="button" id="fit">Fit map to shown gauges</button></aside></div></section>
+<section class="card selected" id="selected" hidden aria-label="Selected gauge details"><div class="section-heading"><div><p class="eyebrow">Selected gauge</p><h2 id="gauge-title"></h2><p id="gauge-meta" class="muted"></p></div>
+<a id="usgs" class="button" target="_blank" rel="noopener">Open USGS gauge ↗</a></div>
+<div id="gauge-stats" class="stats"></div><div class="controls"><label>Hydrograph window<select id="window"><option value="7">Past 7 days</option><option value="30" selected>Past 30 days</option><option value="90">Past 90 days</option></select></label>
+<label>Historical bands<select id="bands"><option value="both">25–75% + 10–90%</option><option value="inner">25–75% only</option><option value="none">Hide historical context</option></select></label>
+<a id="csv" download>Download 90-day daily data (CSV)</a></div>
+<p class="plot-legend"><span class="observed-key">━━ Observed</span> · <span class="median-key">┄ Historical median</span> · <span class="inner-key">■ 25th–75th</span> · <span class="outer-key">■ 10th–90th</span></p>
+<p id="history-status" class="muted"></p>
+<p id="chart-status" role="status" class="muted"></p><div class="hydrograph-layout"><div class="hydrograph-main"><div id="plot-area"><svg id="chart" viewBox="0 0 920 280" role="img" aria-label="Daily mean discharge hydrograph" tabindex="0"></svg></div>
+<div class="day-nav"><button id="previous" type="button">← Previous day</button><button id="next" type="button">Next day →</button></div>
+</div><section class="day-panel" aria-label="Selected day statistics"><h3 id="day-title">Selected day</h3><table><tbody id="day-detail"></tbody></table></section></div>
+<p class="muted">Hover, tap or focus the hydrograph and use the left/right arrows to inspect a day. Gaps indicate unavailable values; zero is a measured zero. These are daily means, not instantaneous readings or flood peaks.</p>
+<details><summary>Record and interpretation notes</summary><p id="record"></p><p>Historical context uses USGS-approved day-of-year statistics from the available record, with at least 30 approved values for a calendar day. Exact reference-year bounds are not supplied by the Statistics API; this is not a fixed 1991–2020 baseline. Metadata record bounds describe observation availability, not the years used in the percentile calculation. Regulation, diversions and watershed changes are not adjusted away.</p><p>Daily dates follow USGS station reporting conventions, not the PRISM precipitation window. Categories use published percentile thresholds; exact percentile ranks, historical records and flood categories are not calculated. Tied thresholds (including common zero flows) are identified separately. Seven-day means are not classified against daily thresholds.</p></details></section>
+<section class="card"><h2>Gauge observations</h2><div class="table-scroll"><table id="gauge-table"><caption>Selected network · daily mean flow in cubic feet per second (cfs)</caption>
+<thead><tr><th scope="col">Gauge</th><th scope="col">State</th><th scope="col">Observation date</th><th scope="col">Daily mean</th><th scope="col">Historical category</th><th scope="col">7-day mean</th><th scope="col">Data status</th></tr></thead><tbody id="gauges"></tbody></table></div>
+<p class="muted">The 7-day mean requires all seven daily values ending on the pilot cutoff. Missing values are not filled. Different rivers have different drainage areas; raw flow is not a regional condition ranking.</p></section>
+<details class="card"><summary>Source coverage, workload &amp; how to read this pilot</summary>
+<div id="coverage"></div><p id="unavailable"></p>
+<p>Source: <a href="https://api.waterdata.usgs.gov/docs/ogcapi/" target="_blank" rel="noopener">USGS Water Data API</a>; discharge parameter 00060, daily mean statistic 00003. Provisional observations can be revised. Qualifiers are preserved, and nonnumeric/censored or conflicting values are shown as unavailable rather than zero.</p>
+<p>Recent: observation within three days of the cutoff; delayed: four to seven days; stale: more than seven days. These thresholds are local display rules. A recent date with a nonnumeric value still has no usable flow value.</p>
+<p>The source inventory includes historical last-observation dates; it is not a count of active or continuously operating gauges. Flood stages, real-time observations and Daily Explorer integration remain separate development steps. This pilot is for local review and is not a warning service.</p>
+<p><a href="coverage.csv">Coverage assessment CSV</a> · <a href="workload.csv">Observation workload</a> · <a href="statistics-availability.csv">Historical support</a> · <a href="statistics-workload.csv">Statistics workload</a> · <a href="unavailable-gauges.csv">Unavailable gauges</a></p>
+<p>Basemap: © OpenStreetMap contributors. Map tiles require an internet connection; observations are read from local cached files. No browser requests are made to USGS.</p></details></main></body></html>
