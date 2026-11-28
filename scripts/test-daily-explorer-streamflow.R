@@ -30,4 +30,5 @@ for(asset in c("streamflow.js","streamflow-explorer-model.js","explorer-streamfl
   if(system2(node,c("--check",shQuote(file.path("scripts/streamflow-assets",asset))))!=0L)stop("Browser syntax check failed: ",asset)
 if(system2(node,shQuote("tests/streamflow-explorer.cjs"))!=0L)stop("Streamflow Explorer checks failed.")
 if(system2(node,shQuote("tests/streamflow-controls.cjs"))!=0L)stop("Shared window-control checks failed.")
+if(system2(node,shQuote("tests/streamflow-jumps.cjs"))!=0L)stop("Embedded jump-navigation checks failed.")
 source("scripts/test-streamflow-network.R")

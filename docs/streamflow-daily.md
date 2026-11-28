@@ -52,6 +52,13 @@ needed. A temporary configuration enables Streamflow for the full daily test.
 Permanent environment files and production are unchanged. Inspect the standard
 staging Daily Explorer, not `streamflow-trial/`, afterward.
 
+For a navigation-only change after the verified daily release exists, use
+`bash scripts/publish-streamflow-navigation-staging.sh`. This holds the staging
+lock, tests nested/full-screen navigation and republishes from cached data.
+Jump buttons scroll the outer site page through both embedded frames; they also
+open collapsed sections and focus their headings. The daily test includes a
+regression check for this nested layout, reduced motion and fixed site headers.
+
 ```bash
 Rscript scripts/check-streamflow-daily.R
 cat data/diagnostics/streamflow-daily/workflow-status.csv

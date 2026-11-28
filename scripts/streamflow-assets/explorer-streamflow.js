@@ -3,6 +3,28 @@
 const $=id=>document.getElementById(id),origin=location.origin;
 const adapter=document.querySelector('script[src*="explorer-streamflow"]');
 const assetRoot=new URL('.',adapter?adapter.src:location.href);
+function jumpToSection(target,offset=16){
+  const heading=target.matches('details')?target.querySelector('summary'):target;
+  if(!heading)return;
+  heading.setAttribute('tabindex','-1');heading.focus({preventScroll:true});
+  // The standard site embeds the connected shell, which embeds the selected
+  // month. Scroll the containing page, accounting for every same-origin frame,
+  // rather than an auto-sized inner window with no useful scroll range.
+  let view=heading.ownerDocument.defaultView,top=heading.getBoundingClientRect().top;
+  try{
+    while(view.frameElement){
+      const frame=view.frameElement;top+=frame.getBoundingClientRect().top+(frame.clientTop||0);
+      view=frame.ownerDocument.defaultView;
+    }
+  }catch(_){/* Stop at the accessible containing page if embedded elsewhere. */}
+  const header=view.document.getElementById('quarto-header');
+  if(header){
+    const style=view.getComputedStyle(header),box=header.getBoundingClientRect();
+    if(['fixed','sticky'].includes(style.position)&&box.top<=0&&box.bottom>0)offset+=box.bottom;
+  }
+  view.scrollTo({top:Math.max(0,view.scrollY+top-offset),
+    behavior:view.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
+}
 const mainFrame=$('connected-viewer');
 if(mainFrame){
   const targets=[['Daily summary','#timeline-title'],['Main map','#map-title'],['Streamflow','#streamflow-panel'],
@@ -16,10 +38,7 @@ if(mainFrame){
       const target=mainFrame.contentDocument?.querySelector(selector);if(!target||target.hidden)return;
       for(let el=target;el;el=el.parentElement)if(el.tagName==='DETAILS')el.open=true;
       requestAnimationFrame(()=>{
-        const heading=target.matches('details')?target.querySelector('summary'):target;
-        heading.setAttribute('tabindex','-1');heading.focus({preventScroll:true});
-        const top=window.scrollY+mainFrame.getBoundingClientRect().top+heading.getBoundingClientRect().top-nav.getBoundingClientRect().height-16;
-        window.scrollTo({top:Math.max(0,top),behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
+        jumpToSection(target,nav.getBoundingClientRect().height+16);
       });
     });nav.append(button);return {button,selector,name};
   });
@@ -73,7 +92,7 @@ region.addEventListener('change',()=>{send();applyToMaps(false);remember();});
 document.addEventListener('swc:daily-selection',e=>sync(e.detail));
 for(const id of ['compare','region'])$(id)?.addEventListener('change',()=>sync());
 const shortcut=document.createElement('button');shortcut.type='button';shortcut.id='view-streamflow';shortcut.textContent='View streamflow';
-shortcut.addEventListener('click',()=>{panel.open=true;activate();panel.scrollIntoView({behavior:'smooth',block:'start'});});
+shortcut.addEventListener('click',()=>{panel.open=true;activate();requestAnimationFrame(()=>jumpToSection(panel));});
 const actions=$('open-map')?.parentElement;if(actions)actions.append(shortcut);
 window.addEventListener('message',e=>{
   if(e.origin!==origin)return;const m=e.data;
