@@ -1,0 +1,6 @@
+testthat::test_file("tests/testthat/test-streamflow-daily.R",stop_on_failure=TRUE)
+source("scripts/find-streamflow-test-node.R")
+node<-find_streamflow_test_node()
+for(f in c("tests/streamflow-model.cjs","tests/streamflow-explorer.cjs","tests/streamflow-controls.cjs"))
+  if(system2(node,shQuote(f))!=0L)stop("Streamflow browser check failed: ",f)
+message("PASS: daily retention safeguards and reviewed browser controls.")

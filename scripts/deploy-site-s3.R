@@ -200,6 +200,10 @@ deploy_swc_site <- function(
   message("Sync mode: ", if (dry_run) "DRY RUN" else "LIVE",
           if (delete) " with deletion inside this prefix" else " without deletion")
   if (render) {
+    if(identical(tolower(Sys.getenv("SWC_STREAMFLOW")),"true")) {
+      source("R/streamflow-daily.R",local=TRUE)
+      streamflow_daily_guard()
+    }
     source(file.path("R","site-cache.R"),local=TRUE)
     quarto <- swc_deploy_quarto()
     swc_deploy_stage_cached_sources(rscript, destination)

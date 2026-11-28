@@ -79,10 +79,16 @@ build_connected_static <- function(current,archive,output=file.path(current,"con
     put(html,paste0(prefix,"index.html"))
   }
   }
+  streamflow_enabled<-identical(tolower(Sys.getenv("SWC_STREAMFLOW")),"true")
+  if(streamflow_enabled) {
+    source("R/streamflow-daily.R",local=TRUE)
+    flow_files<-stage_streamflow_connected(output)
+    seals[flow_files]<-unname(tools::md5sum(file.path(output,flow_files)))
+  }
   dependencies<-c("daily-data.json","explorer.js",vapply(names(archives),function(id)paste0("archive/",id,"/",archives[[id]]$marker),character(1)))
   hashes<-unname(tools::md5sum(file.path(current,dependencies)))
   if(anyNA(hashes))stop("Connected trial requires the accepted archive beside the current viewer.")
-  manifest<-list(schema_version=1L,operational=publication,code_commit=Sys.getenv("SWC_CONNECTED_RELEASE_COMMIT",""),archive_years=unname(vapply(archives,`[[`,integer(1),"year")),files=unname(lapply(names(seals),function(p)list(path=p,md5=seals[[p]]))),
+  manifest<-list(schema_version=1L,streamflow_enabled=streamflow_enabled,operational=publication,code_commit=Sys.getenv("SWC_CONNECTED_RELEASE_COMMIT",""),archive_years=unname(vapply(archives,`[[`,integer(1),"year")),files=unname(lapply(names(seals),function(p)list(path=p,md5=seals[[p]]))),
     dependencies=unname(lapply(seq_along(dependencies),function(i)list(path=dependencies[i],md5=hashes[i]))))
   weather_write_json(manifest,file.path(output,"connected-release.json"))
   validate_connected_static(current)
@@ -92,6 +98,10 @@ validate_connected_static <- function(directory) {
   for(pair in list(list(rows=m$files,root=root),list(rows=m$dependencies,root=directory)))for(f in pair$rows) {
     if(!is.character(f$path)||grepl("(^/|(^|/)\\.\\.(/|$)|\\\\)",f$path))stop("Unsafe connected publication path.")
     if(!identical(f$md5,unname(tools::md5sum(file.path(pair$root,f$path)))))stop("Connected publication differs: ",f$path)
+  }
+  if(isTRUE(m$streamflow_enabled)) {
+    source("R/streamflow-daily.R",local=TRUE)
+    validate_streamflow_connected(directory)
   }
   c<-jsonlite::read_json(file.path(root,"connected-catalog.json"))
   if(!is.null(m$archive_years)) {

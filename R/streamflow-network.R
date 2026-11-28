@@ -98,11 +98,13 @@ streamflow_network_eligibility <- function(directory,sites,events) {
   do.call(rbind,output)
 }
 
-run_streamflow_network <- function(cutoff,mode=c("bootstrap","incremental_live","cache_replay"),download=TRUE) {
+run_streamflow_network <- function(cutoff,mode=c("bootstrap","incremental_live","cache_replay"),download=TRUE,
+    root="data/diagnostics/streamflow-network-pilot",state_dir=file.path(root,"state")) {
   mode<-match.arg(mode);cutoff<-as.Date(cutoff)
   if(mode=="incremental_live"&&!download)stop("A live incremental benchmark requires downloads; use cache_replay for an offline run.")
   if(length(cutoff)!=1L||is.na(cutoff)||cutoff>=Sys.Date())stop("Use a completed-day cutoff before today.")
-  root<-"data/diagnostics/streamflow-network-pilot";viewer<-file.path(root,"viewer")
+  if(!grepl("^data/diagnostics/[A-Za-z0-9_/-]+$",root)||any(strsplit(root,"/",fixed=TRUE)[[1]]%in%c(".","..")))stop("Network output must be under data/diagnostics.")
+  viewer<-file.path(root,"viewer")
   dir.create(root,recursive=TRUE,showWarnings=FALSE)
   sites<-streamflow_network_sites();write.csv(sites,file.path(root,"network-plan.csv"),row.names=FALSE)
   started<-Sys.time();events<-new.env(parent=emptyenv());events$rows<-list()
@@ -110,7 +112,7 @@ run_streamflow_network <- function(cutoff,mode=c("bootstrap","incremental_live",
   # Bootstrap is one-time setup; steady updates have a 45-second source budget
   # so assembly/reference reuse can fit within the proposed 60-second increment.
   metrics$deadline<-started+if(mode=="bootstrap")180 else 45
-  provider<-streamflow_network_provider(file.path(root,"state"),mode,download,events)
+  provider<-streamflow_network_provider(state_dir,mode,download,events)
   build<-build_streamflow_pilot(cutoff=cutoff,download=download,sites=sites,output_dir=viewer,
     daily_rows_provider=provider,metrics=metrics,request_limit=if(mode=="bootstrap")120L else 60L)
   statistics<-add_streamflow_statistics(viewer,download=download&&mode=="bootstrap",refresh=FALSE)

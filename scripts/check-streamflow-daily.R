@@ -1,0 +1,17 @@
+source("R/streamflow-daily.R")
+source("scripts/load-daily-explorer-connected.R")
+source("R/daily-explorer-connected-staging.R")
+status<-read.csv(file.path(streamflow_daily_root(),"workflow-status.csv"),stringsAsFactors=FALSE)
+print(status,row.names=FALSE)
+if(nrow(status)!=1L||status$status!="READY"||status$cutoff!=as.character(Sys.Date()-1L))stop("Streamflow is not fully refreshed through yesterday; inspect workflow-status.csv before promotion.")
+for(d in c("site/daily-explorer","site/_site/daily-explorer")){
+  validate_connected_static(d)
+  validate_streamflow_connected(d)
+  release<-jsonlite::read_json(file.path(d,"connected/streamflow-release.json"))
+  if(release$cutoff!=status$cutoff||release$status!="READY")stop("Rendered Streamflow does not match this daily run.")
+  m<-jsonlite::read_json(file.path(d,"connected/connected-release.json"))
+  if(!isTRUE(m$streamflow_enabled)||!identical(as.integer(unlist(m$archive_years)),c(2025L,2026L)))stop("Streamflow or archive years missing.")
+}
+seals<-file.path(c("site/daily-explorer","site/_site/daily-explorer"),"connected/connected-release.json")
+stopifnot(length(unique(unname(tools::md5sum(seals))))==1L)
+message("PASS: standard Explorer Streamflow, jump navigation, both archive years and daily cutoff match source/rendered releases.")
